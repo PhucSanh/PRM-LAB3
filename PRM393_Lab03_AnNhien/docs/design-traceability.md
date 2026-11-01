@@ -2,7 +2,7 @@
 
 Figma: https://www.figma.com/design/K3JczHkChbUWoDBkXZYMhR/Untitled · fileKey `K3JczHkChbUWoDBkXZYMhR` · Chủ file: **Sanh**
 
-File này nối **từng khung Figma** với **route, ViewModel, nguồn dữ liệu và trạng thái code**. Người và AI agent tra file này trước khi làm một màn (xem `../../AGENTS.md`).
+File này nối **từng khung Figma** với **route, ViewModel, nguồn dữ liệu và trạng thái code**. Người và AI agent tra file này trước khi làm một màn (thứ tự đọc docs: `README.md`).
 
 ## Cách dùng
 

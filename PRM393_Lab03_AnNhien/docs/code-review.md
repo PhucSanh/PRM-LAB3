@@ -13,7 +13,7 @@ Chủ file: **Sanh** (điều phối bước 7). Review theo từng PR. Đề y�
 
 ```text
 Review diff của PR này cho dự án An Nhiên (Flutter, MVVM + Riverpod, Firebase).
-Đọc trước: AGENTS.md, PRM393_Lab03_AnNhien/docs/architecture.md (mục 15 Luật),
+Đọc trước: PRM393_Lab03_AnNhien/docs/architecture.md (mục 15 Luật),
 docs/lab2/rule.md, docs/lab2/vocabulary.md.
 Chỉ báo phát hiện có thật, mỗi phát hiện: file:dòng, loại (theo bảng Loại),
 mô tả, vì sao sai (dẫn luật / đề / số đo), cách sửa đề xuất. Không sửa code.

@@ -1,6 +1,6 @@
 # docs/ – Tài liệu dự án An Nhiên (Lab 3)
 
-Thư mục này là **nguồn chuẩn** của dự án: thầy chấm theo các file ở đây (8 bước của đề), cả nhóm tra cứu, và AI agent đọc làm context trước khi code (`../../AGENTS.md`).
+Thư mục này là **nguồn chuẩn** của dự án: thầy chấm theo các file ở đây (8 bước của đề), cả nhóm tra cứu, và AI agent đọc làm context trước khi code (thứ tự đọc ở cuối file này).
 
 ## File Lab 3 (cả nhóm cập nhật trong lúc làm)
 
