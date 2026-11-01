@@ -1,0 +1,9 @@
+[project]
+name = "an-nhien-e2e"
+version = "0.1.0"
+requires-python = ">=3.12"
+# TODO(Hương): thêm dependency ARTEMIS theo README của google/artemis và ghim commit vào README.md gốc.
+dependencies = ["pytest", "pytest-asyncio"]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"

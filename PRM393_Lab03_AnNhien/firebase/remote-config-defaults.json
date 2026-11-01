@@ -1,0 +1,5 @@
+{
+  "snooze_minutes": 10,
+  "voice_input_enabled": true,
+  "home_max_upcoming": 6
+}

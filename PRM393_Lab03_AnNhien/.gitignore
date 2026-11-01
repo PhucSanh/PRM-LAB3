@@ -1,0 +1,64 @@
+# Flutter / Dart
+.dart_tool/
+.packages
+.pub-cache/
+.pub/
+build/
+.flutter-plugins
+.flutter-plugins-dependencies
+*.iml
+.idea/
+.vscode/
+coverage/
+
+# Android
+android/.gradle/
+android/local.properties
+android/app/debug/
+android/app/profile/
+android/app/release/
+*.jks
+*.keystore
+key.properties
+
+# Bí mật – KHÔNG commit (google-services.json thì được commit)
+.env
+*.env
+service-account*.json
+e2e_test/.env
+
+# Python (e2e_test)
+__pycache__/
+.venv/
+.pytest_cache/
+e2e_test/runs/
+
+# Bổ sung theo mẫu chuẩn Flutter / Android
+*.class
+*.log
+*.pyc
+*.swp
+.DS_Store
+.history
+.swiftpm/
+migrate_working_dir/
+*.ipr
+*.iws
+**/doc/api/
+app.*.symbols
+app.*.map.json
+android/.kotlin/
+android/app/.cxx/
+android/captures/
+android/gradlew
+android/gradlew.bat
+android/gradle/wrapper/gradle-wrapper.jar
+android/**/GeneratedPluginRegistrant.java
+.externalNativeBuild/
+.cxx/
+
+# Firebase CLI / emulator
+.firebase/
+firebase-debug.log
+firestore-debug.log
+ui-debug.log
