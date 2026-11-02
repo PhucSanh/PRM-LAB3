@@ -1,0 +1,47 @@
+[
+  {
+    "key": "move",
+    "name": "Vận động tự nhiên",
+    "description": "Đi bộ, làm vườn, tự làm việc nhà"
+  },
+  {
+    "key": "purpose",
+    "name": "Sống có mục đích",
+    "description": "Mỗi sáng có một lý do để thức dậy"
+  },
+  {
+    "key": "downshift",
+    "name": "Thư giãn mỗi ngày",
+    "description": "Ngồi thở nhẹ, nghỉ trưa"
+  },
+  {
+    "key": "eighty",
+    "name": "Ăn vừa đủ",
+    "description": "Ăn chậm, dừng khi thấy vừa no"
+  },
+  {
+    "key": "plant",
+    "name": "Ăn nhiều rau, đậu",
+    "description": "Rau, đậu, ngũ cốc mỗi bữa"
+  },
+  {
+    "key": "tea",
+    "name": "Trà chiều cùng bạn",
+    "description": "Uống trà, trò chuyện buổi chiều"
+  },
+  {
+    "key": "belong",
+    "name": "Gắn kết cộng đồng",
+    "description": "Sinh hoạt chùa, nhà thờ, hội"
+  },
+  {
+    "key": "family",
+    "name": "Gia đình trên hết",
+    "description": "Gọi điện, ăn cơm cùng con cháu"
+  },
+  {
+    "key": "tribe",
+    "name": "Bạn bè tích cực",
+    "description": "Gặp những người bạn vui vẻ"
+  }
+]
