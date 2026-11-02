@@ -84,3 +84,27 @@ test('F1 profile: owner creates and selects role; other users and anonymous deni
   await assertFails(setDoc(doc(db('child'), 'users/mom'), {role:'elder'}));
   await assertFails(getDoc(doc(env.unauthenticatedContext().firestore(), 'users/mom')));
 });
+
+test('F10: inbox is owner-readable but only trusted backend can write', async () => {
+  await env.withSecurityRulesDisabled(ctx => setDoc(doc(ctx.firestore(), 'users/mom/notifications/n'), {
+    title: 'Đến giờ đi bộ', body: '9:30 sáng', route: '/reminder/a', receivedAt: serverTimestamp(),
+  }));
+  await assertSucceeds(getDoc(doc(db('mom'), 'users/mom/notifications/n')));
+  await assertFails(getDoc(doc(db('child'), 'users/mom/notifications/n')));
+  await assertFails(getDoc(doc(env.unauthenticatedContext().firestore(), 'users/mom/notifications/n')));
+  await assertFails(updateDoc(doc(db('mom'), 'users/mom/notifications/n'), {route:'/inbox'}));
+  await assertSucceeds(deleteDoc(doc(db('mom'), 'users/mom/notifications/n')));
+});
+test('F10: device registration owner-only and validates token/time/payload', async () => {
+  const registration = {token:'device-token', updatedAt:serverTimestamp(), platform:'android'};
+  const own = doc(db('mom'), 'users/mom/devices/device-token');
+  await assertSucceeds(setDoc(own, registration));
+  await assertSucceeds(getDoc(own));
+  await assertFails(getDoc(doc(db('child'), 'users/mom/devices/device-token')));
+  await assertFails(setDoc(doc(db('child'), 'users/mom/devices/device-token'), registration));
+  await assertFails(setDoc(doc(env.unauthenticatedContext().firestore(), 'users/mom/devices/device-token'), registration));
+  for (const patch of [{token:'other'}, {platform:'admin'}, {updatedAt:new Date(0)}, {admin:true}]) {
+    await assertFails(setDoc(own, {...registration,...patch}));
+  }
+  await assertSucceeds(deleteDoc(own));
+});

@@ -56,3 +56,12 @@ Hạ tầng Android/Firebase đã có cấu hình thật và APK build thành c�
 Không sửa feature screens, ViewModels, router, rules, cloud configuration hoặc phân công của thành viên khác trong lần kiểm tra này.
 
 Cập nhật F1 sau audit: xem [f1-verification.md](f1-verification.md). Những hàng còn lại giữ kết quả audit trước đó.
+
+Cập nhật F10 sau audit: xem [f10-verification.md](f10-verification.md).
+H06/H07 đã có inbox Firestore, route consumer, token lifecycle, foreground banner
+và demo UI/ViewModel; H05 có instrumentation F10 và lỗi upload thật được báo cáo.
+Chưa có thiết bị, Console evidence hoặc cloud deployment mới nên không đánh dấu
+F10 nghiệm thu done. Các blocker dùng chung ngoài phần này giữ nguyên.
+
+Cập nhật cloud F10 sau phê duyệt 02/11: publish RC version 1 và deploy Firestore
+rules đã thành công, đọc lại xác minh PASS. Storage/thiết bị/evidence vẫn còn chờ.

@@ -14,6 +14,7 @@ class AppButton extends StatelessWidget {
     required this.onPressed,
     this.kind = AppButtonKind.primary,
     this.busy = false,
+    this.wrapLabel = false,
   });
 
   final String label;
@@ -21,25 +22,31 @@ class AppButton extends StatelessWidget {
   final VoidCallback? onPressed;
   final AppButtonKind kind;
   final bool busy;
+  final bool wrapLabel;
 
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     final child = busy
-        ? const SizedBox.square(dimension: 28, child: CircularProgressIndicator(strokeWidth: 3))
+        ? const SizedBox.square(
+            dimension: 28, child: CircularProgressIndicator(strokeWidth: 3))
         : Row(
             mainAxisAlignment: MainAxisAlignment.center,
             mainAxisSize: MainAxisSize.min,
             children: [
               Icon(icon, size: AppSizes.icon),
               const SizedBox(width: AppSpacing.md),
-              Flexible(child: Text(label, overflow: TextOverflow.ellipsis)),
+              Flexible(
+                  child: Text(label,
+                      overflow: wrapLabel ? null : TextOverflow.ellipsis,
+                      softWrap: wrapLabel ? true : null)),
             ],
           );
     final action = busy ? null : onPressed;
     final button = switch (kind) {
       AppButtonKind.primary => FilledButton(onPressed: action, child: child),
-      AppButtonKind.secondary => OutlinedButton(onPressed: action, child: child),
+      AppButtonKind.secondary =>
+        OutlinedButton(onPressed: action, child: child),
       AppButtonKind.danger => OutlinedButton(
           onPressed: action,
           style: OutlinedButton.styleFrom(

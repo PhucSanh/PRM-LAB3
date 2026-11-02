@@ -53,6 +53,14 @@ class AccountScreen extends ConsumerWidget {
               onPressed: action.busy ? null : () => context.go('/session')),
           const SizedBox(height: AppSpacing.betweenTargets),
           AppButton(
+              label: 'Khu thử tính năng',
+              icon: Icons.science_outlined,
+              kind: AppButtonKind.secondary,
+              onPressed: action.busy
+                  ? null
+                  : () => context.push('/settings/firebase-demo')),
+          const SizedBox(height: AppSpacing.betweenTargets),
+          AppButton(
               label: 'Đăng xuất',
               icon: Icons.logout,
               kind: AppButtonKind.danger,

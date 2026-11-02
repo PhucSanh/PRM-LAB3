@@ -1,3 +1,6 @@
+import 'dart:async';
+import 'package:an_nhien/models/app_notification.dart';
+import 'package:an_nhien/services/messaging_service.dart';
 import 'package:an_nhien/app.dart';
 import 'package:an_nhien/models/app_user.dart';
 import 'package:an_nhien/models/user_profile.dart';
@@ -23,7 +26,47 @@ class RetryProfiles extends FakeProfileService {
   }
 }
 
+class PushMessages extends FakeMessagingService {
+  final opened = StreamController<AppNotification>.broadcast();
+  @override
+  Stream<AppNotification> get onOpened => opened.stream;
+}
+
 void main() {
+  testWidgets(
+      'notification opens approved destination and never bypasses signed-out gate',
+      (tester) async {
+    final auth = FakeAuthService(signedIn: const AppUser(uid: 'u'));
+    final profiles = FakeProfileService(
+        [const UserProfile(uid: 'u', role: UserRole.elder, onboarded: true)]);
+    final push = PushMessages();
+    final container = makeContainer(auth, profiles, messages: push);
+    await tester.pumpWidget(UncontrolledProviderScope(
+        container: container, child: const AnNhienApp()));
+    await tester.pumpAndSettle();
+    final router = container.read(routerProvider);
+    void open(String route) => push.opened.add(AppNotification(
+        id: 'n',
+        title: '',
+        body: '',
+        receivedAt: DateTime(2026),
+        route: route));
+    open('/reminder/a');
+    await tester.pumpAndSettle();
+    expect(router.routeInformationProvider.value.uri.path, '/reminder/a');
+    open('https://evil.test');
+    await tester.pumpAndSettle();
+    expect(router.routeInformationProvider.value.uri.path, '/inbox');
+    await auth.signOut();
+    await tester.pumpAndSettle();
+    open('/reminder/a');
+    await tester.pumpAndSettle();
+    expect(router.routeInformationProvider.value.uri.path, '/sign-in');
+    await tester.pumpWidget(const SizedBox.shrink());
+    container.dispose();
+    await profiles.dispose();
+    await push.opened.close();
+  });
   testWidgets(
       'profile failure stays behind gate; retry reaches role at large text',
       (tester) async {
@@ -130,10 +173,12 @@ void main() {
 }
 
 ProviderContainer makeContainer(FakeAuthService auth, ProfileService profiles,
-        {FakeSessionDataService? cache}) =>
+        {FakeSessionDataService? cache, MessagingService? messages}) =>
     ProviderContainer(overrides: [
       authServiceProvider.overrideWithValue(auth),
       profileServiceProvider.overrideWithValue(profiles),
+      messagingServiceProvider
+          .overrideWithValue(messages ?? FakeMessagingService()),
       sessionDataServiceProvider
           .overrideWithValue(cache ?? FakeSessionDataService()),
       taskRepositoryProvider.overrideWithValue(FakeTaskRepository([])),

@@ -1,3 +1,4 @@
+import 'demo_pdf.dart';
 import 'profile_service.dart';
 import 'firebase_profile_service.dart';
 import 'session_data_service.dart';
@@ -43,12 +44,9 @@ final crashServiceProvider = Provider<CrashService>(
 final remoteConfigServiceProvider = Provider<RemoteConfigService>(
     (ref) => FirebaseRemoteConfigService(FirebaseRemoteConfig.instance));
 final messagingServiceProvider = Provider<MessagingService>((ref) {
-  final service = FirebaseMessagingService(FirebaseMessaging.instance);
-  final authSubscription = FirebaseAuth.instance
-      .authStateChanges()
-      .listen((_) => service.clearSession());
+  final service = FirebaseMessagingService(FirebaseMessaging.instance,
+      FirebaseFirestore.instance, FirebaseAuth.instance);
   ref.onDispose(() {
-    authSubscription.cancel();
     service.dispose();
   });
   return service;
@@ -61,5 +59,14 @@ final _userDataProvider = Provider((ref) =>
 
 final profileServiceProvider = Provider<ProfileService>((ref) =>
     FirebaseProfileService(FirebaseFirestore.instance, FirebaseAuth.instance));
-final sessionDataServiceProvider = Provider<SessionDataService>(
-    (ref) => FirebaseSessionDataService(FirebaseFirestore.instance));
+final sessionDataServiceProvider = Provider<SessionDataService>((ref) =>
+    FirebaseSessionDataService(FirebaseFirestore.instance,
+        beforeClear: () async {
+      await (ref.read(messagingServiceProvider) as FirebaseMessagingService)
+          .prepareSignOut();
+    }));
+
+/// F10 uses a labelled test PDF; F7 retains its own renderer contract.
+final demoReportServiceProvider = Provider<ReportService>((ref) =>
+    FirebaseReportService(FirebaseAuth.instance, FirebaseStorage.instance,
+        renderPdf: renderDemoPdf));
