@@ -34,14 +34,21 @@ class AppBackBar extends StatelessWidget implements PreferredSizeWidget {
           label: Text(backLabel, overflow: TextOverflow.ellipsis),
         ),
       ),
-      actions: [
-        if (step != null)
-          Padding(
-            padding: const EdgeInsets.only(right: AppSpacing.screen),
-            child: Text(step!, style: theme.textTheme.labelMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
-          ),
-        if (trailing != null) Padding(padding: const EdgeInsets.only(right: AppSpacing.screen), child: trailing),
-      ],
+      // "Bước x/y" / [trailing] đặt ở ô `title` (co giãn theo chỗ còn lại) thay vì `actions` (rộng cố định):
+      // chữ phóng to ×2.0 ở 360 dp thì thu nhỏ vừa chỗ, không tràn.
+      title: step == null && trailing == null
+          ? null
+          : Align(
+              alignment: AlignmentDirectional.centerEnd,
+              child: FittedBox(
+                fit: BoxFit.scaleDown,
+                child: trailing ??
+                    Text(step!,
+                        style: theme.textTheme.labelMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
+              ),
+            ),
+      titleSpacing: AppSpacing.sm,
+      actions: const [SizedBox(width: AppSpacing.screen)],
     );
   }
 }

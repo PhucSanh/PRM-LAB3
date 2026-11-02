@@ -44,9 +44,20 @@ Figma: đối chiếu lại các node đã dùng ở bước 02–05 nếu cần
 
 ## Kết quả chạy (agent tự điền khi xong)
 
-- Ngày chạy:
+- Ngày chạy: 02/11/2026
 - File đã tạo / sửa:
-- Lệch Figma (nếu có, lý do):
-- `flutter analyze` / `flutter test`:
+  - Tạo: `lib/widgets/dev/widget_gallery.dart` (`WidgetGallery`, tham số `animate` để test tắt hoạt ảnh), `test/widgets/gallery_overflow_test.dart` (9 test: 360×800 / 412×915 × `textScaler` 1.0 / 1.3 / 2.0 cuộn hết trang; chip ×2.0 + tương phản cao; chip cỡ chữ đổi provider; mở 3 hộp thoại + snackbar), `docs/prompt/F0/PR-F0.md`.
+  - Sửa: `lib/router/app_router.dart` (route `/dev/widgets` chỉ khi `kDebugMode`; khối `redirect` **giữ comment** theo yêu cầu người dùng – không làm việc 6); `lib/widgets/app_back_bar.dart` ("Bước x/y" / `trailing` chuyển sang ô `title` co giãn – hết tràn 24 dp ở ×2.0); `lib/widgets/time_field.dart` ("Đổi giờ" co được – hết tràn 32 dp ở ×2.0); `docs/architecture.md` mục 7, 13; `docs/design-traceability.md` (2 dòng F0 → `changed`, DT-21).
+  - **Ngoài phạm vi, người dùng đã đồng ý:** `lib/screens/sign_in/sign_in_screen.dart` (Hiếu) bọc cuộn + `AppSizes.logo` – khi bật `redirect` màn này tràn 213 dp ở 360 dp × 2.0 (phát hiện lúc thử bật).
+- Lệch Figma (nếu có, lý do): DT-21 – thanh Quay lại: "Bước x/y" / nút "Sửa" thu nhỏ khi chữ ×2.0 thiếu chỗ. F0 tổng thể `changed` vì DT-09 → DT-21.
+- `flutter analyze` / `flutter test`: analyze sạch; 178 / 179 test qua, không có cảnh báo chạm trượt. `auth_routing_test` fail vì khối `redirect` đang comment (lúc thử bật thì 179 / 179 qua).
+- Tự chấm `rule.md`: bảng 11 nhóm trong `PR-F0.md`. Chưa đạt: icon "Đang chọn" ✓ vs `circle-dot` (DT-18); ô giờ 62 dp cách 8 dp (DT-12); "Sửa" có thể < 72 dp ở ×2.0 (DT-21); thiếu nhãn "🔔 Đến giờ" (model chưa có trạng thái này).
+- Chỗ viết cứng ở màn người khác (chỉ liệt kê): `today_screen.dart` (Khang) – `_TaskTile` tự chế `:65–106`, giờ ghép tay `:73`, `Icons.spa` `:90`, trạng thái tự vẽ `:98`, `TextButton.icon` "Cài đặt" `:50`, `Icons.add` / `event_available_outlined` `:27,29,58`; `sign_in_screen.dart` (Hiếu) – `Icons.spa_outlined`, `Icons.login`. Chi tiết trong `PR-F0.md`.
 - Việc người dùng cần làm tay:
-- Commit gợi ý:
+  - Chụp ảnh gallery (360 dp, ×1.3, bật / tắt tương phản cao) dán vào PR; mở PR bằng nội dung `PR-F0.md`.
+  - Nhờ Hiếu duyệt sửa `sign_in_screen.dart`; báo Khang danh sách ở `today_screen.dart`.
+  - Thêm `AppIcons.undo`, `AppIcons.plus`, `AppIcons.trash` rồi bỏ `Icons.*` còn lại (undo_snackbar, gallery); chốt icon "Đang chọn"; gán màu cảnh báo vào `ColorScheme`.
+  - Sửa Figma theo các dòng DT còn ☐.
+  - **Bỏ comment khối `redirect` trong `app_router.dart` trước khi nộp** (đề chấm: chưa đăng nhập không vào được app).
+  - Commit theo thứ tự bước 04 → 05 → 06 (hiện cả 3 bước đều chưa commit).
+- Commit gợi ý: `feat(F0): trang xem thử widget /dev/widgets, test tràn chữ, cập nhật docs`

@@ -50,9 +50,22 @@ Chỉ sửa `lib/widgets/` và `test/widgets/`.
 
 ## Kết quả chạy (agent tự điền khi xong)
 
-- Ngày chạy:
+- Ngày chạy: 02/11/2026
 - File đã tạo / sửa:
+  - Tạo: `lib/widgets/task_widgets.dart` (`TaskRow`, `NextTaskCard`, `TaskStatusChip`, `TaskStatus.label`), `lib/widgets/habit_widgets.dart` (`HabitBadge`, `HabitTile`, `HabitAccentCard`, `HabitStyle`), `lib/widgets/read_aloud_button.dart` (`ReadAloudButton`), `lib/widgets/suggestion_card.dart` (`SuggestionCard`, comment hướng dẫn Khang đặt lên S03); `test/widgets/task_widgets_test.dart`, `habit_widgets_test.dart`, `read_aloud_suggestion_test.dart`.
+  - Sửa: `lib/widgets/time_field.dart` (`formatTimeOfDay(…, wholeHourInWords)` cho "3 giờ chiều", thêm `speakTimeOfDay` cho TalkBack) + test trong `time_field_test.dart`.
+  - **Ngoài phạm vi, người dùng đã đồng ý:** `lib/theme/app_icons.dart` thêm 7 icon thói quen (`habitPurpose` … `habitTribe`; `move` dùng `walk`, `family` dùng `home`) và 8 icon thẻ việc (`statusSkipped`, `statusPostponed`, `later`, `skipToday`, `stopReading`, `suggestion`, `view`, `chevronRight`) theo Từ điển icon DESIGN.md.
+  - Docs: `docs/architecture.md` mục 12 (dòng `app_icons.dart`, ngoại lệ màu cảnh báo) + mục 13 (4 dòng "cần làm" → "có", tách `NextTaskCard`); `docs/design-traceability.md` DT-16 → DT-20. Không đổi trạng thái F0.
 - Lệch Figma (nếu có, lý do):
-- `flutter analyze` / `flutter test`:
+  - DT-16: `NextTaskCard` theo khung mới (S03b / G12), "Đã xong" nằm trong thẻ (Figma đặt ở thanh đáy) + thêm "Hôm nay bỏ qua" – theo API prompt.
+  - DT-17: `TaskRow` chip "Chưa làm" (S03 cũ ghi "Đang chờ"), icon "Đã dời" = `redo-2`, nền thẻ trắng, giờ chẵn "3 giờ chiều".
+  - DT-18: `HabitTile` S05 chữ "Đã chọn / Chọn" dưới tên (Figma dưới dấu chọn) để không tràn ở cỡ 2.0; Figma S05 dùng ✓ cho đang chọn còn Từ điển icon ghi `circle-dot` → cần nhóm chốt.
+  - DT-19: `ReadAloudButton` "Đang đọc…" + nút "Dừng đọc" full-width (S14 nút nhỏ).
+  - DT-20: `SuggestionCard` thêm tên việc gợi ý + "Bỏ qua gợi ý" tuỳ chọn (G12 Figma không có).
+- `flutter analyze` / `flutter test`: analyze sạch. `test/widgets/` 103/103 qua (mỗi trạng thái `TaskRow` đúng chữ + icon + câu TalkBack, nút `NextTaskCard` / `SuggestionCard` / `ReadAloudButton` gọi đúng callback, `HabitBadge` đủ 9 khoá đúng màu + icon + nhãn, 360 / 412 dp × 1.3 / 2.0 không tràn). Toàn bộ 170: 169 qua, `auth_routing_test` lỗi có sẵn từ trước (khối `redirect` đang tắt). Widget không import `services/`, `viewmodels/`, không đọc provider.
 - Việc người dùng cần làm tay:
-- Commit gợi ý:
+  - Chốt với nhóm icon "Đang chọn": ✓ tròn đặc (Figma S05, đang dùng `AppIcons.radioOn`) hay `circle-dot` (Từ điển icon) (DT-18).
+  - Cân nhắc gán màu cảnh báo vào `tertiary` / `tertiaryContainer` của 2 `ColorScheme` để `TaskStatusChip` thôi đọc `AppColors` trực tiếp (architecture.md mục 12).
+  - Báo Khang: thay `_TaskTile` trong `today_screen.dart` bằng `TaskRow` / `NextTaskCard` (TODO sẵn trong file của Khang); đặt `SuggestionCard` theo comment trong `suggestion_card.dart` khi F12 có `SuggestionInboxViewModel`.
+  - Sửa Figma theo DT-16 → DT-20.
+- Commit gợi ý: `feat(F0): widget nội dung – TaskRow, NextTaskCard, HabitBadge/HabitTile, ReadAloudButton, SuggestionCard`

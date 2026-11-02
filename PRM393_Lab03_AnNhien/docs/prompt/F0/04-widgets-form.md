@@ -48,9 +48,16 @@ Chỉ sửa `lib/widgets/` và `test/widgets/`.
 
 ## Kết quả chạy (agent tự điền khi xong)
 
-- Ngày chạy:
+- Ngày chạy: 02/11/2026
 - File đã tạo / sửa:
+  - Tạo: `lib/widgets/app_text_field.dart` (`AppTextField`), `lib/widgets/time_field.dart` (`TimeField`, `showTimeWheel`, `TimeGridDialog`, `formatTimeOfDay`), `lib/widgets/switch_row.dart` (`SwitchRow`), `lib/widgets/choice_group.dart` (`ChoiceGroup<T>`, `ChoiceOption<T>`, `ChoiceLayout`), `lib/widgets/form_parts.dart` (`FieldLabel`, `FieldMessage.error` / `.hint`, `exampleHint`); `test/widgets/app_text_field_test.dart`, `time_field_test.dart`, `switch_row_test.dart`, `choice_group_test.dart`.
+  - Sửa: `docs/architecture.md` mục 13 (4 dòng "cần làm" → "có", thêm dòng `FieldLabel` / `FieldMessage`; `ChoiceCard` đổi tên thành `ChoiceGroup`); `docs/design-traceability.md` (DT-12 → DT-15). Không đổi trạng thái F0.
 - Lệch Figma (nếu có, lý do):
-- `flutter analyze` / `flutter test`:
-- Việc người dùng cần làm tay:
-- Commit gợi ý:
+  - **Lệch prompt (người dùng đã chốt theo Figma):** hộp chọn giờ là lưới nút chạm như Figma DLG-TaskTime / DLG-WakeTime (giờ 1–12, Sáng / Chiều, phút 00 / 15 / 30 / 45, "Lưu giờ" + "Hủy"), không phải 3 cột `ListWheelScrollView` phút bước 5 + "Xong". Giữ tên `showTimeWheel()` để khớp API.
+  - DT-12: ô giờ cao 72 (Figma 48); Sáng / Chiều lên ngay dưới giờ, phút xuống cuối; "Bác chọn: …" + 2 nút ghim đáy, lưới cuộn; "Hủy" có icon ✕; giữ ô phút lẻ đã lưu.
+  - DT-13: ô nhập / ô giờ cao ≥ 72 (Figma 60); "6:00 sáng" thay "6 : 00 sáng"; ô giờ luôn có "Đổi giờ ⌄".
+  - DT-14: `SwitchRow` thêm "Đang bật / Đang tắt" dưới câu phụ (N07 đặt dưới công tắc, S10 không có); công tắc kích thước Material.
+  - DT-15: `ChoiceGroup` một kiểu cho mọi khung: dấu tích bên trái + "Đang chọn" bên phải, ô ≥ 72 cách nhau 20 (prompt ghi ≥ 52, dùng 72 vì không có token 52 và rule.md R-TAP-01).
+- `flutter analyze` / `flutter test`: analyze sạch. 33 test mới qua (lỗi nhập + liveRegion, chọn giờ trả đúng `TimeOfDay` kể cả 12 giờ sáng / chiều và Hủy / chạm ngoài, bấm cả hàng `SwitchRow`, `ChoiceGroup` đổi lựa chọn + Semantics radio + chữ mẫu S01 đúng cỡ; 360 / 412 dp × 1.3 / 2.0 không tràn, "Bác chọn" + 2 nút luôn thấy). Toàn bộ 140 qua, trừ `auth_routing_test` lỗi có sẵn từ trước (khối `redirect` đang tắt, như bước 03).
+- Việc người dùng cần làm tay: thêm vào `lib/theme/app_icons.dart` (bước này không được sửa `lib/theme/`) rồi bỏ các `TODO(F0)`: `AppIcons.info` (`Icons.info_outline`, `form_parts.dart`), `chevronDown` (`Icons.keyboard_arrow_down`, `time_field.dart`), `save` (`Icons.save_outlined`, `time_field.dart`), `radioOn` / `radioOff` (`Icons.check_circle` / `Icons.radio_button_unchecked`, `choice_group.dart`). Cân nhắc thêm token `AppSizes.choiceTile` nếu nhóm muốn ô lựa chọn 52 như prompt. Sửa Figma theo DT-12 → DT-15 (cột "Đã sửa Figma?").
+- Commit gợi ý: `feat(F0): widget form – AppTextField, TimeField + hộp chọn giờ dạng lưới, SwitchRow, ChoiceGroup`

@@ -28,6 +28,32 @@ abstract final class AppIcons {
   static const home = Icons.home_outlined; // house – thói quen Gia đình trên hết
   static const walk = Icons.directions_walk; // footprints / walk – thói quen Vận động
 
+  // Form (widget F0-04).
+  static const info = Icons.info_outline; // info – câu gợi ý "Ví dụ…" dưới ô nhập
+  static const chevronDown = Icons.keyboard_arrow_down; // chevron-down – ô giờ "Đổi giờ ⌄"
+  static const save = Icons.save_outlined; // save – Lưu giờ, Lưu việc này, Lưu người thân
+  static const radioOn = Icons.check_circle; // lựa chọn đang chọn (khác circle-check "Đã xong")
+  static const radioOff = Icons.radio_button_unchecked; // lựa chọn chưa chọn
+
+  // 9 thói quen (vocabulary.md mục 1; Move dùng [walk], Gia đình trên hết dùng [home]).
+  static const habitPurpose = Icons.explore_outlined; // compass – Sống có mục đích
+  static const habitDownshift = Icons.air; // wind – Thư giãn mỗi ngày
+  static const habitEighty = Icons.restaurant; // utensils – Ăn vừa đủ
+  static const habitPlant = Icons.rice_bowl_outlined; // salad – Ăn nhiều rau, đậu
+  static const habitTea = Icons.emoji_food_beverage_outlined; // coffee – Trà chiều cùng bạn
+  static const habitBelong = Icons.groups_outlined; // users – Gắn kết cộng đồng
+  static const habitTribe = Icons.handshake_outlined; // handshake – Bạn bè tích cực
+
+  // Trạng thái việc + hành động trên thẻ việc (widget F0-05; DESIGN.md › Từ điển icon).
+  static const statusSkipped = Icons.remove_circle_outline; // circle-minus – "Bỏ qua"
+  static const statusPostponed = Icons.redo; // redo-2 – "Đã dời"
+  static const later = Icons.alarm_add_outlined; // alarm-clock-plus – "Dời lại", "Nhắc lại sau"
+  static const skipToday = Icons.skip_next_outlined; // skip-forward – "Hôm nay bỏ qua"
+  static const stopReading = Icons.stop_circle_outlined; // circle-stop – "Dừng đọc"
+  static const suggestion = Icons.mail_outline; // mail – chỉ cho thẻ "Mai gửi Bác …" (G12)
+  static const view = Icons.visibility_outlined; // eye – "Xem thử", "Xem gợi ý"
+  static const chevronRight = Icons.chevron_right; // chevron-right – mở chi tiết, cuối thẻ bấm được
+
   // Tab bottom nav (DESIGN.md › Từ điển icon › Điều hướng).
   static const tabToday = Icons.wb_sunny_outlined; // sun
   static const tabWeek = Icons.calendar_month_outlined; // calendar-days

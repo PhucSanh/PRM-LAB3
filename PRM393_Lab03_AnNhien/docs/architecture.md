@@ -138,8 +138,9 @@ Màn dùng `switch (state)` để vẽ đủ 4 trạng thái. Hành động mộ
 | `/caregiver/task/new` → `/repeat` → `/review` → `/caregiver/task/sent` | C06 → C07 → C08 (+ C08w) → C09 | F14 | placeholder |
 | `/caregiver/task/:id` | C10 (+ C11, C12 dialog) | F14 | placeholder |
 | `/caregiver/suggest` | G01 → G02 | F12 | placeholder |
+| `/dev/widgets` | Trang xem thử widget F0 (`WidgetGallery`) – **chỉ khai báo khi `kDebugMode`**; khi bật `redirect` thì phải đăng nhập mới vào được | F0 | có (debug) |
 
-Việc của F0 (Sanh) – đã làm ở bước 01 (02/11/2026): mọi route trên đã khai báo trong `app_router.dart`, màn chưa làm là `FeaturePlaceholder` ghi mã màn · feature · người theo bản chia task 02/11; nhóm route theo feature bằng comment `// F<số> <tên> – <người>`. `/caregiver/schedule` chọn C03 / C04 / C05 theo query `view`. Kiểm tra bằng `test/router_test.dart`.
+Việc của F0 (Sanh) – đã làm ở bước 01 (02/11/2026): mọi route trên đã khai báo trong `app_router.dart`, màn chưa làm là `FeaturePlaceholder` ghi mã màn · feature · người theo bản chia task 02/11; nhóm route theo feature bằng comment `// F<số> <tên> – <người>`. `/caregiver/schedule` chọn C03 / C04 / C05 theo query `view`. Kiểm tra bằng `test/router_test.dart`. Khối `redirect` (chưa đăng nhập → `/sign-in`, đã đăng nhập ở `/sign-in` → `/today`) **đang tạm comment** để test UI không cần đăng nhập Google; bỏ comment trước khi nộp (đề chấm: chưa đăng nhập không vào được app). Khi còn comment thì `test/auth_routing_test.dart` fail.
 
 Quy tắc điều hướng từ handoff: tab dùng `StatefulShellRoute`; Back hệ thống ở S03 thoát app; kết quả lưu (`/today/add/result`) dùng `go` (thay thế, không chồng); màn con N11–N13 trả kết quả bằng `pop(result)`; S04 mở từ 2 nơi nên nút Back ghi "Quay lại".
 
@@ -245,33 +246,37 @@ Token lấy từ `lab2/design-tokens.md` (bảng `colors`, `typography`, `spacin
 | `app_spacing.dart` | `AppSpacing` (4…48, `screen` 20, `betweenTargets` 20), `AppRadius` (8, 12, 14, 16, 24, `full` 999 + `…All`), `AppSizes` (`minTarget` 72, `icon` 32, `habitIcon` 48, `accentBar` 6, `border` 2, `appBar` 88, `navBar` 96…) |
 | `app_theme.dart` | `AppTheme.light()`, `AppTheme.highContrast()` (cùng hàm dựng, chỉ đổi `ColorScheme`), `AppText.bodyLgStrong`, `AppText.numericLg` |
 | `display_settings.dart` | `AppFontScale { vua 1.0, lon 1.15, ratLon 1.3 }`, `fontScaleProvider` (mặc định `lon` theo Figma S01/S10), `highContrastProvider` (mặc định tắt), `maxTextScale` 2.0 – giữ trong bộ nhớ, F8 nối `SettingsService` |
-| `app_icons.dart` | `AppIcons`: 22 icon khung Components (`138:2`) + 4 icon tab → `IconData` Material gần nhất (DT-09) |
+| `app_icons.dart` | `AppIcons`: 22 icon khung Components (`138:2`) + 4 icon tab + nhóm Form (`info`, `chevronDown`, `save`, `radioOn/Off`) + 7 icon thói quen `habit…` (cùng `walk`, `home`) + nhóm thẻ việc (`statusSkipped`, `statusPostponed`, `later`, `skipToday`, `stopReading`, `suggestion`, `view`, `chevronRight`) → `IconData` Material gần nhất (DT-09) |
 
 Chữ (Be Vietnam Pro, bundle trong `assets/fonts/`, khai báo ở `pubspec.yaml`): `display` 34 · `headline` 30 · `title-md` 26 · `title-lg` 24 · `body-lg` 24 · `label-btn` 22 · `body-md` / `caption` / `label-nav` 20. Cả 15 kiểu của `TextTheme` đều được điền nên không có chữ < 20 sp (kể cả widget Material dùng `labelSmall`, `titleSmall`).
 
 Cỡ chữ người dùng chọn (S01 / S10) = `textScaler` 1.0 / 1.15 / 1.3 toàn app, nhân với cỡ chữ hệ thống, trần 2.0 (`lib/app.dart` › `builder`). Đổi `fontScaleProvider` là cả app đổi ngay. Tương phản cao (S10) = `AppTheme.highContrast()`: nền trắng, chữ chính `#0F1411` (18.6 : 1), chữ phụ `#202B25` (14.7 : 1), nút `#174C37` (chữ trắng 9.9 : 1), lỗi `#912018` – chỉ dùng lại màu có trong DESIGN.md.
 
-Màn và widget lấy màu qua `Theme.of(context).colorScheme` (để tương phản cao có tác dụng), không đọc `AppColors` trực tiếp.
+Màn và widget lấy màu qua `Theme.of(context).colorScheme` (để tương phản cao có tác dụng), không đọc `AppColors` trực tiếp. Ngoại lệ duy nhất: `TaskStatusChip` "Chưa làm" dùng `AppColors.warningContainer / onWarningContainer / warningStrong` vì `ColorScheme` chưa có vai trò màu cảnh báo (TODO: gán vào `tertiary…` của 2 scheme).
 
 ## 13. Widget dùng chung (F0 – Sanh) – theo `lab2/flutter-handoff.md` › Bảng 2
 
 | Widget | Dùng ở | Trạng thái |
 | --- | --- | --- |
 | `AppButton` (`AppButtonKind`: primary / secondary / tonal / text / danger / dangerOutline; cao ≥ 72, icon + chữ, `busy`) | mọi màn | có |
-| `AppBackBar` (Back có chữ · + `step` "Bước x/y" · + `trailing`, vd. `AppBarEditButton` "Sửa" ở S04) | màn cấp 2–3 | có |
-| `AppShell` (bottom nav 4 tab có nhãn, cao 96, `maxLines: 1`; icon `AppIcons.tab…`) | 4 tab | có |
+| `AppBackBar(backLabel, step, trailing, onBack)` (Back có chữ · + `step` "Bước x/y" · + `trailing`, vd. `AppBarEditButton` "Sửa" ở S04; `step` / `trailing` nằm ở ô co giãn, chữ ×2.0 không đủ chỗ thì thu nhỏ – DT-21) | màn cấp 2–3 | có |
+| `AppShell` (bottom nav 4 tab theo Figma `1:451`: nền trắng viền trên, 4 ô rộng đều cách nhau 20, icon 32 + nhãn 20 đậm **2 dòng** "Hôm / nay", ô đang chọn nền `primaryContainer` bo 12 bọc cả icon lẫn nhãn; cao ≥ 96; chữ phóng to thì nhãn thu nhỏ vừa ô – DT-22) | 4 tab | có |
 | `LoadingView` (`message`, `hint`) / `EmptyView` (`icon`, `title`, `message`, `action`, `secondaryAction`) / `ErrorView` (`message`, `onRetry`, `title`, `detail`, `extraActions`; luôn có "Thử lại", `liveRegion`) – khớp ST-Loading / ST-Empty / ST-Error | mọi màn tải dữ liệu | có |
 | `IconCircle` (icon 64 trong vòng tròn nền nhạt; `danger` = nền `errorContainer`) | đầu hộp thoại, ST-*, màn "Đã lưu / Đã gửi" | có |
 | `FeaturePlaceholder` | màn chưa làm | có |
-| `NextTaskCard`, `TaskRow` (Upcoming / Done / Skipped) | S03, S11, S16, C03 | cần làm |
-| `HabitBadge` / `HabitTile` (icon + tên + màu nhấn) | S04, S05, S08, S16, C06 | cần làm |
-| `TimeField` + `showTimeWheel()` (DLG-TaskTime / DLG-WakeTime: 3 cột giờ / phút / sáng-chiều, Hủy / Xong) | S02, S06, S15, N05, C06 | cần làm |
+| `WidgetGallery` (`lib/widgets/dev/widget_gallery.dart`, route `/dev/widgets` chỉ ở debug): mọi widget F0 theo nhóm nút · thanh · hộp thoại / snackbar · trạng thái · form · nội dung, hàng đổi cỡ chữ (Vừa / Lớn / Rất lớn + ×2.0) và tương phản cao; `animate: false` cho test. Không phải widget cho màn dùng | dev, `test/widgets/gallery_overflow_test.dart` | có |
+| `TaskRow(time: TimeOfDay, title, habitKey, status: TaskStatus, note, onTap, showChevron)` (vạch màu · `HabitBadge` · giờ "6 giờ sáng" / "9:30 sáng" · tên · `TaskStatusChip` · dòng phụ = `note` hoặc tên thói quen; TalkBack "6 giờ sáng, Đi bộ, đã xong") + `TaskStatusChip(status)` (Chưa làm / Đã xong / Bỏ qua / Đã dời, icon + chữ) + `TaskStatus.label` | S03, S11, S16, C03 | có |
+| `NextTaskCard(time, title, habitKey, onDone, onLater, onSkip, onTap, durationMinutes)` ("🔔 Việc tiếp theo · 9:30 sáng", nút "Đã xong" primary · "Dời lại" viền · "Hôm nay bỏ qua" chữ, nút không có callback thì ẩn; DT-16) | S03 | có |
+| `HabitBadge(habitKey, size, icon, semanticLabel)` (ô màu nhấn, icon trắng, 48 → icon 32) · `HabitTile(habitKey, name, description, selected, onTap, icon)` (`selected` null = mũi tên ›; true / false = dấu chọn + "Đã chọn" / "Chọn") · `HabitAccentCard` (khung vạch màu dùng chung) · `HabitStyle.nameOf / descriptionOf / iconOf` (tên mặc định theo vocabulary.md, chỉ dự phòng – tên thật nạp từ `habits/{key}`) | S04, S05, S08, S16, C06 | có |
+| `TimeField(label, value, onChanged, icon, dialogTitle, dialogIcon, errorText)` (nút "6:00 sáng · Đổi giờ ⌄", cao ≥ 72) + `showTimeWheel(context, initial, title, icon)` → `TimeOfDay?` (DLG-TaskTime / DLG-WakeTime: lưới nút chạm giờ 1–12, Sáng / Chiều, phút 00 / 15 / 30 / 45; "Bác chọn: …" + "Lưu giờ" / "Hủy" ghim đáy; mặc định 8:00 sáng; DT-12) + `formatTimeOfDay()` ("9:30 sáng", "3:00 chiều", "8:00 tối" – SG-10) | S02, S06, S15, N05, N06, C06 | có |
 | `showConfirmDialog<T>(context, icon, title, message, details, options: [ConfirmOption(label, icon, value, kind)], danger)` + `ConfirmDetail` (dòng icon + chữ) – nút xếp dọc full-width theo thứ tự `options`, cách nhau 20; huỷ ở cuối, trừ khi hậu quả khó lấy lại thì nút an toàn là nút chính ở trên (SG-19); chạm ngoài / Back trả `null` | DLG-Done / Later / Skip / Delete, N13, N14, N15, C08w, C11, C12 | có |
 | `showUndoSnackbar(context, title, subtitle, onUndo)` (2 tầng chữ, hàng nút "Đóng" · "Hoàn tác", `persist: true` – không tự tắt, `liveRegion`) | S03-*, G09, C12 | có |
-| `AppTextField` (nhãn ngoài ô, gợi ý "Ví dụ…", `errorText` có icon, `liveRegion`) | S02, S06, S12, C06 | cần làm |
-| `SwitchRow`, `ChoiceCard` (radio / segmented cao ≥ 52) | S01, S10, S12, C07 | cần làm |
-| `ReadAloudButton` ("🔊 Đọc to", gọi `SpeechService.speak`) | S04, S14, S16 | cần làm |
-| `SuggestionCard` (thẻ G12 ở đầu S03) | S03 (F3 chỉ đặt widget, F12 làm nội dung) | cần làm |
+| `AppTextField(label, hint, controller, errorText, keyboardType, maxLength, onChanged, icon, autofillHints, textInputAction)` (nhãn trên ô, `hint` hiện dưới ô với tiền tố "Ví dụ: ", lỗi: nền `errorContainer` + viền `error` + dòng ⓘ đỏ `liveRegion`, cao ≥ 72) | S02, S06, S12, N06, N09, C06, C08 | có |
+| `FieldLabel(text, icon)` (nhãn 24 đậm trên ô / nhóm lựa chọn) · `FieldMessage.error` / `.hint` (dòng ⓘ dưới ô) · `exampleHint()` | mọi form | có |
+| `SwitchRow(title, subtitle, value, onChanged, icon)` (cả hàng bấm được, "Đang bật / Đang tắt", `Semantics(toggled)`, cao ≥ 72; chữ > 1.5 thì công tắc xuống dòng) | S10, S12, N07, C08 | có |
+| `ChoiceGroup<T>(options: [ChoiceOption(value, label, description, icon, previewScale)], value, onChanged, layout: ChoiceLayout.list / segmented)` (đang chọn: dấu tích + "Đang chọn" + nền `primaryContainer`; Semantics radio; mỗi ô cao ≥ 72, cách nhau 20; `previewScale` vẽ chữ mẫu đúng cỡ cho S01 / S10) | S01, S02, S06, S10, S12, N12, C01, C07 | có |
+| `ReadAloudButton(onPressed, speaking)` ("🔊 Đọc to"; đang đọc: dòng "Đang đọc…" `liveRegion` + nút "Dừng đọc"). Widget không gọi TTS: ViewModel gọi `SpeechService` và trả `speaking` | S04, S14, S16 | có |
+| `SuggestionCard(fromName, itemCount, previewTitles, onOpen, onDismiss)` (thẻ G12: "Mai gửi Bác 2 việc", tối đa 3 tên việc, "Chưa thêm vào lịch. Bác tự chọn.", "Xem gợi ý" + "Bỏ qua gợi ý" tuỳ chọn; cách đặt lên S03 ghi trong comment của widget) | S03 (F3 chỉ đặt widget, F12 làm nội dung) | có |
 
 Màn của mọi người **chỉ** dùng widget ở đây. Thiếu widget → báo Sanh, không tự làm bản riêng trong thư mục màn.
 

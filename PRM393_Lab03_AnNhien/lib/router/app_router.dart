@@ -7,6 +7,7 @@ import '../screens/sign_in/sign_in_screen.dart';
 import '../screens/today/today_screen.dart';
 import '../viewmodels/session_view_model.dart';
 import '../widgets/app_shell.dart';
+import '../widgets/dev/widget_gallery.dart';
 import '../widgets/feature_placeholder.dart';
 
 /// Route map theo architecture.md mục 7.2 (gốc: flutter-handoff.md Lab 2). Chủ file: A – Sanh.
@@ -86,6 +87,8 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(path: '/caregiver/task/:id', builder: (_, __) => ph('C10 · F14', 'Chi tiết việc lặp lại', 'Hiếu')),
       // F12 Gợi ý lịch (phía Con cháu) – Sanh
       GoRoute(path: '/caregiver/suggest', builder: (_, __) => ph('G01 · F12', 'Con cháu soạn lịch gợi ý', 'Sanh')),
+      // F0 Trang xem thử widget – chỉ có ở bản debug (cần đăng nhập như mọi route khác).
+      if (kDebugMode) GoRoute(path: '/dev/widgets', builder: (_, __) => const WidgetGallery(animate: false)),
       StatefulShellRoute.indexedStack(
         builder: (_, __, shell) => AppShell(navigationShell: shell),
         branches: [
