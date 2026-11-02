@@ -9,7 +9,7 @@ abstract interface class TaskRepository {
 }
 
 class FakeTaskRepository implements TaskRepository {
-  FakeTaskRepository([List<TaskItem>? seed]) : _tasks = [...?seed ?? _sample];
+  FakeTaskRepository([List<TaskItem>? seed]) : _tasks = [...(seed ?? _sample)];
 
   final List<TaskItem> _tasks;
 

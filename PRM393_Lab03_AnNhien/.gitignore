@@ -50,9 +50,6 @@ app.*.map.json
 android/.kotlin/
 android/app/.cxx/
 android/captures/
-android/gradlew
-android/gradlew.bat
-android/gradle/wrapper/gradle-wrapper.jar
 android/**/GeneratedPluginRegistrant.java
 .externalNativeBuild/
 .cxx/
@@ -62,3 +59,6 @@ android/**/GeneratedPluginRegistrant.java
 firebase-debug.log
 firestore-debug.log
 ui-debug.log
+
+# Local rules test dependencies
+node_modules/

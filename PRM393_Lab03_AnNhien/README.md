@@ -19,18 +19,19 @@ Chi tiết từng feature và màn Figma: `docs/design-traceability.md` (và `..
 ## Cài đặt lần đầu (chỉ Sanh làm 1 lần, rồi commit)
 
 ```bash
-# 1. Sinh thư mục android/ (không ghi đè lib/ đã có)
-flutter create . --org com.annhien --project-name an_nhien --platforms android
+# android/ đã có trong repo; không cần chạy flutter create lại.
 
-# 2. Lấy package (pubspec.yaml đã có sẵn) và chạy thử bằng service giả, chưa cần Firebase
+# 2. Lấy package và chạy unit test (test override bằng service giả)
 flutter pub get
 flutter test
-flutter run
+# flutter run: cần hoàn thành cấu hình Firebase Android bên dưới trước
 ```
 
 Sau đó đổi tên thư mục `github-templates/` thành `.github/` (chứa CODEOWNERS + mẫu PR) và điền GitHub username thật vào `CODEOWNERS`.
 
 ## Nối Firebase (Hiếu, ngày 1)
+
+Hướng dẫn hiện hành và các bước Console: [docs/firebase-setup.md](docs/firebase-setup.md). Kết quả đã chạy và blocker: [docs/firebase-verification.md](docs/firebase-verification.md). Provider production đã dùng adapter Firebase; TaskRepository đang chờ nhóm thống nhất schema ngày/occurrence. Đã cấu hình dự án Firebase PRM393 (`prm393-145c9`) cho Android; kiểm chứng runtime trên thiết bị và các blocker khác được ghi trong tài liệu.
 
 ```bash
 dart pub global activate flutterfire_cli
@@ -38,7 +39,7 @@ flutterfire configure            # tạo lib/firebase_options.dart + android/app
 flutter pub add firebase_core firebase_auth google_sign_in cloud_firestore firebase_storage firebase_messaging firebase_analytics firebase_crashlytics firebase_remote_config
 ```
 
-Sau đó mở `lib/main.dart` gọi `Firebase.initializeApp`, viết bản `Firebase…` của từng service trong `lib/services/` và đổi trong `lib/services/providers.dart`.
+`main.dart` đã gọi `Firebase.initializeApp` trước khi chạy app; các provider đã đăng ký adapter Firebase. Cần chạy FlutterFire với project ID thật, kiểm tra cấu hình sinh ra và xử lý các blocker trong tài liệu trước khi chạy trên Android.
 
 ## Cách làm việc
 
