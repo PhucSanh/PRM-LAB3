@@ -22,8 +22,11 @@ import 'crash_service.dart';
 import 'family_repository.dart';
 import 'habit_repository.dart';
 import 'messaging_service.dart';
+import 'profile_setup_service.dart';
 import 'remote_config_service.dart';
+import 'reminder_service.dart';
 import 'report_service.dart';
+import 'settings_service.dart';
 import 'task_repository.dart';
 
 /// Nơi DUY NHẤT chọn bản giả hay bản Firebase. Chủ file: B – Hiếu.
@@ -65,6 +68,17 @@ final sessionDataServiceProvider = Provider<SessionDataService>((ref) =>
       await (ref.read(messagingServiceProvider) as FirebaseMessagingService)
           .prepareSignOut();
     }));
+
+// F2 (Hương) thêm, đang trỏ bản Fake.
+// TODO(Hiếu): bản Firebase (Firestore users/{uid} + cache máy).
+final settingsServiceProvider =
+    Provider<SettingsService>((ref) => FakeSettingsService());
+// TODO(Hiếu): bản thật (flutter_local_notifications – đề xuất package trong PR).
+final reminderServiceProvider =
+    Provider<ReminderService>((ref) => FakeReminderService());
+// TODO(Hiếu): tạm cho S02; gộp `saveSetup` vào ProfileService (bản Firebase) rồi bỏ.
+final profileSetupServiceProvider =
+    Provider<ProfileSetupService>((ref) => FakeProfileSetupService());
 
 /// F10 uses a labelled test PDF; F7 retains its own renderer contract.
 final demoReportServiceProvider = Provider<ReportService>((ref) =>

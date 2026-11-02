@@ -51,9 +51,21 @@ Giải thích vì sao cần thông báo, xin quyền. Cho phép → sang thử l
 
 ## Kết quả chạy (agent tự điền khi xong)
 
-- Ngày chạy:
+- Ngày chạy: 02/11/2026
 - File đã tạo / sửa:
-- Lệch Figma (nếu có, lý do):
+  - Tạo: `lib/screens/onboarding/notifications_screen.dart` (S13 + S13d theo `OnboardingData.step`), `test/notifications_screen_test.dart`.
+  - Sửa: `lib/viewmodels/onboarding_view_model.dart` – `checkPermission()` (có quyền sẵn → `true`, chỉ tự đi tiếp ở **lần vào đầu** để "Quay lại" từ N01 không bị đẩy đi lại), `allowReminders()` → `granted` / `denied` (từ chối → `notificationsDenied`; lỗi service → coi như từ chối + `CrashService.recordError`), `skipReminders()` → S13d, `showReminderPrompt()` (Quay lại ở S13d → S13); cờ `notificationsOn` lưu sẵn cho `tutorial_complete` ở bước 06. Dòng `/setup/notifications` + import trong `app_router.dart`; `test/f2_view_models_test.dart` (+5 test S13); `docs/design-traceability.md` (S13, S13d → `doing`, DT-25); `docs/architecture.md` (mục 7.2, 9).
+  - Hỏi người dùng 2 lần: (1) nút "Bật nhắc việc" ở S13d → **hỏi lại quyền**, không thêm package mở cài đặt hệ thống; (2) hộp gợi ý vàng (chưa có `InlineHint`) → dùng `FieldMessage.hint` có sẵn.
+  - Không gộp với `MessagingService.requestPermission()` (FCM của Hiếu) – S13 chỉ dùng `ReminderService`.
+  - Figma: `get_design_context` + ảnh cho `1:217`, `14:284`.
+- Lệch Figma (nếu có, lý do): DT-25 – hộp gợi ý dùng `FieldMessage.hint` (không nền vàng); câu dặn "Bác bấm Cho phép" đưa lên trước thẻ ví dụ để luôn thấy trước khi điện thoại hỏi; vòng icon 112 / 64; S13d vòng nền `errorContainer` (theo handoff); thẻ ví dụ bằng `HabitAccentCard` + `HabitBadge`; icon nút theo `AppIcons`, nút cao 72; "Bật nhắc việc" ở S13d chỉ hỏi lại quyền.
 - `flutter analyze` / `flutter test`:
+  - `flutter analyze`: 1 warning có sẵn (`pendingNotification`, `app_router.dart`).
+  - Test F2 (5 file): 60/60 qua – gồm S13 + S13d × 360 / 412 dp × `textScaler` 1.3 / 2.0 không tràn, nút đáy luôn thấy; cho phép → `/setup/try-reminder`; từ chối → S13d → "Vẫn để sau" → `/setup/first-task`; có quyền sẵn → đi thẳng, không hỏi.
+  - `flutter test` toàn bộ: +193 −68 (68 lỗi có sẵn như các bước trước).
+  - Chỉ `dart format` file của F2. Đã render S13 / S13d ở 360 dp bằng font thật để so với Figma (ảnh tạm, không commit).
 - Việc người dùng cần làm tay:
-- Commit gợi ý:
+  - Thử từng nhánh bằng cách đổi Fake trong `providers.dart` (`reminderServiceProvider`): mặc định `FakeReminderService()` = cho phép; `FakeReminderService(permissionGranted: false)` = từ chối → S13d; `FakeReminderService(alreadyGranted: true)` = có quyền sẵn → bỏ qua S13. Đổi xong hot restart, đi `/welcome` → `/setup` → `/setup/notifications`. Nhớ trả về mặc định trước khi commit.
+  - Nhờ Hiếu / Khang: bản thật `ReminderService` (flutter_local_notifications; Android 13+ quyền `POST_NOTIFICATIONS`, 14+ `USE_FULL_SCREEN_INTENT`, `SCHEDULE_EXACT_ALARM`), thêm cách mở cài đặt hệ thống khi đã bị từ chối hẳn (đề xuất `openSystemSettings()` + package trong PR). Chốt với Hiếu có gộp quyền FCM vào S13 hay không.
+  - Nhờ Sanh (F0): thêm widget `InlineHint` (nền `warning-container`) + vai trò màu warning cho tương phản cao, rồi thay `FieldMessage.hint` ở S13 / S13d.
+- Commit gợi ý: `feat(F2): màn S13 cho phép nhắc việc và S13d nhắc việc đang tắt`

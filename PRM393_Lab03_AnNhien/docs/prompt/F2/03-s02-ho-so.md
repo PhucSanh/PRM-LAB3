@@ -54,9 +54,23 @@ Ba khung S02 là **state** của cùng route `/setup`, không tạo route mới.
 
 ## Kết quả chạy (agent tự điền khi xong)
 
-- Ngày chạy:
+- Ngày chạy: 02/11/2026
 - File đã tạo / sửa:
-- Lệch Figma (nếu có, lý do):
+  - `ProfileService` vẫn chưa có hàm lưu (kiểm tra cả `origin/main`) → người dùng chọn **interface tạm của F2**: tạo `lib/services/profile_setup_service.dart` (`ProfileSetupService.saveSetup(uid, ProfileSetup)` + `FakeProfileSetupService(failOnSave:)`, enum `Honorific` Ông / Bà), thêm `profileSetupServiceProvider` (Fake, `TODO(Hiếu)`) vào `providers.dart`. Không sửa file nào khác của Hiếu.
+  - Tạo: `lib/screens/onboarding/setup_profile_screen.dart` (3 state + DLG-WakeTime qua `TimeField` / `showTimeWheel`), `test/setup_profile_screen_test.dart`.
+  - Sửa: `lib/viewmodels/onboarding_view_model.dart` (`ProfileStage` confirmName / enterName / details; `load()` lấy tên gợi ý từ `AuthService.currentUser.displayName`; `setName`, `confirmName`, `editName`, `submitName`, `setHonorific`, `setWakeTime`, `submitProfile` – validate tên bỏ khoảng trắng thừa, không rỗng, ≤ 40 ký tự; lưu lỗi → `saveError` + `CrashService.recordError` reason `save_profile_setup`, giữ dữ liệu), dòng `/setup` + import trong `app_router.dart`, `test/f2_view_models_test.dart` (+9 test S02), `test/welcome_screen_test.dart` (override `authServiceProvider`), `docs/design-traceability.md` (4 dòng S02 / DLG-WakeTime → `doing`, thêm DT-24), `docs/architecture.md` (mục 7.2, 8.1, 9).
+  - Sửa lỗi bước 01: `FakeSettingsService.watch()` dùng `Stream.multi` không phát được trong `testWidgets` (FakeAsync) nên màn kẹt ở Loading → đổi sang `async*` giống `FakeAuthService`. `FakeProfileService` của Hiếu cũng dùng `Stream.multi` – có thể là một nguyên nhân của các test lỗi sẵn ở router / auth (chưa kiểm chứng, không sửa).
+  - Figma: `get_design_context` + ảnh cho `1:58`, `1:103`, `1:176`; DLG-WakeTime `31:2` dùng `showTimeWheel` có sẵn (đã theo Figma ở DT-12).
+- Lệch Figma (nếu có, lý do): DT-24 – câu "Tên này lấy từ tài khoản Google của Bác." (tên từ Google, không phải con cháu nhập); lỗi tên trống / quá dài theo AppStyleGuide (Figma không vẽ); lưu lỗi → câu lỗi + nút "Thử lại"; không có ô số điện thoại (Figma không có); thanh trên không có icon lịch; ô tên nền `secondaryContainer`; nút "Nhập lại tên" kiểu `AppButton` secondary; icon Material; mũi tên bên trái chữ. Theo Figma (khác handoff): chỉ Ông / Bà, chọn sẵn "Ông", thức dậy mặc định 6:00 sáng.
 - `flutter analyze` / `flutter test`:
+  - `flutter analyze`: 1 warning có sẵn (`pendingNotification`, `lib/router/app_router.dart:34`).
+  - Test F2 (4 file): 47/47 qua – gồm 3 state × 360 / 412 dp × `textScaler` 1.3 / 2.0 không tràn, nút đáy luôn trong màn; lỗi tên có `liveRegion`; lưu lỗi → "Thử lại" → lưu được.
+  - `flutter test` toàn bộ: +180 −68 (68 lỗi giống hệt trước, xem bước 01).
+  - Sự cố đã khắc phục: chạy `dart format lib test` như quy tắc chung làm định dạng lại 55 file của người khác (theme, widgets, today…) → đã `git checkout` lại các file đó và áp lại đúng 4 dòng của F2 trong `app_router.dart`. Từ giờ chỉ format file của F2.
+  - Đã render 3 state ở 360 dp bằng font thật (ảnh tạm, không commit) và so với ảnh Figma.
 - Việc người dùng cần làm tay:
-- Commit gợi ý:
+  - Gửi Hiếu: gộp `saveSetup` vào `ProfileService` + `FirebaseProfileService` (ghi `users/{uid}.displayName / honorific ("ong" / "ba") / wakeTime ("HH:mm")`), thêm `honorific`, `wakeTime` vào `UserProfile`, đổi `profileSetupServiceProvider` sang bản thật rồi xoá service tạm. Tới khi đó S02 **chỉ lưu vào bộ nhớ** (Fake), mở lại app sẽ mất.
+  - Báo Sanh (F0) nếu muốn bỏ bớt DT-24: icon lịch cạnh "Bước x/y" trong `AppBackBar`, token màu cho ô chỉ xem.
+  - Chụp ảnh 3 state trên máy ảo 360 dp (cần đăng nhập Google thì mới có tên gợi ý và lưu được).
+  - Cân nhắc sửa câu "Quy tắc chung" trong các file prompt: `dart format lib test` → chỉ format file của feature.
+- Commit gợi ý: `feat(F2): màn S02 thiết lập hồ sơ (xác nhận tên, nhập tên, cách gọi, giờ thức dậy)`

@@ -117,7 +117,7 @@ Màn dùng `switch (state)` để vẽ đủ 4 trạng thái. Hành động mộ
 | --- | --- | --- | --- |
 | `/sign-in` | A01 | F1 | có |
 | `/role` | C01 | F1 | có; chờ kiểm chứng Firebase trên máy |
-| `/welcome` · `/setup` · `/setup/notifications` | S01 · S02 · S13 / S13d | F2 | placeholder |
+| `/welcome` · `/setup` · `/setup/notifications` | S01 · S02 · S13 / S13d | F2 | `/welcome` có (`WelcomeScreen`), `/setup` có (`SetupProfileScreen`, 3 state + DLG-WakeTime); `/setup/notifications` có (`NotificationsScreen`, S13 / S13d) |
 | `/setup/try-reminder` · `/setup/first-task` | N01–N03 · N04 → N05 → N18 → N19 | F2 | placeholder |
 | `/today` (tab 0) | S03 + mọi state S03-*, ST-Empty, N17, G11 / G12 | F3 | có |
 | `/today/task/:id` · `/today/task/:id/edit` | S04 · S15 | F3 · F4 | placeholder |
@@ -159,15 +159,16 @@ Quy tắc điều hướng từ handoff: tab dùng `StatefulShellRoute`; Back h�
 | `RemoteConfigService` | `init()`, `getInt`, `getBool`, `onUpdated` | Remote Config |
 | `MessagingService` | `requestPermission()`, `inbox()`, `onOpened` | FCM + `users/{uid}/notifications` |
 | `ReportService` | `exportWeek(weekStart)` → `Stream<UploadProgress>` | package `pdf` + Storage `reports/{uid}/` |
+| `ProfileService` | `ensureProfile(user)`, `watch(uid)`, `setRole(uid, role)`, `markOnboarded(uid)` | Firestore `users/{uid}` (`FirebaseProfileService`, đã có). **Thiếu** hàm lưu hồ sơ S02 (`displayName`, `honorific`, `wakeTime`) – F2 đề xuất, chờ Hiếu |
+| `SettingsService` (F2 thêm, **chỉ có Fake**) | `watch()` → `AppSettings`, `setFontScale`, `setHighContrast`, `setReadAloud`, `setVibrate`; `FakeSettingsService(failOnSave:)` | TODO(Hiếu): Firestore `users/{uid}` + cache máy. Model `lib/models/app_settings.dart` (F2 đề xuất) |
+| `ReminderService` (F2 thêm, **chỉ có Fake**) | `hasPermission()`, `requestPermission()`, `schedule(task)`, `cancel(id)`, `snooze(id, minutes)`, `showTest()`; `FakeReminderService(permissionGranted:, alreadyGranted:, failOnShowTest:)` | TODO(Hiếu / Khang): flutter_local_notifications (đề xuất package trong PR) |
+| `ProfileSetupService` (F2 thêm, **tạm**, chỉ có Fake) | `saveSetup(uid, ProfileSetup)` – `displayName`, `honorific` (`ong` / `ba`), `wakeTime` ("HH:mm"); `FakeProfileSetupService(failOnSave:)` | TODO(Hiếu): gộp vào `ProfileService` + bản Firebase ghi `users/{uid}`, thêm `honorific` / `wakeTime` vào `UserProfile`, rồi xoá service tạm |
 
 ### 8.2 Cần thêm (người làm feature thêm interface + Fake, Hiếu viết bản Firebase)
 
 | Service | Hàm đề xuất | Dùng cho | Nền tảng |
 | --- | --- | --- | --- |
 | `TaskRepository` (bổ sung) | `tasksInRange(from, to)`, `postpone(id, to)`, `undo(change)`, `softDelete(id, scope)` | F3, F4, F7, F9 | Firestore |
-| `SettingsService` | `watch()`, `setFontScale`, `setHighContrast`, `setReadAloud`, `setVibrate` | F2 (S01), F8 (S10), F6 (N07) | Firestore `users/{uid}` + cache máy |
-| `ProfileService` | `ensureProfile(user)`, `watch(uid)`, `setRole(uid, role)`, `markOnboarded(uid)`; `save` cho F2/F8 chưa triển khai | F1 (C01), F2 (S02), F8 (N06) | Firestore `users/{uid}` |
-| `ReminderService` | `requestPermission()`, `schedule(task)`, `cancel(id)`, `snooze(id, minutes)`, `showTest()` | F2 (S13, N01), F4 (N16), F6 | flutter_local_notifications |
 | `SpeechService` | `listen()` → text, `parse(text)` → `TaskDraft`, `speak(text)` | F5, đọc to ở S04 / S14 / S16 | speech_to_text, flutter_tts (`vi-VN`) |
 | `SuggestionService` | `send(momUid, s)`, `watchPending()`, `byId(id)`, `accept(id, items)`, `dismiss(id)`, `undoDismiss(id)` | F12, F14 (C08) | Firestore `users/{momUid}/suggestions` + FCM |
 | `PairingService` | `createCode()` (máy mẹ), `pair(code)` (máy con cháu), `pairedMom()` | F13 | Firestore `pairings/{code}` (hết hạn 10 phút) |
@@ -185,9 +186,9 @@ Mỗi ViewModel còn dùng `AnalyticsService` (ghi event) và `CrashService` (l�
 | `TodayViewModel` | F3 (chủ), F2, F4, F6 thêm state | Khang (chủ) | S03, N19, S03b, S03-alldone, N17, ST-Empty, DLG-Done, DLG-Later, DLG-Skip, S03-later, S03-later4, S03-tomorrow, S03-skip, S03-edited, S03-deleted, S03-snooze | TaskRepository, ReminderService | ✅ |
 | `SignInViewModel` | F1 | Hiếu | A01, A02, A02e, A03, A04 | AuthService | ✅ |
 | `RoleViewModel` | F1 | Hiếu | C01 | ProfileService | ✅ |
-| `OnboardingViewModel` | F2 | Hương | S01, S02, DLG-WakeTime, S13, S13d | SettingsService, ProfileService, ReminderService |  |
-| `TryReminderViewModel` | F2 | Hương | N01, N02, N03 | ReminderService |  |
-| `FirstTaskViewModel` | F2 | Hương | N04, N05, N18 | TaskRepository |  |
+| `OnboardingViewModel` | F2 | Hương | S01, S02, DLG-WakeTime, S13, S13d | SettingsService, AuthService (tên gợi ý, uid), ProfileSetupService (tạm thay ProfileService), ReminderService | S01, S02, S13 / S13d xong (bước 02–04) |
+| `TryReminderViewModel` | F2 | Hương | N01, N02, N03 | ReminderService | khung (F2 bước 01) |
+| `FirstTaskViewModel` | F2 | Hương | N04, N05, N18 | HabitRepository, TaskRepository, ProfileService | khung (F2 bước 01) |
 | `TaskDetailViewModel` | F3 | Khang | S04 | TaskRepository |  |
 | `TaskFormViewModel` | F4 | Khang | S05, S06, S06e, S06o, ST-Validation, DLG-TaskTime, N11, N12, N13, N14, ST-Loading, ST-Loading-offline, ST-Saved, ST-Error, N16, S15, DLG-Delete | HabitRepository, TaskRepository, CrashService, ReminderService |  |
 | `VoiceAddViewModel` | F5 | Khang | V00, V01, V02, V03, V04, V05 | SpeechService, RemoteConfigService, TaskRepository |  |
