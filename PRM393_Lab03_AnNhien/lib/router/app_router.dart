@@ -7,7 +7,6 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import '../models/user_profile.dart';
 import '../screens/account/account_screen.dart';
 import '../screens/account/role_screen.dart';
 import '../screens/account/session_screen.dart';
@@ -66,7 +65,7 @@ final routerProvider = Provider<GoRouter>((ref) {
 
   router = GoRouter(
     initialLocation: '/today',
-    refreshListenable: session,
+    refreshListenable: refresh,
     // TẠM TẮT chặn đăng nhập Google để build / test UI trước.
     // Bỏ comment khối dưới trước khi commit / nộp.
     // redirect: (context, state) {
@@ -77,10 +76,11 @@ final routerProvider = Provider<GoRouter>((ref) {
     //   return null;
     // },
     routes: [
-<<<<<<< HEAD
       // F1 Tài khoản + vai trò – Hiếu
       GoRoute(path: '/sign-in', builder: (_, __) => const SignInScreen()),
-      GoRoute(path: '/role', builder: (_, __) => ph('C01 · F1', 'Chọn vai trò', 'Hiếu', back: false)),
+      GoRoute(path: '/session', builder: (_, __) => const SessionScreen()),
+      GoRoute(path: '/role', builder: (_, __) => const RoleScreen()),
+      GoRoute(path: '/account', builder: (_, __) => const AccountScreen()),
       // F2 Onboarding – Hương
       GoRoute(path: '/welcome', builder: (_, __) => ph('S01 · F2', 'Chào mừng – chọn cỡ chữ', 'Hương', back: false)),
       GoRoute(path: '/setup', builder: (_, __) => ph('S02 · F2', 'Thiết lập hồ sơ', 'Hương')),
@@ -96,14 +96,12 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(path: '/settings/reminders', builder: (_, __) => ph('N07 · F6', 'Cài đặt nhắc việc', 'Khang')),
       // F8 Cài đặt & hồ sơ – Sanh (khu demo Firebase F10 – Hiếu)
       GoRoute(path: '/settings', builder: (_, __) => ph('S10 · F8', 'Cài đặt hiển thị', 'Sanh')),
-      GoRoute(
-        path: '/settings/profile',
-        builder: (_, __) => ph('N06 · F8/F10', 'Hồ sơ + khu demo Firebase', 'Sanh (khu demo: Hiếu)'),
-      ),
+      GoRoute(path: '/settings/profile', builder: (_, __) => const ProfileDemoEntryScreen()),
+      GoRoute(path: '/settings/firebase-demo', builder: (_, __) => const FirebaseDemoScreen()),
       GoRoute(path: '/settings/help', builder: (_, __) => ph('N08 · F8', 'Cách dùng đơn giản', 'Sanh')),
       GoRoute(path: '/settings/data', builder: (_, __) => ph('N20 · F8', 'Dữ liệu trên điện thoại', 'Sanh')),
       // F10 Firebase – Hiếu
-      GoRoute(path: '/inbox', builder: (_, __) => ph('F10', 'Hộp thông báo', 'Hiếu')),
+      GoRoute(path: '/inbox', builder: (_, __) => const InboxScreen()),
       // Chế độ Con cháu: mọi route /caregiver/* nằm ngoài shell của Bác.
       // F13 Ghép nối – Hiếu
       GoRoute(path: '/caregiver/pair', builder: (_, __) => ph('C02 · F13', 'Nhập mã ghép nối', 'Hiếu')),
@@ -130,51 +128,10 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(path: '/caregiver/suggest', builder: (_, __) => ph('G01 · F12', 'Con cháu soạn lịch gợi ý', 'Sanh')),
       // F0 Trang xem thử widget – chỉ có ở bản debug (cần đăng nhập như mọi route khác).
       if (kDebugMode) GoRoute(path: '/dev/widgets', builder: (_, __) => const WidgetGallery(animate: false)),
-=======
-      GoRoute(path: '/session', builder: (_, __) => const SessionScreen()),
-      GoRoute(path: '/role', builder: (_, __) => const RoleScreen()),
-      GoRoute(path: '/account', builder: (_, __) => const AccountScreen()),
-      GoRoute(
-          path: '/caregiver/pair',
-          builder: (_, __) =>
-              ph('C02 · F13', 'Ghép nối với người thân', 'Hiếu', back: false)),
-      GoRoute(
-          path: '/caregiver/schedule',
-          builder: (_, __) =>
-              ph('C03 · F14', 'Lịch của người thân', 'Hiếu', back: false)),
-      GoRoute(path: '/sign-in', builder: (_, __) => const SignInScreen()),
-      // F2 Onboarding – Hiếu
-      GoRoute(
-          path: '/welcome',
-          builder: (_, __) =>
-              ph('S01 · F2', 'Chào mừng – chọn cỡ chữ', 'Hiếu', back: false)),
-      GoRoute(
-          path: '/setup',
-          builder: (_, __) => ph('S02 · F2', 'Thiết lập hồ sơ', 'Hiếu')),
-      GoRoute(
-          path: '/setup/notifications',
-          builder: (_, __) => ph('S13 · F2', 'Cho phép nhắc việc', 'Hiếu')),
-      // F6 Lời nhắc – Khang
-      GoRoute(
-          path: '/reminder/:taskId',
-          builder: (_, __) => ph('S14 · F6', 'Lời nhắc đến giờ', 'Khang')),
-      // F8 Cài đặt & hồ sơ – Sanh (khu demo Firebase F10 – Hiếu)
-      GoRoute(
-          path: '/settings',
-          builder: (_, __) => ph('S10 · F8', 'Cài đặt hiển thị', 'Sanh')),
-      GoRoute(
-          path: '/settings/profile',
-          builder: (_, __) => const ProfileDemoEntryScreen()),
-      GoRoute(path: '/inbox', builder: (_, __) => const InboxScreen()),
-      GoRoute(
-          path: '/settings/firebase-demo',
-          builder: (_, __) => const FirebaseDemoScreen()),
->>>>>>> ae00670c8da72f20eae2bb0af165c3493627f4ca
       StatefulShellRoute.indexedStack(
         builder: (_, __, shell) => AppShell(navigationShell: shell),
         branches: [
           StatefulShellBranch(routes: [
-<<<<<<< HEAD
             // F3 Hôm nay – Khang
             GoRoute(path: '/today', builder: (_, __) => const TodayScreen(), routes: [
               GoRoute(path: 'task/:id', builder: (_, __) => ph('S04 · F3', 'Chi tiết hoạt động', 'Khang')),
@@ -213,76 +170,6 @@ final routerProvider = Provider<GoRouter>((ref) {
               GoRoute(path: ':personId/edit', builder: (_, __) => ph('N09 · F11', 'Sửa người thân', 'Hương')),
               GoRoute(path: ':personId/share', builder: (_, __) => ph('S17 · F11', 'Nhắn tin cho người thân', 'Hương')),
             ]),
-=======
-            GoRoute(
-                path: '/today',
-                builder: (_, __) => const TodayScreen(),
-                routes: [
-                  GoRoute(
-                      path: 'task/:id',
-                      builder: (_, __) =>
-                          ph('S04 · F3', 'Chi tiết hoạt động', 'Khang')),
-                  GoRoute(
-                      path: 'task/:id/edit',
-                      builder: (_, __) => ph('S15 · F4', 'Sửa việc', 'Khang')),
-                  GoRoute(
-                      path: 'add',
-                      builder: (_, __) => ph(
-                          'S05 · F4', 'Thêm việc – chọn hoạt động', 'Khang')),
-                  GoRoute(
-                      path: 'add/time',
-                      builder: (_, __) =>
-                          ph('S06 · F4', 'Thêm việc – thiết lập', 'Khang')),
-                  GoRoute(
-                      path: 'voice',
-                      builder: (_, __) =>
-                          ph('V01 · F5', 'Nói để thêm việc', 'Khang')),
-                  GoRoute(
-                      path: 'suggestions/:id',
-                      builder: (_, __) =>
-                          ph('G03 · F12', 'Lịch Mai gợi ý', 'Hương')),
-                ]),
-          ]),
-          StatefulShellBranch(routes: [
-            GoRoute(
-                path: '/week',
-                builder: (_, __) =>
-                    ph('S07 · F7', 'Lịch tuần', 'Hương', back: false),
-                routes: [
-                  GoRoute(
-                      path: ':date',
-                      builder: (_, __) =>
-                          ph('S11 · F7', 'Chi tiết ngày', 'Hương')),
-                ]),
-          ]),
-          StatefulShellBranch(routes: [
-            GoRoute(
-                path: '/habits',
-                builder: (_, __) =>
-                    ph('S08 · F9', '9 thói quen', 'Hương', back: false),
-                routes: [
-                  GoRoute(
-                      path: ':key',
-                      builder: (_, __) =>
-                          ph('S16 · F9', 'Chi tiết thói quen', 'Hương')),
-                ]),
-          ]),
-          StatefulShellBranch(routes: [
-            GoRoute(
-                path: '/family',
-                builder: (_, __) =>
-                    ph('S09 · F11', 'Gia đình', 'Hương', back: false),
-                routes: [
-                  GoRoute(
-                      path: 'add',
-                      builder: (_, __) =>
-                          ph('S12 · F11', 'Thêm người thân', 'Hương')),
-                  GoRoute(
-                      path: ':personId/share',
-                      builder: (_, __) =>
-                          ph('S17 · F11', 'Nhắn tin cho người thân', 'Hương')),
-                ]),
->>>>>>> ae00670c8da72f20eae2bb0af165c3493627f4ca
           ]),
         ],
       ),
