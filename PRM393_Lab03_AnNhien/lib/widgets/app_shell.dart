@@ -16,12 +16,21 @@ class AppShell extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      appBar: AppBar(automaticallyImplyLeading: false, actions: [
+        TextButton.icon(
+            onPressed: () => context.push('/account'),
+            icon: const Icon(Icons.account_circle_outlined),
+            label: const Text('Tài khoản')),
+      ]),
       body: navigationShell,
       bottomNavigationBar: NavigationBar(
         selectedIndex: navigationShell.currentIndex,
-        onDestinationSelected: (i) => navigationShell.goBranch(i, initialLocation: i == navigationShell.currentIndex),
+        onDestinationSelected: (i) => navigationShell.goBranch(i,
+            initialLocation: i == navigationShell.currentIndex),
         destinations: [
-          for (final (icon, label) in _tabs) NavigationDestination(icon: Icon(icon), label: label, tooltip: label),
+          for (final (icon, label) in _tabs)
+            NavigationDestination(
+                icon: Icon(icon), label: label, tooltip: label),
         ],
       ),
     );

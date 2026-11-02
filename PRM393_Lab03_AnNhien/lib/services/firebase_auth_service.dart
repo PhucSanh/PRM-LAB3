@@ -46,6 +46,10 @@ class FirebaseAuthService implements AuthService {
           cause: e);
     } on FirebaseAuthException catch (e) {
       if (e.code == 'network-request-failed') throw AppException.network;
+      if (e.code == 'operation-not-allowed') {
+        throw const AppException(
+            'Đăng nhập Google đang tạm tắt. Bác thử lại sau nhé.');
+      }
       throw AppException('Không thể đăng nhập. Bác thử lại nhé.', cause: e);
     } on SocketException {
       throw AppException.network;
@@ -60,10 +64,9 @@ class FirebaseAuthService implements AuthService {
     try {
       // End Firebase session even if Google cleanup fails.
       await _auth.signOut();
-      if (_googleReady != null) {
-        await _googleReady;
-        await GoogleSignIn.instance.signOut();
-      }
+      // Also clear Google state after a Firebase session restored on app launch.
+      await (_googleReady ??= GoogleSignIn.instance.initialize());
+      await GoogleSignIn.instance.signOut();
     } on FirebaseAuthException catch (e) {
       if (e.code == 'network-request-failed') throw AppException.network;
       throw AppException('Chưa thể đăng xuất. Bác thử lại nhé.', cause: e);

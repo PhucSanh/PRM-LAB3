@@ -74,3 +74,13 @@ test('Storage: owner PDF upload/read/delete; reject stranger, type, size, extens
   await assertFails(getBytes(ref(env.unauthenticatedContext().storage(),'reports/mom/week.pdf')));
   await assertSucceeds(deleteObject(file));
 });
+test('F1 profile: owner creates and selects role; other users and anonymous denied', async () => {
+  const profile = doc(db('mom'), 'users/mom');
+  await assertSucceeds(setDoc(profile, {displayName:'Bác', photoUrl:null, role:null, onboarded:false, createdAt:serverTimestamp()}));
+  await assertSucceeds(updateDoc(profile, {role:'elder'}));
+  await assertSucceeds(getDoc(profile));
+  await assertFails(getDoc(doc(db('child'), 'users/mom')));
+  await assertFails(updateDoc(doc(db('child'), 'users/mom'), {role:'caregiver'}));
+  await assertFails(setDoc(doc(db('child'), 'users/mom'), {role:'elder'}));
+  await assertFails(getDoc(doc(env.unauthenticatedContext().firestore(), 'users/mom')));
+});
