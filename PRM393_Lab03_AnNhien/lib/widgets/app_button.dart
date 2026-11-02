@@ -33,6 +33,7 @@ class AppButton extends StatelessWidget {
     required this.onPressed,
     this.kind = AppButtonKind.primary,
     this.busy = false,
+    this.wrapLabel = false,
   });
 
   final String label;
@@ -40,6 +41,7 @@ class AppButton extends StatelessWidget {
   final VoidCallback? onPressed;
   final AppButtonKind kind;
   final bool busy;
+  final bool wrapLabel;
 
   @override
   Widget build(BuildContext context) {
@@ -55,7 +57,11 @@ class AppButton extends StatelessWidget {
             children: [
               Icon(icon, size: AppSizes.icon),
               const SizedBox(width: AppSpacing.md),
-              Flexible(child: Text(label, textAlign: TextAlign.center)),
+              Flexible(
+                  child: Text(label,
+                      textAlign: TextAlign.center,
+                      overflow: wrapLabel ? null : TextOverflow.ellipsis,
+                      softWrap: wrapLabel ? true : null)),
             ],
           );
     final action = busy ? null : onPressed;

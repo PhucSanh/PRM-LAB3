@@ -24,6 +24,12 @@ class AppShell extends StatelessWidget {
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     return Scaffold(
+      appBar: AppBar(automaticallyImplyLeading: false, actions: [
+        TextButton.icon(
+            onPressed: () => context.push('/account'),
+            icon: const Icon(Icons.account_circle_outlined),
+            label: const Text('Tài khoản')),
+      ]),
       body: navigationShell,
       bottomNavigationBar: DecoratedBox(
         decoration: BoxDecoration(

@@ -46,3 +46,20 @@ mô tả, vì sao sai (dẫn luật / đề / số đo), cách sửa đề xuấ
 | Google Stitch | Sinh thiết kế v0 cho Lab 2 (`lab2/design-decisions.md`) | Sanh |
 | Codex | Vòng Stitch tự phản biện cho C / G / N (Lab 2) | Sanh |
 | _(thêm khi dùng)_ | | |
+
+## F10 — rà soát cục bộ bằng Codex (02/11/2026)
+
+Đây là tự rà soát implementation trong working tree, chưa phải review trên PR;
+không thay bằng chứng commit `fix(CR-xx)` của đề. Chưa tạo PR/commit trong lượt này.
+
+| ID | File | Loại | Phát hiện | Sửa và kiểm chứng | Commit sửa |
+| --- | --- | --- | --- | --- | --- |
+| CR-F10-01 | firebase_messaging_service.dart | Đúng sai | Inbox RAM mất khi process chết; cold-start push không tạo lịch sử bền vững | Inbox Firestore do trusted sender ghi trước push; rules tests owner/stranger | Chưa commit |
+| CR-F10-02 | notification_target.dart / app_router.dart | Bảo mật | Payload mới cần được kiểm tra trước khi thành route | Allowlist local target + recipient_uid + auth/profile guards; target/routing tests | Chưa commit |
+| CR-F10-03 | app_button.dart | Trợ năng | Nhãn ellipsis bị cắt ở chữ 200% | wrapLabel opt-in F10; widget tests 360/412 dp, 200% | Chưa commit |
+| CR-F10-04 | firebase_demo_view_model.dart | Đúng sai | RC realtime thay UiData có thể xóa busy, cho bấm upload lần hai | Giữ busy/message/progress/url khi đọc RC | Chưa commit |
+| CR-F10-05 | session_data_service.dart | Bảo mật | Callback xóa token lỗi có thể bỏ qua xóa cache | terminate/clearPersistence trong finally; còn cần native runtime | Chưa commit |
+| CR-F10-06 | firebase_messaging_service.dart / sender | Riêng tư | Đăng ký máy cũ có thể còn khi logout offline | Invalidate token, xóa đăng ký; sender giới hạn 30 ngày, system tray chung và recipient guard | Chưa commit |
+
+Chưa có adapter/native E2E do không có Android device. Không suy diễn Fake tests
+thành xác nhận FCM/Storage/Crashlytics production đã chạy.

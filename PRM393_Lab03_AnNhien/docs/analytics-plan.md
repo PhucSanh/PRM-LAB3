@@ -77,3 +77,22 @@ Nguồn: chỉ số thành công M1–M8 (`lab2/PRD.md` mục 10, `lab2/persona.
 | `export_report` | | | |
 | `share` | | | |
 | `accept_suggestion` | | | |
+
+## Event F10 bổ sung (02/11/2026)
+
+Ghi trong ViewModel/provider, không ghi token, UID người nhận, route ID, URL tệp
+hay nội dung thông báo. Business events ★ ở trên vẫn cần bằng chứng riêng.
+
+| Event | Trigger | Tham số |
+| --- | --- | --- |
+| view_firebase_demo | Mở khu thử tính năng | — |
+| refresh_remote_config | Đọc RC/defaults/cache xong; không chứng minh đã fetch mạng | — |
+| view_inbox | Subscribe inbox theo phiên / thử lại | — |
+| notification_permission | Kết quả xin quyền | allowed (int 0/1) |
+| receive_notification | Nhận FCM foreground đúng tài khoản | — |
+| open_notification | Bấm Xem từ banner hoặc mục inbox | — |
+| upload_demo_file | Có URL thật sau upload tệp thử | source=firebase_demo |
+| upload_demo_failed | Tạo/upload tệp thử lỗi | source=firebase_demo |
+| test_crash | Xác nhận thử đóng ứng dụng | source=firebase_demo |
+
+Chưa có ảnh DebugView F10; các test Fake không phải bằng chứng Console.
