@@ -1,3 +1,8 @@
+import '../screens/firebase_demo/profile_demo_entry_screen.dart';
+import '../screens/firebase_demo/inbox_screen.dart';
+import '../screens/firebase_demo/firebase_demo_screen.dart';
+import '../models/app_notification.dart';
+import '../models/notification_target.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -17,10 +22,20 @@ import '../widgets/feature_placeholder.dart';
 
 /// Route map theo flutter-handoff.md (Lab 2). Chủ file: A – Sanh.
 /// Ai làm màn nào: thay `FeaturePlaceholder` bằng màn thật của mình.
+final notificationOpenedProvider = StreamProvider<AppNotification>(
+    (ref) => ref.watch(messagingServiceProvider).onOpened);
+
 final routerProvider = Provider<GoRouter>((ref) {
   final refresh = ValueNotifier<int>(0);
   ref.onDispose(refresh.dispose);
   String? lastUid;
+  String? pendingNotification;
+  ref.listen(notificationOpenedProvider, (_, next) {
+    next.whenData((item) {
+      pendingNotification = notificationTarget(item.route);
+    });
+    refresh.value++;
+  });
   ref.listen(sessionProvider, (_, next) {
     next.whenData((user) {
       if (lastUid != user?.uid) {
@@ -58,7 +73,10 @@ final routerProvider = Provider<GoRouter>((ref) {
       final session = ref.read(sessionProvider);
       if (session.isLoading || session.hasError) return to('/session');
       final user = session.asData?.value;
-      if (user == null) return to('/sign-in');
+      if (user == null) {
+        pendingNotification = null;
+        return to('/sign-in');
+      }
       if (ref.read(signOutViewModelProvider).busy) return to('/session');
       if (path == '/account') return null;
       final profileState = ref.read(profileProvider);
@@ -70,6 +88,12 @@ final routerProvider = Provider<GoRouter>((ref) {
         return to('/session');
       }
       if (profile.role == null) return to('/role');
+      if (pendingNotification != null) {
+        final destination = pendingNotification!;
+        pendingNotification = null;
+        return to(destination);
+      }
+      if (path == '/inbox' || path == '/settings/firebase-demo') return null;
       final caregiver = profile.role == UserRole.caregiver;
       final home = caregiver
           ? (profile.pairedMomUid == null
@@ -128,11 +152,11 @@ final routerProvider = Provider<GoRouter>((ref) {
           builder: (_, __) => ph('S10 · F8', 'Cài đặt hiển thị', 'Sanh')),
       GoRoute(
           path: '/settings/profile',
-          builder: (_, __) =>
-              ph('N06 · F8/F10', 'Hồ sơ + khu demo Firebase', 'Sanh, Hiếu')),
+          builder: (_, __) => const ProfileDemoEntryScreen()),
+      GoRoute(path: '/inbox', builder: (_, __) => const InboxScreen()),
       GoRoute(
-          path: '/inbox',
-          builder: (_, __) => ph('F10', 'Hộp thông báo', 'Hiếu')),
+          path: '/settings/firebase-demo',
+          builder: (_, __) => const FirebaseDemoScreen()),
       StatefulShellRoute.indexedStack(
         builder: (_, __, shell) => AppShell(navigationShell: shell),
         branches: [

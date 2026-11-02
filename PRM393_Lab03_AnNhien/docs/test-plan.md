@@ -77,3 +77,21 @@ Loại: `Chính` (happy path) · `Lỗi` (nhánh lỗi + phục hồi) · `Nativ
 | ID | Lần 1 | Lần 2 | Lần 3 | Pass rate | Thời gian TB | Ghi chú (flaky vì sao) |
 | --- | --- | --- | --- | --- | --- | --- |
 | TC-01 | | | | | | |
+
+## F10 bổ sung 02/11/2026
+
+Tự động: `test/f10_test.dart`, push routing case trong `test/auth_routing_test.dart`,
+2 ca F10 trong `firebase/tests/rules.test.mjs`. Kết quả và giới hạn xem
+[f10-verification.md](f10-verification.md). Flutter PASS 25 tests; Emulator PASS 9 nhóm.
+Các kết quả này không thay ARTEMIS hoặc kiểm tra thiết bị.
+
+| Ca nghiệm thu Android/ARTEMIS | Lần 1 | Lần 2 | Lần 3 |
+| --- | --- | --- | --- |
+| Inbox: quyền/từ chối, trống/lỗi/thử lại | Chưa chạy | Chưa chạy | Chưa chạy |
+| FCM foreground/background/cold start, mở đúng màn | Chưa chạy | Chưa chạy | Chưa chạy |
+| Đổi tài khoản, không thấy inbox cũ; restart giữ inbox | Chưa chạy | Chưa chạy | Chưa chạy |
+| RC Console thay giá trị → UI cập nhật | Chưa chạy | Chưa chạy | Chưa chạy |
+| Tạo/upload PDF, tiến độ, URL thật, non-fatal khi lỗi | Chưa chạy | Chưa chạy | Chưa chạy |
+| Hủy/xác nhận test crash, mở lại và thấy Console report | Chưa chạy | Chưa chạy | Chưa chạy |
+
+Fixture ARTEMIS hiện còn skip/TODO; không sửa thay Hương hoặc ghi kết quả giả.

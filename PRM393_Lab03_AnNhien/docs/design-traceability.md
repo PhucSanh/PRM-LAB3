@@ -212,7 +212,14 @@ Sơ đồ từng flow (nhánh chính, nhánh lỗi, nhánh phụ): `lab2/user-fl
 
 | Khung Figma | Node | Loại | Route | ViewModel | Nguồn dữ liệu | Stitch (Lab 2) | Trạng thái |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| N06 Thông tin của Bác (Sửa hồ sơ) | [38:187](https://www.figma.com/design/K3JczHkChbUWoDBkXZYMhR/Untitled?node-id=38-187) | Màn | `/settings/profile` | ProfileViewModel | ProfileService | `stitch-runs/N06/v2.html` | todo |
+| N06 Thông tin của Bác (Sửa hồ sơ) | [38:187](https://www.figma.com/design/K3JczHkChbUWoDBkXZYMhR/Untitled?node-id=38-187) | Màn | `/settings/profile` | ProfileViewModel | ProfileService | `stitch-runs/N06/v2.html` | F10 có điểm vào; F8 form chưa làm |
+
+F10 cập nhật 02/11/2026: `/inbox` → InboxViewModel → MessagingService
+(Firestore owner inbox + FCM); `/settings/firebase-demo` → FirebaseDemoViewModel →
+RemoteConfig/Crash/Analytics + demoReportService. Đã code và có Fake/widget/rules
+tests; chờ thiết bị và Console evidence. Xem [f10-verification.md](f10-verification.md).
+Thiết kế mới: [demo 153:224](https://www.figma.com/design/K3JczHkChbUWoDBkXZYMhR/Untitled?node-id=153-224),
+[inbox 153:264](https://www.figma.com/design/K3JczHkChbUWoDBkXZYMhR/Untitled?node-id=153-264).
 
 ## F11 · Gia đình: thêm người thân, nhắn tin (Flow 5, Flow 9) — Hương
 
@@ -293,8 +300,8 @@ Sơ đồ từng flow (nhánh chính, nhánh lỗi, nhánh phụ): `lab2/user-fl
 | --- | --- | --- | --- |
 | C11 | Dialog "Áp dụng thay đổi cho" (chỉ lần này / từ lần này về sau / tất cả / hủy) | F14 – Hiếu | Flow 12; Stitch chưa chạy. Làm theo handoff, ghi DT nếu khác |
 | C12 | Dialog "Ngưng lịch lặp" (Giữ lại / Ngưng lặp lại) | F14 – Hiếu | Flow 12; như trên |
-| Hộp thông báo | Danh sách thông báo FCM, route `/inbox` | F10 – Hiếu | Cần thiết kế thêm (DT-03) |
-| Khu demo Firebase | Trên N06 | F10 – Hiếu | Cần thiết kế thêm (DT-03) |
+| Hộp thông báo | Danh sách thông báo FCM, route `/inbox` | F10 – Hiếu | Đã thêm thiết kế DT-03; xem phần F10 |
+| Khu demo Firebase | Trên N06 | F10 – Hiếu | Đã thêm thiết kế DT-03; xem phần F10 |
 
 ## Thay đổi so với Figma (bắt buộc ghi, đề Lab 3 › "Changes to the design")
 
@@ -302,7 +309,7 @@ Sơ đồ từng flow (nhánh chính, nhánh lỗi, nhánh phụ): `lab2/user-fl
 | --- | --- | --- | --- | --- |
 | DT-01 | A01 | Nút chính "Tiếp tục với Google" thay cho nhập số điện thoại; A02–A04 làm sau nếu kịp | Đề Lab 3 bắt buộc Google Sign-In | ☐ |
 | DT-02 | S07 | Thêm nút "Xuất PDF" + thanh tiến độ + link tải | Đề Lab 3 bắt buộc sinh 1 file và upload | ☐ |
-| DT-03 | N06 | Thêm khu demo Firebase + Hộp thông báo | Đề Lab 3 bắt buộc Firebase demo area | ☐ |
+| DT-03 | N06 | Thêm nút mở khu thử tính năng + demo / inbox riêng; tệp thử PDF ghi rõ không phải lịch tuần | Đề Lab 3 bắt buộc Firebase demo area | ☑ N06 + 153:224 + 153:264; chưa nối prototype |
 | DT-04 | S05, V00–V05 | Nút "Nói việc" ở S05 mở luồng giọng nói, bật/tắt bằng Remote Config `voice_input_enabled` | Tính năng mới Lab 3 | ☐ |
 | DT-05 | N20 | Câu "Chưa đồng bộ sang máy khác" không còn đúng khi dùng Firestore: đổi thành "Lưu trên tài khoản Google của Bác, vẫn dùng được khi mất mạng" | Lab 3 có backend Firebase | ☐ |
 | DT-06 | G03–G09 | Route `/today/suggestions/:id` thay cho `/family/suggestions/:id` của handoff | Gợi ý mở chủ yếu từ S03 (G11 / G12); router Lab 3 đã đặt như vậy | — (chỉ route) |

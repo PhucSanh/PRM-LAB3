@@ -16,13 +16,18 @@ class FakeSessionDataService implements SessionDataService {
 /// Android FlutterFire recreates its native Firestore instance after terminate.
 /// Call only while the session gate has detached user-bound listeners.
 class FirebaseSessionDataService implements SessionDataService {
-  FirebaseSessionDataService(this.db);
+  FirebaseSessionDataService(this.db, {this.beforeClear});
+  final Future<void> Function()? beforeClear;
   final FirebaseFirestore db;
   @override
   Future<void> clearLocalData() async {
     try {
-      await db.terminate();
-      await db.clearPersistence();
+      try {
+        await beforeClear?.call();
+      } finally {
+        await db.terminate();
+        await db.clearPersistence();
+      }
     } catch (error) {
       throw AppException('Chưa xoá được dữ liệu trên máy. Bác thử lại nhé.',
           cause: error);

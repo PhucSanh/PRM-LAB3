@@ -82,3 +82,20 @@ Emulator tests dùng project **demo-an-nhien** độc lập, không phải Fireb
 ## Rà soát API key
 
 Key hiện tại đã được giới hạn package/SHA-1 và API allowlist theo lựa chọn của người dùng. Kết quả kiểm chứng, yêu cầu thêm certificate của thành viên nhóm và trạng thái cảnh báo GitHub: [firebase-key-review.md](firebase-key-review.md).
+
+## Cập nhật F10 (02/11/2026)
+
+Thông tin inbox RAM trong mục 9 ở trên là trạng thái trước F10. Implementation
+hiện tại có inbox Firestore owner-only, foreground banner, router consumer và
+đăng ký máy; dùng trusted sender ghi inbox trước gửi FCM. Hướng dẫn payload,
+script, điều kiện thiết bị/bucket/RC và giới hạn nằm ở
+[f10-verification.md](f10-verification.md). Kiểm tra cloud chỉ đọc lần này: chưa
+có 3 tham số RC của app và chưa có bucket Storage. Không tự bật billing.
+
+### Cloud F10 đã triển khai sau phê duyệt (02/11/2026)
+
+Remote Config version 1 đã publish ba defaults: snooze_minutes=10 (NUMBER),
+voice_input_enabled=true (BOOLEAN), home_max_upcoming=6 (NUMBER); đọc lại PASS.
+Firestore rules F10 đã compile/deploy và đọc lại active source khớp file local.
+Người dùng đã đồng ý bước publish/deploy này trong chat. Storage/billing và các
+provider khác không đổi; vẫn cần thiết bị để nghiệm thu runtime và chụp evidence.

@@ -293,3 +293,29 @@ Dữ liệu chưa đồng bộ có thể mất và được thông báo trước
 F2 gọi `markOnboarded(uid)` sau khi hoàn tất onboarding. F13/F14 vẫn là placeholder.
 `role` và `pairedMomUid` chỉ điều hướng giao diện, không cấp quyền đọc lịch UID khác.
 Google provider tạm tắt trên Console không tự ẩn nút; không đổi phương thức Auth.
+
+### F10 triển khai 02/11/2026
+
+`InboxViewModel` quản lý UiState, quyền và analytics; `FirebaseDemoViewModel`
+quản lý RC realtime, upload tệp thử và Crashlytics. `/inbox`,
+`/settings/firebase-demo`, điểm vào F10 ở `/settings/profile` và `/account`.
+App quan sát foregroundNotificationProvider để hiện banner; router consume push
+opened sau auth/profile guards. NotificationTarget chỉ nhận route nội bộ cho phép.
+`MessagingService.onReceived` bổ sung để nhận foreground; bản Fake có stream rỗng.
+
+Firestore `users/{uid}/notifications/{id}` = title/body/route/receivedAt(Timestamp),
+backend ghi trước push, owner đọc/xóa. `users/{uid}/devices/{token}` = token,
+updatedAt(server timestamp), platform(android); owner-only. Inbox limit 100 theo
+receivedAt desc; hủy listener trước clearPersistence. Sender CLI dùng HTTP v1,
+metadata recipient_uid/notification_id/route, system tray chỉ có nội dung chung.
+Dọn token trước clearPersistence qua callback SessionDataService; cache vẫn được
+xóa trong finally nếu cleanup FCM lỗi. Sender bỏ đăng ký cũ hơn 30 ngày.
+
+`demoReportServiceProvider` dùng FirebaseReportService + renderDemoPdf riêng,
+PDF tiếng Việt có DejaVu Sans và license. Không đổi reportServiceProvider của F7.
+`FirebaseDemoEntry` là widget dùng chung cho F8 ghép vào form thật. AppButton
+`wrapLabel=true` ở màn F10 cho phép xuống dòng tại textScaler=2.0.
+
+Cập nhật sau phê duyệt: rules F10 đã deploy và RC version 1 đã có ba defaults;
+bucket Storage vẫn chưa có. Giới hạn
+và quy trình nghiệm thu: [f10-verification.md](f10-verification.md).
