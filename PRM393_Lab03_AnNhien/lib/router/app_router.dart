@@ -26,13 +26,15 @@ final routerProvider = Provider<GoRouter>((ref) {
   return GoRouter(
     initialLocation: '/today',
     refreshListenable: session,
-    redirect: (context, state) {
-      final signedIn = session.value != null;
-      final atSignIn = state.matchedLocation == '/sign-in';
-      if (!signedIn) return atSignIn ? null : '/sign-in';
-      if (atSignIn) return '/today';
-      return null;
-    },
+    // TẠM TẮT chặn đăng nhập Google để build / test UI trước.
+    // Bỏ comment khối dưới trước khi commit / nộp.
+    // redirect: (context, state) {
+    //   final signedIn = session.value != null;
+    //   final atSignIn = state.matchedLocation == '/sign-in';
+    //   if (!signedIn) return atSignIn ? null : '/sign-in';
+    //   if (atSignIn) return '/today';
+    //   return null;
+    // },
     routes: [
       GoRoute(path: '/sign-in', builder: (_, __) => const SignInScreen()),
       // F2 Onboarding – Hiếu
