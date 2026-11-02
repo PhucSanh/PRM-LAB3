@@ -116,30 +116,30 @@ Màn dùng `switch (state)` để vẽ đủ 4 trạng thái. Hành động mộ
 | Route | Màn | Feature | Trong `app_router.dart` |
 | --- | --- | --- | --- |
 | `/sign-in` | A01 | F1 | có |
-| `/role` | C01 | F1 | **chưa có** |
+| `/role` | C01 | F1 | placeholder |
 | `/welcome` · `/setup` · `/setup/notifications` | S01 · S02 · S13 / S13d | F2 | placeholder |
-| `/setup/try-reminder` · `/setup/first-task` | N01–N03 · N04 → N05 → N18 → N19 | F2 | **chưa có** |
+| `/setup/try-reminder` · `/setup/first-task` | N01–N03 · N04 → N05 → N18 → N19 | F2 | placeholder |
 | `/today` (tab 0) | S03 + mọi state S03-*, ST-Empty, N17, G11 / G12 | F3 | có |
 | `/today/task/:id` · `/today/task/:id/edit` | S04 · S15 | F3 · F4 | placeholder |
-| `/today/add` · `/today/add/time` · `/today/add/result` | S05 · S06 · ST-Loading / Saved / Error, N16 | F4 | placeholder / **result chưa có** |
-| `/task/date` · `/task/repeat` · `/task/scope` | N11 · N12 · N13 (màn con, `pop(result)`) | F4 | **chưa có** |
+| `/today/add` · `/today/add/time` · `/today/add/result` | S05 · S06 · ST-Loading / Saved / Error, N16 | F4 | placeholder |
+| `/task/date` · `/task/repeat` · `/task/scope` | N11 · N12 · N13 (màn con, `pop(result)`) | F4 | placeholder |
 | `/today/voice` | V00–V05 | F5 | placeholder |
-| `/today/all` | S11 chế độ hôm nay | F7 | **chưa có** |
+| `/today/all` | S11 chế độ hôm nay | F7 | placeholder |
 | `/today/suggestions/:id` | G03–G09 | F12 | placeholder |
 | `/reminder/:taskId` | S14 (mở từ notification `fullScreenIntent`; `?preview=true` từ S10) | F6 | placeholder |
-| `/week` (tab 1) · `/week/:date` · `/week/:date/task/:id` | S07 · S11 / S11b · S04 | F7 | placeholder / **task chưa có** |
+| `/week` (tab 1) · `/week/:date` · `/week/:date/task/:id` | S07 · S11 / S11b · S04 | F7 | placeholder |
 | `/habits` (tab 2) · `/habits/:key` | S08 · S16 | F9 | placeholder |
-| `/family` (tab 3) · `/family/add` · `/family/:personId/edit` · `/family/:personId/share` | S09 · S12 · N09 · S17 | F11 | placeholder / **edit chưa có** |
+| `/family` (tab 3) · `/family/add` · `/family/:personId/edit` · `/family/:personId/share` | S09 · S12 · N09 · S17 | F11 | placeholder |
 | `/settings` · `/settings/profile` | S10 · N06 (+ khu demo F10) | F8 | placeholder |
-| `/settings/reminders` · `/settings/help` · `/settings/data` | N07 · N08 · N20 | F6 · F8 · F8 | **chưa có** |
+| `/settings/reminders` · `/settings/help` · `/settings/data` | N07 · N08 · N20 | F6 · F8 · F8 | placeholder |
 | `/inbox` | Hộp thông báo | F10 | placeholder |
-| `/caregiver/pair` | C02 / C02e | F13 | **chưa có** |
-| `/caregiver/schedule?view=day\|week\|month` | C03 / C04 / C05 | F14 | **chưa có** |
-| `/caregiver/task/new` → `/repeat` → `/review` → `/caregiver/task/sent` | C06 → C07 → C08 (+ C08w) → C09 | F14 | **chưa có** |
-| `/caregiver/task/:id` | C10 (+ C11, C12 dialog) | F14 | **chưa có** |
-| `/caregiver/suggest` | G01 → G02 | F12 | **chưa có** |
+| `/caregiver/pair` | C02 / C02e | F13 | placeholder |
+| `/caregiver/schedule?view=day\|week\|month` | C03 / C04 / C05 | F14 | placeholder |
+| `/caregiver/task/new` → `/repeat` → `/review` → `/caregiver/task/sent` | C06 → C07 → C08 (+ C08w) → C09 | F14 | placeholder |
+| `/caregiver/task/:id` | C10 (+ C11, C12 dialog) | F14 | placeholder |
+| `/caregiver/suggest` | G01 → G02 | F12 | placeholder |
 
-Việc của F0 (Sanh): thêm các route **chưa có** dưới dạng `FeaturePlaceholder`, và sửa tên người trên placeholder cho đúng chia task mới (hiện F2 ghi "Hiếu", G03 ghi "Hương").
+Việc của F0 (Sanh) – đã làm ở bước 01 (02/11/2026): mọi route trên đã khai báo trong `app_router.dart`, màn chưa làm là `FeaturePlaceholder` ghi mã màn · feature · người theo bản chia task 02/11; nhóm route theo feature bằng comment `// F<số> <tên> – <người>`. `/caregiver/schedule` chọn C03 / C04 / C05 theo query `view`. Kiểm tra bằng `test/router_test.dart`.
 
 Quy tắc điều hướng từ handoff: tab dùng `StatefulShellRoute`; Back hệ thống ở S03 thoát app; kết quả lưu (`/today/add/result`) dùng `go` (thay thế, không chồng); màn con N11–N13 trả kết quả bằng `pop(result)`; S04 mở từ 2 nơi nên nút Back ghi "Quay lại".
 
@@ -237,26 +237,37 @@ Mỗi ViewModel còn dùng `AnalyticsService` (ghi event) và `CrashService` (l�
 
 ## 12. Theme (F0 – Sanh)
 
-Token lấy từ `lab2/design-tokens.md` (bảng `colors`, `typography`, `spacing`, `rounded`) và `lab2/flutter-handoff.md` › Bảng 1. Đã có trong `lib/theme/`: `AppColors` (màu chính + error + warning + disabled), `HabitPalette` (9 màu nhấn), `AppSpacing` (4…48, `screen` = 20, `betweenTargets` = 20), `AppRadius` (8, 12, 14, 16, 24), `AppSizes` (`minTarget` 72, `icon` 32…), `AppTheme`.
+Token lấy từ `lab2/design-tokens.md` (bảng `colors`, `typography`, `spacing`, `rounded`) và `lab2/flutter-handoff.md` › Bảng 1. File trong `lib/theme/`:
 
-Chữ (Be Vietnam Pro, phải bundle trong `assets/fonts/`): `display` 34 · `headline` 30 · `title-md` 26 · `title-lg` 24 · `body-lg` 24 · `label-btn` 22 · `body-md` / `caption` / `label-nav` 20. Không có chữ < 20 sp.
+| File | Nội dung |
+| --- | --- |
+| `app_colors.dart` | `AppColors` (đủ màu DESIGN.md, thêm `success`, `warningStrong`, `shadowLevel1/2`), `AppColorsHighContrast`, `HabitPalette` (9 màu + `onAccent` trắng) |
+| `app_spacing.dart` | `AppSpacing` (4…48, `screen` 20, `betweenTargets` 20), `AppRadius` (8, 12, 14, 16, 24, `full` 999 + `…All`), `AppSizes` (`minTarget` 72, `icon` 32, `habitIcon` 48, `accentBar` 6, `border` 2, `appBar` 88, `navBar` 96…) |
+| `app_theme.dart` | `AppTheme.light()`, `AppTheme.highContrast()` (cùng hàm dựng, chỉ đổi `ColorScheme`), `AppText.bodyLgStrong`, `AppText.numericLg` |
+| `display_settings.dart` | `AppFontScale { vua 1.0, lon 1.15, ratLon 1.3 }`, `fontScaleProvider` (mặc định `lon` theo Figma S01/S10), `highContrastProvider` (mặc định tắt), `maxTextScale` 2.0 – giữ trong bộ nhớ, F8 nối `SettingsService` |
+| `app_icons.dart` | `AppIcons`: 22 icon khung Components (`138:2`) + 4 icon tab → `IconData` Material gần nhất (DT-09) |
 
-Cỡ chữ người dùng chọn (S01 / S10) = `textScaler` 1.0 / 1.15 / 1.3 toàn app; layout phải chịu được 2.0. Tương phản cao (S10) = đổi `ColorScheme` sang biến thể high-contrast.
+Chữ (Be Vietnam Pro, bundle trong `assets/fonts/`, khai báo ở `pubspec.yaml`): `display` 34 · `headline` 30 · `title-md` 26 · `title-lg` 24 · `body-lg` 24 · `label-btn` 22 · `body-md` / `caption` / `label-nav` 20. Cả 15 kiểu của `TextTheme` đều được điền nên không có chữ < 20 sp (kể cả widget Material dùng `labelSmall`, `titleSmall`).
+
+Cỡ chữ người dùng chọn (S01 / S10) = `textScaler` 1.0 / 1.15 / 1.3 toàn app, nhân với cỡ chữ hệ thống, trần 2.0 (`lib/app.dart` › `builder`). Đổi `fontScaleProvider` là cả app đổi ngay. Tương phản cao (S10) = `AppTheme.highContrast()`: nền trắng, chữ chính `#0F1411` (18.6 : 1), chữ phụ `#202B25` (14.7 : 1), nút `#174C37` (chữ trắng 9.9 : 1), lỗi `#912018` – chỉ dùng lại màu có trong DESIGN.md.
+
+Màn và widget lấy màu qua `Theme.of(context).colorScheme` (để tương phản cao có tác dụng), không đọc `AppColors` trực tiếp.
 
 ## 13. Widget dùng chung (F0 – Sanh) – theo `lab2/flutter-handoff.md` › Bảng 2
 
 | Widget | Dùng ở | Trạng thái |
 | --- | --- | --- |
-| `AppButton` (Primary 60 dp / Secondary / Tonal / Text / Danger / Danger-outline) | mọi màn | có – kiểm tra đủ biến thể |
-| `AppBackBar` (Back có chữ, Back + Bước x/y, Back + "Sửa") | màn cấp 2–3 | có – kiểm tra biến thể |
-| `AppShell` (bottom nav 4 tab có nhãn, cao 84, `maxLines: 1`) | 4 tab | có |
-| `LoadingView` / `EmptyView` / `ErrorView` | mọi màn tải dữ liệu | có |
+| `AppButton` (`AppButtonKind`: primary / secondary / tonal / text / danger / dangerOutline; cao ≥ 72, icon + chữ, `busy`) | mọi màn | có |
+| `AppBackBar` (Back có chữ · + `step` "Bước x/y" · + `trailing`, vd. `AppBarEditButton` "Sửa" ở S04) | màn cấp 2–3 | có |
+| `AppShell` (bottom nav 4 tab có nhãn, cao 96, `maxLines: 1`; icon `AppIcons.tab…`) | 4 tab | có |
+| `LoadingView` (`message`, `hint`) / `EmptyView` (`icon`, `title`, `message`, `action`, `secondaryAction`) / `ErrorView` (`message`, `onRetry`, `title`, `detail`, `extraActions`; luôn có "Thử lại", `liveRegion`) – khớp ST-Loading / ST-Empty / ST-Error | mọi màn tải dữ liệu | có |
+| `IconCircle` (icon 64 trong vòng tròn nền nhạt; `danger` = nền `errorContainer`) | đầu hộp thoại, ST-*, màn "Đã lưu / Đã gửi" | có |
 | `FeaturePlaceholder` | màn chưa làm | có |
 | `NextTaskCard`, `TaskRow` (Upcoming / Done / Skipped) | S03, S11, S16, C03 | cần làm |
 | `HabitBadge` / `HabitTile` (icon + tên + màu nhấn) | S04, S05, S08, S16, C06 | cần làm |
 | `TimeField` + `showTimeWheel()` (DLG-TaskTime / DLG-WakeTime: 3 cột giờ / phút / sáng-chiều, Hủy / Xong) | S02, S06, S15, N05, C06 | cần làm |
-| `ConfirmDialog` (icon 64, tiêu đề, 2–4 nút xếp dọc full-width) | DLG-Done / Later / Skip / Delete, N13, N14, N15, C08w, C11, C12 | cần làm |
-| `UndoSnackbar` (2 tầng, nút "Hoàn tác" 48 dp, không tự tắt) | S03-*, G09, C12 | cần làm |
+| `showConfirmDialog<T>(context, icon, title, message, details, options: [ConfirmOption(label, icon, value, kind)], danger)` + `ConfirmDetail` (dòng icon + chữ) – nút xếp dọc full-width theo thứ tự `options`, cách nhau 20; huỷ ở cuối, trừ khi hậu quả khó lấy lại thì nút an toàn là nút chính ở trên (SG-19); chạm ngoài / Back trả `null` | DLG-Done / Later / Skip / Delete, N13, N14, N15, C08w, C11, C12 | có |
+| `showUndoSnackbar(context, title, subtitle, onUndo)` (2 tầng chữ, hàng nút "Đóng" · "Hoàn tác", `persist: true` – không tự tắt, `liveRegion`) | S03-*, G09, C12 | có |
 | `AppTextField` (nhãn ngoài ô, gợi ý "Ví dụ…", `errorText` có icon, `liveRegion`) | S02, S06, S12, C06 | cần làm |
 | `SwitchRow`, `ChoiceCard` (radio / segmented cao ≥ 52) | S01, S10, S12, C07 | cần làm |
 | `ReadAloudButton` ("🔊 Đọc to", gọi `SpeechService.speak`) | S04, S14, S16 | cần làm |

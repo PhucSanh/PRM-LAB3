@@ -28,12 +28,12 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
-  # TODO(A – Sanh, F0): thêm font Be Vietnam Pro vào assets/fonts/ rồi mở khối dưới.
-  # fonts:
-  #   - family: BeVietnamPro
-  #     fonts:
-  #       - asset: assets/fonts/BeVietnamPro-Regular.ttf
-  #       - asset: assets/fonts/BeVietnamPro-SemiBold.ttf
-  #         weight: 600
-  #       - asset: assets/fonts/BeVietnamPro-Bold.ttf
-  #         weight: 700
+  # Be Vietnam Pro (Google Fonts, OFL) – bundle sẵn, không tải qua mạng. F0 – Sanh.
+  fonts:
+    - family: BeVietnamPro
+      fonts:
+        - asset: assets/fonts/BeVietnamPro-Regular.ttf
+        - asset: assets/fonts/BeVietnamPro-SemiBold.ttf
+          weight: 600
+        - asset: assets/fonts/BeVietnamPro-Bold.ttf
+          weight: 700

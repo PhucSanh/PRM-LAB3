@@ -64,8 +64,8 @@ Sơ đồ từng flow (nhánh chính, nhánh lỗi, nhánh phụ): `lab2/user-fl
 
 | Khung Figma | Node | Loại | Route | ViewModel | Nguồn dữ liệu | Stitch (Lab 2) | Trạng thái |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| Components Màn mới (Giọng nói & Tài khoản) | [138:2](https://www.figma.com/design/K3JczHkChbUWoDBkXZYMhR/Untitled?node-id=138-2) | Thư viện | `(toàn app)` | — | — | — | todo |
-| S03 Hôm nay | [1:270](https://www.figma.com/design/K3JczHkChbUWoDBkXZYMhR/Untitled?node-id=1-270) | Màn (tab 0) | `/today` | TodayViewModel | TaskRepository | `stitch-runs/S03/v3.html` | todo |
+| Components Màn mới (Giọng nói & Tài khoản) | [138:2](https://www.figma.com/design/K3JczHkChbUWoDBkXZYMhR/Untitled?node-id=138-2) | Thư viện | `(toàn app)` | — | — | — | doing |
+| S03 Hôm nay | [1:270](https://www.figma.com/design/K3JczHkChbUWoDBkXZYMhR/Untitled?node-id=1-270) | Màn (tab 0) | `/today` | TodayViewModel | TaskRepository | `stitch-runs/S03/v3.html` | doing |
 
 ## F1 · Tài khoản + chọn vai trò (Bác / Con cháu) — Hiếu
 
@@ -308,6 +308,9 @@ Sơ đồ từng flow (nhánh chính, nhánh lỗi, nhánh phụ): `lab2/user-fl
 | DT-06 | G03–G09 | Route `/today/suggestions/:id` thay cho `/family/suggestions/:id` của handoff | Gợi ý mở chủ yếu từ S03 (G11 / G12); router Lab 3 đã đặt như vậy | — (chỉ route) |
 | DT-07 | C06–C08 | Giữ state form 3 bước bằng Riverpod `Notifier` thay cho `Cubit` của handoff | Kiến trúc Lab 3 là MVVM + Riverpod | — (chỉ code) |
 | DT-08 | S01, S10 | Cỡ chữ / tương phản lưu qua `SettingsService` (Firestore + cache máy) thay cho chỉ `SharedPreferences` | Đổi máy vẫn giữ cài đặt | — (chỉ code) |
+| DT-09 | Components `138:2`, mọi màn | Icon Lucide trong Figma được thay bằng icon Material gần nhất (`lib/theme/app_icons.dart`), hình nét hơi khác | Không thêm package icon ở F0; nghĩa từng icon giữ đúng Từ điển icon của DESIGN.md | — (chỉ code) |
+| DT-10 | S03b, S03-skip, G09 (snackbar Hoàn tác) | Câu chữ ở tầng trên, hàng nút ở tầng dưới (Figma S03b đặt chữ và "Hoàn tác" cùng một hàng); thêm nút "Đóng"; nút "Hoàn tác" cao 72 thay vì 48 | Theo handoff › Snackbar (2 tầng) và prompt F0-03 (có nút đóng vì snackbar không tự tắt); vùng chạm 72 theo rule.md R-TAP-01 | ☐ |
+| DT-11 | DLG-*, N13, N14, ST-Loading / Empty / Error | Icon đầu hộp thoại / màn trạng thái 64 dp trong vòng tròn 112 (Figma ≈ 44 trong vòng 80); nút trong hộp thoại cao 72 (Figma 60) | Handoff ghi "icon 64"; dùng chung `IconCircle` cho hộp thoại và ST-*; vùng chạm 72 toàn app | ☐ |
 
 ## Ghi chú từ Lab 2 cần nhớ khi code
 

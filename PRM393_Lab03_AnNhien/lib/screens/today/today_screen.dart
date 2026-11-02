@@ -80,14 +80,14 @@ class _TaskTile extends StatelessWidget {
           onTap: () => context.push('/today/task/${task.id}'),
           child: Container(
             constraints: const BoxConstraints(minHeight: AppSizes.minTarget),
-            decoration: BoxDecoration(border: Border(left: BorderSide(color: colors.accent, width: 6))),
+            decoration: BoxDecoration(border: Border(left: BorderSide(color: colors.accent, width: AppSizes.accentBar))),
             padding: const EdgeInsets.all(AppSpacing.base),
             child: Row(children: [
               Container(
-                width: 48,
-                height: 48,
-                decoration: BoxDecoration(color: colors.accent, borderRadius: BorderRadius.circular(AppRadius.md)),
-                child: const Icon(Icons.spa, color: Colors.white, size: AppSizes.icon),
+                width: AppSizes.habitIcon,
+                height: AppSizes.habitIcon,
+                decoration: BoxDecoration(color: colors.accent, borderRadius: AppRadius.mdAll),
+                child: const Icon(Icons.spa, color: HabitPalette.onAccent, size: AppSizes.icon),
               ),
               const SizedBox(width: AppSpacing.md),
               Expanded(

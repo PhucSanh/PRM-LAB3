@@ -1,16 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
+import '../theme/app_icons.dart';
+
 /// Bottom nav 4 tab: Hôm nay · Lịch tuần · Thói quen · Gia đình (rule.md R-NAV-01).
 class AppShell extends StatelessWidget {
   const AppShell({super.key, required this.navigationShell});
   final StatefulNavigationShell navigationShell;
 
   static const _tabs = [
-    (Icons.wb_sunny_outlined, 'Hôm nay'),
-    (Icons.calendar_month_outlined, 'Lịch tuần'),
-    (Icons.eco_outlined, 'Thói quen'),
-    (Icons.people_outline, 'Gia đình'),
+    (AppIcons.tabToday, 'Hôm nay'),
+    (AppIcons.tabWeek, 'Lịch tuần'),
+    (AppIcons.tabHabits, 'Thói quen'),
+    (AppIcons.tabFamily, 'Gia đình'),
   ];
 
   @override
