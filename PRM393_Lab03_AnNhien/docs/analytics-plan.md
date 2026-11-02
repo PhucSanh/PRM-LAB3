@@ -78,6 +78,12 @@ Nguồn: chỉ số thành công M1–M8 (`lab2/PRD.md` mục 10, `lab2/persona.
 | `share` | | | |
 | `accept_suggestion` | | | |
 
+Cách lấy bằng chứng event F2 (Hương): bật DebugView như trên, xoá dữ liệu app (hoặc tài khoản Bác mới chưa `onboarded`), đi Flow 1 `/welcome` → `/setup` → `/setup/notifications` → `/setup/try-reminder` → `/setup/first-task`:
+- `test_reminder`: N01 bấm "Gửi thử" → N02 bấm "Tôi đã nhận được" (`received: true`) hoặc "Chưa nhận được" (`received: false`).
+- `add_task`: N05 bấm "Lưu việc" → tham số `source: first_task`, `habit_key`, `repeat`, `duration_sec`.
+- `tutorial_complete`: N18 bấm "Xem lịch" (hoặc "Để sau" ở N04 → `has_first_task: false`) → `font_size`, `notifications_on`, `has_first_task`.
+- Kiểm tra trên DebugView: không có tên Bác / tên việc trong tham số. Lưu ý: `add_task` chỉ có khi `TaskRepository` lưu được (bản Firebase đang chờ chốt schema – xem `docs/prompt/F2/06-n04-viec-dau-tien.md`).
+
 ## Event F10 bổ sung (02/11/2026)
 
 Ghi trong ViewModel/provider, không ghi token, UID người nhận, route ID, URL tệp

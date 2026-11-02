@@ -8,6 +8,7 @@ import '../../utils/app_error.dart';
 import '../../viewmodels/onboarding_view_model.dart';
 import '../../viewmodels/ui_state.dart';
 import '../../widgets/app_back_bar.dart';
+import 'onboarding_layout.dart';
 import '../../widgets/app_button.dart';
 import '../../widgets/form_parts.dart';
 import '../../widgets/habit_widgets.dart';
@@ -87,55 +88,6 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
   }
 }
 
-/// Nội dung cuộn + thanh nút ghim ở đáy (luôn thấy khi chữ ×2.0).
-class _Layout extends StatelessWidget {
-  const _Layout({required this.body, required this.footer});
-
-  final List<Widget> body;
-  final List<Widget> footer;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return Column(children: [
-      Expanded(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(AppSpacing.screen),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              for (final (i, child) in body.indexed) ...[
-                if (i > 0) const SizedBox(height: AppSpacing.base),
-                child,
-              ],
-            ],
-          ),
-        ),
-      ),
-      DecoratedBox(
-        decoration: BoxDecoration(
-          color: theme.scaffoldBackgroundColor,
-          border:
-              Border(top: BorderSide(color: theme.colorScheme.outlineVariant)),
-        ),
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(AppSpacing.screen, AppSpacing.md,
-              AppSpacing.screen, AppSpacing.screen),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              for (final (i, child) in footer.indexed) ...[
-                if (i > 0) const SizedBox(height: AppSpacing.betweenTargets),
-                child,
-              ],
-            ],
-          ),
-        ),
-      ),
-    ]);
-  }
-}
-
 class _Heading extends StatelessWidget {
   const _Heading(this.text);
   final String text;
@@ -160,7 +112,7 @@ class _AskReminders extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return _Layout(
+    return OnboardingLayout(
       body: const [
         Center(child: IconCircle(icon: AppIcons.bell)),
         _Heading('Cho phép nhắc việc'),
@@ -257,7 +209,7 @@ class _RemindersOff extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final body = Theme.of(context).textTheme.bodyLarge;
-    return _Layout(
+    return OnboardingLayout(
       body: [
         const Center(
           child:

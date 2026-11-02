@@ -57,9 +57,20 @@ N04 → N05 → N18 cùng route `/setup/first-task` (chuyển bằng state, Quay
 
 ## Kết quả chạy (agent tự điền khi xong)
 
-- Ngày chạy:
+- Ngày chạy: 02/11/2026
 - File đã tạo / sửa:
-- Lệch Figma (nếu có, lý do):
+  - Hỏi người dùng 2 lần: (1) N04 dùng **9 thói quen** từ `HabitRepository` (model `Habit` chưa có `suggestions[]`, không hard-code); (2) N05 **chỉ đổi giờ**, ngày = hôm nay, nhịp = mỗi ngày (chỉ xem), không làm "Tự đặt tên việc".
+  - Tạo: `lib/screens/onboarding/first_task_screen.dart` (N04 / N05 / N18 theo `FirstTaskData.step`; Loading / Empty / Error + Thử lại khi nạp gợi ý), `test/first_task_screen_test.dart`.
+  - Sửa: `lib/viewmodels/first_task_view_model.dart` – `pick`, `confirmPick`, `backToPick`, `setTime` (mặc định 9:00 sáng theo Figma N05), `save()` (`TaskRepository.save` việc lặp mỗi ngày → N18; lỗi → `saveError` + `CrashService.recordError`, giữ lựa chọn; log `add_task` `{habit_key, repeat, source: first_task, duration_sec}`; đã cho phép nhắc việc thì `ReminderService.schedule`), `finish()` (`ProfileService.markOnboarded(uid)` + log `tutorial_complete` `{font_size: vua/lon/rat_lon, notifications_on, has_first_task}`; dùng cho "Xem lịch", "Thêm việc khác" và "Để sau" ở N04; lỗi → `saveError`, không log). `notifications_on` = cờ S13 hoặc quyền thật của máy. Dòng `/setup/first-task` + import trong `app_router.dart`. `test/f2_view_models_test.dart` (+6 test, `RecordingAnalytics` ghi cả tham số, `FlakyTaskRepository`). `docs/design-traceability.md` (N04, N05, N18 → `doing`, DT-27; N19 giữ `todo`), `docs/architecture.md` (mục 7.2, 9).
+  - Figma: `get_design_context` + ảnh cho `38:2`, `38:108`, `47:170`; ảnh `47:225` (N19) để đối chiếu.
+- Lệch Figma (nếu có, lý do): DT-27 – N04 là 9 thói quen (tên + mô tả), không có thẻ "Tự đặt tên việc", không có thanh tab; N05 chỉ đổi giờ, "Ngày bắt đầu: Hôm nay" / "Nhịp nhắc: Mỗi ngày" chỉ xem (Figma N05 "Một lần" ≠ N18 "Mỗi ngày"); N18 không có "Nhắc trước 10 phút" (`TaskItem` chưa có trường), vòng icon 112; lỗi lưu → câu lỗi + "Thử lại".
 - `flutter analyze` / `flutter test`:
+  - `flutter analyze`: 1 warning có sẵn (`pendingNotification`, `app_router.dart`).
+  - Test F2: `f2_view_models_test` + `first_task_screen_test` 46/46 qua – gồm N04 / N05 / N18 × 360 / 412 dp × `textScaler` 1.3 / 2.0 không tràn; lưu đúng dữ liệu + `add_task` chỉ khoá / số; lưu lỗi giữ lựa chọn; `finish()` → `onboarded == true` + `tutorial_complete` đúng tham số, không chứa tên Bác / tên việc; "Để sau" → `has_first_task: false`; `markOnboarded` lỗi → không log.
+  - `flutter test` toàn bộ: +223 −68 (68 lỗi có sẵn như các bước trước). Lần chạy đầu ra −72: 4 lỗi do chính test N04 (chữ "Mỗi ngày" xuất hiện 2 lần sau khi đổi dòng phụ của `TaskRow`) – đã sửa.
+  - Chỉ `dart format` file của F2. Đã render N04 / N05 / N18 ở 360 dp bằng font thật để so với Figma (ảnh tạm, không commit).
 - Việc người dùng cần làm tay:
-- Commit gợi ý:
+  - **Nhờ Hiếu**: (1) `FirebaseTaskRepository.save()` / `tasksForDay()` hiện **luôn ném** "Lịch đang chờ thống nhất dữ liệu ngày và lặp lại." → trên máy thật N05 luôn báo lỗi và Hôm nay không tải được cho tới khi chốt schema `TaskItem` (ngày bắt đầu, lặp, `remindBeforeMin`). (2) Bỏ comment khối `redirect` và thêm điều kiện mục 7.1: `role == null` → `/role`; Bác chưa `onboarded` → `/welcome`; đã `onboarded` thì không vào lại `/welcome` – hiện "mở lại app không hỏi lại" mới đúng ở mức ViewModel (`markOnboarded`), chưa ở router. (3) Gộp `ProfileSetupService` vào `ProfileService` (bước 03). (4) Thêm `Habit.suggestions` (Firestore `habits/{key}.suggestions[]`) để N04 khớp Figma. (5) Bản thật `ReminderService` (cùng Khang).
+  - **Nhờ Khang (N19)**: S03 khi chỉ có đúng 1 việc vừa thêm (Figma `47:225`): lời chào "Chào buổi sáng, Bác {tên}", thẻ "Việc tiếp theo" + "Dời lại", danh sách "Việc hôm nay" 1 dòng, nút "Thêm việc khác" và nút đáy "Đã xong". `TodayViewModel` đọc cùng `TaskRepository` nên việc vừa lưu sẽ hiện khi S03 tải lần đầu; nếu S03 đã được tạo trước đó thì cần gọi lại `load()` khi quay về (F2 không sửa `today_view_model.dart`). `/today/add` (S05) vẫn là placeholder.
+  - Thử cả luồng bằng Fake: `/welcome` → `/setup` → `/setup/notifications` → `/setup/try-reminder` → `/setup/first-task` → "Lưu việc" → "Xem lịch". Muốn lưu được trên máy cần tạm đổi `taskRepositoryProvider` sang `FakeTaskRepository()` (nhớ trả lại trước khi commit).
+- Commit gợi ý: `feat(F2): màn N04–N18 chọn và lưu việc đầu tiên, markOnboarded + tutorial_complete`

@@ -10,8 +10,10 @@ import 'package:go_router/go_router.dart';
 import '../screens/account/account_screen.dart';
 import '../screens/account/role_screen.dart';
 import '../screens/account/session_screen.dart';
+import '../screens/onboarding/first_task_screen.dart';
 import '../screens/onboarding/notifications_screen.dart';
 import '../screens/onboarding/setup_profile_screen.dart';
+import '../screens/onboarding/try_reminder_screen.dart';
 import '../screens/onboarding/welcome_screen.dart';
 import '../viewmodels/account_view_model.dart';
 import '../viewmodels/today_view_model.dart';
@@ -88,8 +90,8 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(path: '/welcome', builder: (_, __) => const WelcomeScreen()),
       GoRoute(path: '/setup', builder: (_, __) => const SetupProfileScreen()),
       GoRoute(path: '/setup/notifications', builder: (_, __) => const NotificationsScreen()),
-      GoRoute(path: '/setup/try-reminder', builder: (_, __) => ph('N01 · F2', 'Thử lời nhắc', 'Hương')),
-      GoRoute(path: '/setup/first-task', builder: (_, __) => ph('N04 · F2', 'Chọn việc đầu tiên', 'Hương')),
+      GoRoute(path: '/setup/try-reminder', builder: (_, __) => const TryReminderScreen()),
+      GoRoute(path: '/setup/first-task', builder: (_, __) => const FirstTaskScreen()),
       // F4 Thêm, sửa, xoá việc – Khang (màn con N11–N13, trả kết quả bằng pop(result))
       GoRoute(path: '/task/date', builder: (_, __) => ph('N11 · F4', 'Chọn ngày', 'Khang')),
       GoRoute(path: '/task/repeat', builder: (_, __) => ph('N12 · F4', 'Lặp lại', 'Khang')),

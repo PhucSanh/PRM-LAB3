@@ -29,7 +29,7 @@ class FakeReminderService implements ReminderService {
   }) : _granted = alreadyGranted;
 
   final bool permissionGranted;
-  final bool failOnShowTest;
+  bool failOnShowTest;
   final Duration delay;
   bool _granted;
 

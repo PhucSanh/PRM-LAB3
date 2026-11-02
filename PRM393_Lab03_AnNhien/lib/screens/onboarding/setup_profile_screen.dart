@@ -8,6 +8,7 @@ import '../../utils/app_error.dart';
 import '../../viewmodels/onboarding_view_model.dart';
 import '../../viewmodels/ui_state.dart';
 import '../../widgets/app_back_bar.dart';
+import 'onboarding_layout.dart';
 import '../../widgets/app_button.dart';
 import '../../widgets/app_text_field.dart';
 import '../../widgets/choice_group.dart';
@@ -93,64 +94,6 @@ class _SetupProfileScreenState extends ConsumerState<SetupProfileScreen> {
   }
 }
 
-/// Khung chung của 3 state: nội dung cuộn, căn giữa theo chiều dọc như Figma;
-/// [footer] ghim ở đáy, luôn thấy (bàn phím mở thì Scaffold đẩy lên trên).
-class _StageLayout extends StatelessWidget {
-  const _StageLayout({required this.body, required this.footer});
-
-  final List<Widget> body;
-  final List<Widget> footer;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return Column(children: [
-      Expanded(
-        child: LayoutBuilder(
-          builder: (context, constraints) => SingleChildScrollView(
-            padding: const EdgeInsets.all(AppSpacing.screen),
-            child: ConstrainedBox(
-              constraints: BoxConstraints(
-                  minHeight: constraints.maxHeight - 2 * AppSpacing.screen),
-              child: Center(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    for (final (i, child) in body.indexed) ...[
-                      if (i > 0) const SizedBox(height: AppSpacing.xl),
-                      child,
-                    ],
-                  ],
-                ),
-              ),
-            ),
-          ),
-        ),
-      ),
-      DecoratedBox(
-        decoration: BoxDecoration(
-          color: theme.scaffoldBackgroundColor,
-          border:
-              Border(top: BorderSide(color: theme.colorScheme.outlineVariant)),
-        ),
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(AppSpacing.screen, AppSpacing.md,
-              AppSpacing.screen, AppSpacing.screen),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              for (final (i, child) in footer.indexed) ...[
-                if (i > 0) const SizedBox(height: AppSpacing.betweenTargets),
-                child,
-              ],
-            ],
-          ),
-        ),
-      ),
-    ]);
-  }
-}
-
 class _Heading extends StatelessWidget {
   const _Heading(this.text);
   final String text;
@@ -222,7 +165,9 @@ class _ConfirmName extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final vm = ref.read(onboardingViewModelProvider.notifier);
-    return _StageLayout(
+    return OnboardingLayout(
+      centered: true,
+      gap: AppSpacing.xl,
       body: [
         _Heading('Bác là ${data.name}, đúng không?'),
         _NameBox(label: 'Tên của Bác', name: data.name),
@@ -254,7 +199,9 @@ class _EnterName extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final vm = ref.read(onboardingViewModelProvider.notifier);
-    return _StageLayout(
+    return OnboardingLayout(
+      centered: true,
+      gap: AppSpacing.xl,
       body: [
         const _Heading('Bác tên là gì?'),
         AppTextField(
@@ -293,7 +240,9 @@ class _Details extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final vm = ref.read(onboardingViewModelProvider.notifier);
     final failed = data.saveError != null;
-    return _StageLayout(
+    return OnboardingLayout(
+      centered: true,
+      gap: AppSpacing.xl,
       body: [
         const _Heading('Giới thiệu về Bác'),
         _NameBox(label: 'Bác là', name: data.name),

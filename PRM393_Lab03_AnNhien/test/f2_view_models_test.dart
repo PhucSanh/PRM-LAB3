@@ -3,14 +3,18 @@ import 'dart:async';
 import 'package:an_nhien/models/app_settings.dart';
 import 'package:an_nhien/models/app_user.dart';
 import 'package:an_nhien/models/habit.dart';
+import 'package:an_nhien/models/task_item.dart';
+import 'package:an_nhien/models/user_profile.dart';
 import 'package:an_nhien/services/analytics_service.dart';
 import 'package:an_nhien/services/auth_service.dart';
 import 'package:an_nhien/services/crash_service.dart';
 import 'package:an_nhien/services/habit_repository.dart';
+import 'package:an_nhien/services/profile_service.dart';
 import 'package:an_nhien/services/profile_setup_service.dart';
 import 'package:an_nhien/services/providers.dart';
 import 'package:an_nhien/services/reminder_service.dart';
 import 'package:an_nhien/services/settings_service.dart';
+import 'package:an_nhien/services/task_repository.dart';
 import 'package:an_nhien/theme/display_settings.dart';
 import 'package:an_nhien/utils/app_error.dart';
 import 'package:an_nhien/viewmodels/first_task_view_model.dart';
@@ -46,6 +50,39 @@ class BrokenSettingsService extends FakeSettingsService {
       : super.watch();
 }
 
+/// Ghi lại cả tham số event (FakeAnalyticsService chỉ ghi tên).
+class RecordingAnalytics implements AnalyticsService {
+  final events = <(String, Map<String, Object>?)>[];
+
+  @override
+  Future<void> logEvent(String name, [Map<String, Object>? params]) async =>
+      events.add((name, params));
+
+  @override
+  Future<void> setUserId(String? uid) async {}
+
+  List<Map<String, Object>?> paramsOf(String name) => [
+        for (final (n, p) in events)
+          if (n == name) p
+      ];
+}
+
+/// TaskRepository giả có cờ lỗi khi lưu.
+class FlakyTaskRepository extends FakeTaskRepository {
+  FlakyTaskRepository({this.failOnSave = false}) : super(const []);
+  bool failOnSave;
+  final saved = <TaskItem>[];
+
+  @override
+  Future<void> save(TaskItem task) async {
+    if (failOnSave) {
+      throw const AppException('Chưa lưu được việc. Bác thử lại nhé.');
+    }
+    saved.add(task);
+    await super.save(task);
+  }
+}
+
 class StubHabitRepository implements HabitRepository {
   StubHabitRepository(this.habits, {this.fail = false});
   final List<Habit> habits;
@@ -69,6 +106,9 @@ void main() {
     AuthService? auth,
     ProfileSetupService? profileSetup,
     ReminderService? reminder,
+    AnalyticsService? analytics,
+    TaskRepository? tasks,
+    ProfileService? profiles,
   }) {
     final c = ProviderContainer(overrides: [
       authServiceProvider.overrideWithValue(auth ?? FakeAuthService()),
@@ -80,7 +120,12 @@ void main() {
           reminder ?? FakeReminderService(delay: Duration.zero)),
       habitRepositoryProvider
           .overrideWithValue(habits ?? FakeHabitRepository()),
-      analyticsServiceProvider.overrideWithValue(FakeAnalyticsService()),
+      analyticsServiceProvider
+          .overrideWithValue(analytics ?? FakeAnalyticsService()),
+      taskRepositoryProvider
+          .overrideWithValue(tasks ?? FakeTaskRepository(const [])),
+      profileServiceProvider
+          .overrideWithValue(profiles ?? FakeProfileService()),
       crashServiceProvider.overrideWithValue(FakeCrashService()),
     ]);
     addTearDown(c.dispose);
@@ -357,11 +402,96 @@ void main() {
   });
 
   group('TryReminderViewModel', () {
+    (
+      ProviderContainer,
+      TryReminderViewModel,
+      FakeReminderService,
+      FakeAnalyticsService
+    ) setUpVm({bool failOnShowTest = false}) {
+      final reminder = FakeReminderService(
+          alreadyGranted: true,
+          failOnShowTest: failOnShowTest,
+          delay: Duration.zero);
+      final analytics = FakeAnalyticsService();
+      final c = containerWith(reminder: reminder, analytics: analytics);
+      return (
+        c,
+        c.read(tryReminderViewModelProvider.notifier),
+        reminder,
+        analytics
+      );
+    }
+
+    TryReminderState stateOf(ProviderContainer c) =>
+        c.read(tryReminderViewModelProvider);
+
     test('bắt đầu ở N01 (idle), chưa có lỗi', () {
-      final c = containerWith();
-      final state = c.read(tryReminderViewModelProvider);
-      expect(state.phase, TryReminderPhase.idle);
-      expect(state.error, isNull);
+      final (c, _, _, _) = setUpVm();
+      expect(stateOf(c).phase, TryReminderPhase.idle);
+      expect(stateOf(c).error, isNull);
+    });
+
+    test('gửi thử gọi Fake → hỏi Bác đã nhận chưa (N02)', () async {
+      final (c, vm, reminder, _) = setUpVm();
+      final sending = vm.sendTest();
+      expect(stateOf(c).phase, TryReminderPhase.sending);
+      await sending;
+      expect(reminder.testShownCount, 1);
+      expect(stateOf(c).phase, TryReminderPhase.waitingAnswer);
+    });
+
+    test('trả lời "đã nhận" → received, log test_reminder đúng 1 lần',
+        () async {
+      final (c, vm, _, analytics) = setUpVm();
+      await vm.sendTest();
+      await vm.answer(true);
+      expect(stateOf(c).phase, TryReminderPhase.received);
+      expect(analytics.logged.where((e) => e == 'test_reminder'), hasLength(1));
+      // Bấm lại không log thêm.
+      await vm.answer(true);
+      expect(analytics.logged.where((e) => e == 'test_reminder'), hasLength(1));
+    });
+
+    test('trả lời "chưa nhận" → N03, log 1 lần; Thử lại → hỏi lại, log thêm 1',
+        () async {
+      final (c, vm, reminder, analytics) = setUpVm();
+      await vm.sendTest();
+      await vm.answer(false);
+      expect(stateOf(c).phase, TryReminderPhase.notReceived);
+      expect(analytics.logged.where((e) => e == 'test_reminder'), hasLength(1));
+
+      await vm.retry();
+      expect(reminder.testShownCount, 2);
+      expect(stateOf(c).phase, TryReminderPhase.waitingAnswer);
+      await vm.answer(true);
+      expect(analytics.logged.where((e) => e == 'test_reminder'), hasLength(2));
+    });
+
+    test('chưa gửi thử thì không trả lời được', () async {
+      final (c, vm, _, analytics) = setUpVm();
+      await vm.answer(true);
+      expect(stateOf(c).phase, TryReminderPhase.idle);
+      expect(analytics.logged, isEmpty);
+    });
+
+    test('Fake lỗi → về N01 kèm câu lỗi cho Bác; Thử lại được', () async {
+      final (c, vm, reminder, _) = setUpVm(failOnShowTest: true);
+      await vm.sendTest();
+      expect(stateOf(c).phase, TryReminderPhase.idle);
+      expect(stateOf(c).error, contains('Bác'));
+
+      reminder.failOnShowTest = false;
+      await vm.retry();
+      expect(stateOf(c).phase, TryReminderPhase.waitingAnswer);
+      expect(stateOf(c).error, isNull);
+    });
+
+    test('"Quay lại" ở N02 / N03 → về N01', () async {
+      final (c, vm, _, _) = setUpVm();
+      await vm.sendTest();
+      await vm.answer(false);
+      vm.backToStart();
+      expect(stateOf(c).phase, TryReminderPhase.idle);
     });
   });
 
@@ -392,6 +522,160 @@ void main() {
       repo.fail = false;
       await c.read(firstTaskViewModelProvider.notifier).load();
       expect(c.read(firstTaskViewModelProvider), isA<UiData<FirstTaskData>>());
+    });
+
+    group('N04 → N05 → N18', () {
+      const lan = AppUser(uid: 'u1', displayName: 'Lan');
+
+      Future<
+              (
+                ProviderContainer,
+                FirstTaskViewModel,
+                FlakyTaskRepository,
+                FakeProfileService,
+                RecordingAnalytics,
+                FakeReminderService
+              )>
+          ready({bool failOnSave = false, bool notificationsOn = true}) async {
+        final tasks = FlakyTaskRepository(failOnSave: failOnSave);
+        final profiles = FakeProfileService(
+            [const UserProfile(uid: 'u1', role: UserRole.elder)]);
+        addTearDown(profiles.dispose);
+        final analytics = RecordingAnalytics();
+        final reminder = FakeReminderService(
+            alreadyGranted: notificationsOn, delay: Duration.zero);
+        final c = containerWith(
+          auth: FakeAuthService(signedIn: lan),
+          tasks: tasks,
+          profiles: profiles,
+          analytics: analytics,
+          reminder: reminder,
+        );
+        await settled(c, firstTaskViewModelProvider);
+        return (
+          c,
+          c.read(firstTaskViewModelProvider.notifier),
+          tasks,
+          profiles,
+          analytics,
+          reminder
+        );
+      }
+
+      FirstTaskData dataOf(ProviderContainer c) =>
+          (c.read(firstTaskViewModelProvider) as UiData<FirstTaskData>).data;
+
+      test(
+          'N04 chọn sẵn việc đầu; chọn khác → Tiếp tục → N05, Quay lại giữ lựa chọn',
+          () async {
+        final (c, vm, _, _, _, _) = await ready();
+        expect(dataOf(c).habitKey, dataOf(c).habits.first.key);
+        vm.pick('tea');
+        vm.confirmPick();
+        expect(dataOf(c).step, FirstTaskStep.time);
+        expect(dataOf(c).time, const TimeOfDay(hour: 9, minute: 0));
+        vm.backToPick();
+        expect(dataOf(c).step, FirstTaskStep.pick);
+        expect(dataOf(c).habitKey, 'tea');
+      });
+
+      test(
+          'lưu → TaskRepository nhận đúng dữ liệu, N18, add_task chỉ có khoá / số',
+          () async {
+        final (c, vm, tasks, _, analytics, reminder) = await ready();
+        vm.pick('tea');
+        vm.confirmPick();
+        vm.setTime(const TimeOfDay(hour: 15, minute: 30));
+
+        expect(await vm.save(), isTrue);
+        final task = tasks.saved.single;
+        expect(task.habitKey, 'tea');
+        expect(task.title, dataOf(c).habit!.name);
+        expect((task.hour, task.minute), (15, 30));
+        expect(task.repeat, RepeatRule.daily);
+        expect(dataOf(c).step, FirstTaskStep.saved);
+        // Đã cho phép nhắc việc → đặt lời nhắc.
+        expect(reminder.scheduled.keys, [task.id]);
+
+        final params = analytics.paramsOf('add_task').single!;
+        expect(params['habit_key'], 'tea');
+        expect(params['repeat'], 'daily');
+        expect(params['source'], 'first_task');
+        expect(params['duration_sec'], isA<int>());
+        expect(params.values, isNot(contains(task.title)));
+      });
+
+      test('lưu lỗi → saveError, giữ lựa chọn, không log; Thử lại được',
+          () async {
+        final (c, vm, tasks, _, analytics, _) = await ready(failOnSave: true);
+        vm.pick('family');
+        vm.confirmPick();
+        expect(await vm.save(), isFalse);
+        expect(dataOf(c).saveError, contains('Bác'));
+        expect(dataOf(c).step, FirstTaskStep.time);
+        expect(dataOf(c).habitKey, 'family');
+        expect(analytics.paramsOf('add_task'), isEmpty);
+
+        tasks.failOnSave = false;
+        expect(await vm.save(), isTrue);
+        expect(dataOf(c).saveError, isNull);
+      });
+
+      test(
+          'finish() sau khi lưu → onboarded = true, tutorial_complete đủ tham số',
+          () async {
+        final (c, vm, _, profiles, analytics, _) = await ready();
+        vm.confirmPick();
+        await vm.save();
+        expect(await vm.finish(), isTrue);
+
+        expect((await profiles.watch('u1').first).onboarded, isTrue);
+        final params = analytics.paramsOf('tutorial_complete').single!;
+        expect(params, {
+          'font_size': 'lon',
+          'notifications_on': true,
+          'has_first_task': true,
+        });
+        // Không chứa tên Bác / tên việc.
+        expect(params.values, isNot(contains('Lan')));
+        expect(params.values, isNot(contains(dataOf(c).title)));
+      });
+
+      test(
+          '"Để sau" (không có việc đầu tiên) vẫn markOnboarded, has_first_task = false',
+          () async {
+        final (c, vm, tasks, profiles, analytics, _) =
+            await ready(notificationsOn: false);
+        c.read(fontScaleProvider.notifier).set(AppFontScale.ratLon);
+        expect(await vm.finish(), isTrue);
+
+        expect(tasks.saved, isEmpty);
+        expect((await profiles.watch('u1').first).onboarded, isTrue);
+        expect(analytics.paramsOf('tutorial_complete').single, {
+          'font_size': 'rat_lon',
+          'notifications_on': false,
+          'has_first_task': false,
+        });
+      });
+
+      test('markOnboarded lỗi → saveError, không log tutorial_complete',
+          () async {
+        final analytics = RecordingAnalytics();
+        // Hồ sơ chưa chọn vai trò Bác → FakeProfileService ném AppException.
+        final profiles = FakeProfileService([const UserProfile(uid: 'u1')]);
+        addTearDown(profiles.dispose);
+        final c = containerWith(
+            auth: FakeAuthService(signedIn: lan),
+            profiles: profiles,
+            analytics: analytics);
+        await settled(c, firstTaskViewModelProvider);
+        final vm = c.read(firstTaskViewModelProvider.notifier);
+
+        expect(await vm.finish(), isFalse);
+        expect(dataOf(c).saveError, isNotNull);
+        expect(dataOf(c).saving, isFalse);
+        expect(analytics.paramsOf('tutorial_complete'), isEmpty);
+      });
     });
   });
 }
