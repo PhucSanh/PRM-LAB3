@@ -78,3 +78,7 @@ Emulator tests dùng project **demo-an-nhien** độc lập, không phải Fireb
 ## Artifact Android đã build
 
 `flutter build apk --debug` đã PASS với cấu hình Firebase PRM393 thật. APK: `build/app/outputs/flutter-apk/app-debug.apk`. Package `com.annhien.an_nhien`, version 0.1.0+1, compileSdk 36. Chữ ký APK đã được apksigner xác minh và khớp cả hai SHA đăng ký trên Firebase. Chưa thử runtime do chưa có Android device/emulator.
+
+## Rà soát API key
+
+Key hiện tại đã được giới hạn package/SHA-1 và API allowlist theo lựa chọn của người dùng. Kết quả kiểm chứng, yêu cầu thêm certificate của thành viên nhóm và trạng thái cảnh báo GitHub: [firebase-key-review.md](firebase-key-review.md).

@@ -1,3 +1,6 @@
+import 'profile_service.dart';
+import 'firebase_profile_service.dart';
+import 'session_data_service.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_analytics/firebase_analytics.dart';
@@ -55,3 +58,8 @@ final reportServiceProvider = Provider<ReportService>((ref) =>
 
 final _userDataProvider = Provider((ref) =>
     FirebaseUserData(FirebaseFirestore.instance, FirebaseAuth.instance));
+
+final profileServiceProvider = Provider<ProfileService>((ref) =>
+    FirebaseProfileService(FirebaseFirestore.instance, FirebaseAuth.instance));
+final sessionDataServiceProvider = Provider<SessionDataService>(
+    (ref) => FirebaseSessionDataService(FirebaseFirestore.instance));

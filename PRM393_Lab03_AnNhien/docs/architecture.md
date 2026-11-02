@@ -116,7 +116,7 @@ Màn dùng `switch (state)` để vẽ đủ 4 trạng thái. Hành động mộ
 | Route | Màn | Feature | Trong `app_router.dart` |
 | --- | --- | --- | --- |
 | `/sign-in` | A01 | F1 | có |
-| `/role` | C01 | F1 | **chưa có** |
+| `/role` | C01 | F1 | có; chờ kiểm chứng Firebase trên máy |
 | `/welcome` · `/setup` · `/setup/notifications` | S01 · S02 · S13 / S13d | F2 | placeholder |
 | `/setup/try-reminder` · `/setup/first-task` | N01–N03 · N04 → N05 → N18 → N19 | F2 | **chưa có** |
 | `/today` (tab 0) | S03 + mọi state S03-*, ST-Empty, N17, G11 / G12 | F3 | có |
@@ -165,7 +165,7 @@ Quy tắc điều hướng từ handoff: tab dùng `StatefulShellRoute`; Back h�
 | --- | --- | --- | --- |
 | `TaskRepository` (bổ sung) | `tasksInRange(from, to)`, `postpone(id, to)`, `undo(change)`, `softDelete(id, scope)` | F3, F4, F7, F9 | Firestore |
 | `SettingsService` | `watch()`, `setFontScale`, `setHighContrast`, `setReadAloud`, `setVibrate` | F2 (S01), F8 (S10), F6 (N07) | Firestore `users/{uid}` + cache máy |
-| `ProfileService` | `watch()`, `save(profile)`, `setRole(role)`, `markOnboarded()` | F1 (C01), F2 (S02), F8 (N06) | Firestore `users/{uid}` |
+| `ProfileService` | `ensureProfile(user)`, `watch(uid)`, `setRole(uid, role)`, `markOnboarded(uid)`; `save` cho F2/F8 chưa triển khai | F1 (C01), F2 (S02), F8 (N06) | Firestore `users/{uid}` |
 | `ReminderService` | `requestPermission()`, `schedule(task)`, `cancel(id)`, `snooze(id, minutes)`, `showTest()` | F2 (S13, N01), F4 (N16), F6 | flutter_local_notifications |
 | `SpeechService` | `listen()` → text, `parse(text)` → `TaskDraft`, `speak(text)` | F5, đọc to ở S04 / S14 / S16 | speech_to_text, flutter_tts (`vi-VN`) |
 | `SuggestionService` | `send(momUid, s)`, `watchPending()`, `byId(id)`, `accept(id, items)`, `dismiss(id)`, `undoDismiss(id)` | F12, F14 (C08) | Firestore `users/{momUid}/suggestions` + FCM |
@@ -183,7 +183,7 @@ Mỗi ViewModel còn dùng `AnalyticsService` (ghi event) và `CrashService` (l�
 | `SessionViewModel` | F1 | Hiếu | (toàn app – theo dõi đăng nhập) | AuthService | ✅ |
 | `TodayViewModel` | F3 (chủ), F2, F4, F6 thêm state | Khang (chủ) | S03, N19, S03b, S03-alldone, N17, ST-Empty, DLG-Done, DLG-Later, DLG-Skip, S03-later, S03-later4, S03-tomorrow, S03-skip, S03-edited, S03-deleted, S03-snooze | TaskRepository, ReminderService | ✅ |
 | `SignInViewModel` | F1 | Hiếu | A01, A02, A02e, A03, A04 | AuthService | ✅ |
-| `RoleViewModel` | F1 | Hiếu | C01 | ProfileService |  |
+| `RoleViewModel` | F1 | Hiếu | C01 | ProfileService | ✅ |
 | `OnboardingViewModel` | F2 | Hương | S01, S02, DLG-WakeTime, S13, S13d | SettingsService, ProfileService, ReminderService |  |
 | `TryReminderViewModel` | F2 | Hương | N01, N02, N03 | ReminderService |  |
 | `FirstTaskViewModel` | F2 | Hương | N04, N05, N18 | TaskRepository |  |
@@ -279,3 +279,17 @@ Màn của mọi người **chỉ** dùng widget ở đây. Thiếu widget → b
 4. Service tiêm qua `providers.dart`; test ViewModel bằng `overrideWithValue(Fake…)`.
 5. Không màu, cỡ chữ, khoảng cách viết cứng – chỉ dùng `lib/theme/` (F0 "Xong khi").
 6. Câu chữ theo `lab2/AppStyleGuide.md` + `lab2/vocabulary.md`; luật thiết kế theo `lab2/rule.md`.
+
+### F1 triển khai 02/11/2026
+
+`UserProfile` tách khỏi `AppUser`. ProfileService tạo hồ sơ lần đầu bằng transaction,
+không ghi đè role/onboarded đã có; stream theo UID. `/session` chờ auth/profile và
+cho thử lại khi lỗi, `/account` xem tên/vai trò và xác nhận đăng xuất. UID thay đổi
+sẽ reset Today/Role ViewModel cùng các repository theo phiên. SignOutViewModel
+ngắt profile listener, xoá Firestore persistence rồi kết thúc Firebase/Google;
+cache lỗi vẫn đăng xuất, lần đăng nhập tiếp theo phải xoá cache thành công.
+Dữ liệu chưa đồng bộ có thể mất và được thông báo trước khi đăng xuất.
+
+F2 gọi `markOnboarded(uid)` sau khi hoàn tất onboarding. F13/F14 vẫn là placeholder.
+`role` và `pairedMomUid` chỉ điều hướng giao diện, không cấp quyền đọc lịch UID khác.
+Google provider tạm tắt trên Console không tự ẩn nút; không đổi phương thức Auth.

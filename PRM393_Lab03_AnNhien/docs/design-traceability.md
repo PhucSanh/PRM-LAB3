@@ -73,12 +73,12 @@ Sơ đồ từng flow (nhánh chính, nhánh lỗi, nhánh phụ): `lab2/user-fl
 
 | Khung Figma | Node | Loại | Route | ViewModel | Nguồn dữ liệu | Stitch (Lab 2) | Trạng thái |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| A01 Tạo tài khoản – Số điện thoại (Bước 1/3) | [139:6](https://www.figma.com/design/K3JczHkChbUWoDBkXZYMhR/Untitled?node-id=139-6) | Màn | `/sign-in` | SignInViewModel | AuthService | — | todo |
+| A01 Tạo tài khoản – Số điện thoại (Bước 1/3) | [139:6](https://www.figma.com/design/K3JczHkChbUWoDBkXZYMhR/Untitled?node-id=139-6) | Màn | `/sign-in` | SignInViewModel | AuthService | — | changed |
 | A02 Nhập mã xác nhận (Bước 2/3) | [139:43](https://www.figma.com/design/K3JczHkChbUWoDBkXZYMhR/Untitled?node-id=139-43) | Màn | `/sign-in (làm sau)` | SignInViewModel | AuthService | — | todo |
 | A02e Mã chưa đúng | [139:89](https://www.figma.com/design/K3JczHkChbUWoDBkXZYMhR/Untitled?node-id=139-89) | State | `/sign-in (làm sau)` | SignInViewModel | AuthService | — | todo |
 | A03 Mở app bằng vân tay (Bước 3/3) | [139:136](https://www.figma.com/design/K3JczHkChbUWoDBkXZYMhR/Untitled?node-id=139-136) | Màn | `/sign-in (làm sau)` | SignInViewModel | AuthService | — | todo |
 | A04 Đã tạo tài khoản | [139:178](https://www.figma.com/design/K3JczHkChbUWoDBkXZYMhR/Untitled?node-id=139-178) | State | `/sign-in (làm sau)` | SignInViewModel | AuthService | — | todo |
-| C01 Chọn vai trò | [1:3870](https://www.figma.com/design/K3JczHkChbUWoDBkXZYMhR/Untitled?node-id=1-3870) | Màn | `/role` | RoleViewModel | ProfileService | `codex-runs/C01/v0.html` | todo |
+| C01 Chọn vai trò | [1:3870](https://www.figma.com/design/K3JczHkChbUWoDBkXZYMhR/Untitled?node-id=1-3870) | Màn | `/role` | RoleViewModel | ProfileService | `codex-runs/C01/v0.html` | doing |
 
 ## F2 · Onboarding của Bác (Flow 1) — Hương
 
@@ -319,3 +319,10 @@ Sơ đồ từng flow (nhánh chính, nhánh lỗi, nhánh phụ): `lab2/user-fl
 - Xoá việc là xoá mềm, giữ 7 ngày để Hoàn tác.
 - Chế độ Người thân dùng cùng design system, được dùng cỡ chữ "Vừa"; không có màn theo dõi vị trí hay sức khỏe.
 
+
+F1 cập nhật 02/11/2026: A01 giữ Google theo DT-01; báo huỷ/mất mạng và provider
+đang tạm tắt. C01 đã có UI/RoleViewModel, Firestore profile, guard và widget tests.
+Chưa đối chiếu hình ảnh hoặc sửa Figma nên C01 không đánh dấu done; DT-01 vẫn ☐.
+A02/A02e/A03/A04 hoãn: luồng số điện thoại/OTP/sinh trắc học không thuộc phương thức
+Google bắt buộc của Lab 3; không triển khai giả các màn xác thực này.
+`/session` và `/account` là màn hỗ trợ F1; không thay màn hồ sơ N06 của F8.

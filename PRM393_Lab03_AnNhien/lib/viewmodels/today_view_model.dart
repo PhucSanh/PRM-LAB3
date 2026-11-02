@@ -23,13 +23,17 @@ class TodayViewModel extends Notifier<UiState<TodayData>> {
   }
 
   Future<void> load() async {
+    if (!ref.mounted) return;
     state = const UiLoading();
     try {
       final tasks = await ref.read(taskRepositoryProvider).tasksForDay(DateTime.now());
+      if (!ref.mounted) return;
       final sorted = [...tasks]..sort((a, b) => (a.hour * 60 + a.minute).compareTo(b.hour * 60 + b.minute));
       state = sorted.isEmpty ? const UiEmpty() : UiData(TodayData(tasks: sorted));
     } catch (e, st) {
+      if (!ref.mounted) return;
       await ref.read(crashServiceProvider).recordError(e, st, reason: 'load_today');
+      if (!ref.mounted) return;
       state = const UiError('Chưa tải được việc hôm nay.');
     }
   }
