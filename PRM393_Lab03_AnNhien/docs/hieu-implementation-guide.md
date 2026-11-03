@@ -39,3 +39,17 @@ Các phần tiếp theo và kết quả kiểm tra sẽ được bổ sung sau m
 Kiểm chứng mốc: **9 tests Dart contract/scope/pairing/suggestion PASS**, **19 tests backend + Firestore/Storage Emulator PASS, 0 skip**. Bộ auth đang được cập nhật fixtures vì route F14 đã chuyển từ placeholder sang màn thật. Chưa deploy rules/functions mới lên project thật.
 
 Tài liệu API tham khảo: [Firebase callable](https://firebase.google.com/docs/functions/callable), [Firestore transaction](https://firebase.google.com/docs/firestore/manage-data/transactions).
+
+## Mốc 3: màn F13/F14 và demo hoàn chỉnh
+
+- Thay placeholder C02/C02e, C03–C10 bằng màn thật và ViewModel Riverpod. C11/C12 là lựa chọn phạm vi và xác nhận ngưng, không thêm route giả.
+- Ngày/tuần/tháng dùng dữ liệu live qua stream; chọn ngày để xem việc, tải lỗi có Thử lại. Form ba bước giữ bản nháp, kiểm tra tên/ngày/lặp, bấm lặp bị chặn, lỗi lưu giữ dữ liệu để retry.
+- Kiểm tra trùng giờ theo toàn thời gian giao nhau của hai lịch, tính cả qua nửa đêm và các ngày ngoại lệ. Dùng chu kỳ lịch Gregorian 400 năm sau ngoại lệ cuối, không cắt ở 12 tháng.
+- Mã ở máy Bác cần xác nhận trước khi tạo, có đếm hết hạn. Bác xem người thân đã ghép nối và thu hồi quyền; Con cháu cũng có thể ngưng ghép nối.
+- Mặc định bật “Mẹ nhận trước khi thêm”. Khu thử F10 `/settings/firebase-demo/suggestions` cho phép nghiệm thu nhận từng việc, đổi giờ, bỏ qua và Hoàn tác. Màn G01–G12 đầy đủ vẫn thuộc Sanh; notification tới route G03 vẫn cần màn của Sanh. Không ghi nhận F12 đã xong thay thành viên khác.
+- `main_dev.dart` override toàn bộ dịch vụ liên quan, vào `/demo`; dữ liệu Fake chia sẻ giữa gửi/nhận và lịch nên nhận gợi ý thực sự thêm vào lịch demo. Không cần sửa router để mở màn; dùng `INITIAL_ROUTE`.
+- Có điều chỉnh responsive khi tái sử dụng F0: mã nhập bằng một ô có nhãn, nhóm ngày/tuần/tháng wrap khi chữ lớn, nhóm thói quen hai cột chuyển một cột. Các bản Figma gốc đã đọc; chưa coi UI pixel-perfect hoặc prototype Figma đã được cập nhật.
+- Sửa nhẹ FeaturePlaceholder dùng vùng cuộn vì test đã phát hiện tràn ở Cài đặt 360dp/chữ 200%; không triển khai F8 thay Sanh.
+- Test shell/route cũ từng kỳ vọng mã placeholder ở màn đã triển khai; nay dùng fixtures Fake đầy đủ, chỉ giữ bảng placeholder cho màn thật sự chưa làm. Test auth opt-in vẫn kiểm tra guard, bản demo mặc định false.
+
+Kết quả tại mốc: **305 unit/widget tests PASS**, trong đó có flow gửi → mẹ nhận → lịch cập nhật, nhánh trùng giờ/lỗi/retry, và F13/F14 ở 360/412dp với chữ hệ thống 1x/2x. APK debug demo build PASS. Đang kiểm thử native Firebase trên Android Emulator; chưa dùng kết quả này để khẳng định cloud production hoặc ARTEMIS.

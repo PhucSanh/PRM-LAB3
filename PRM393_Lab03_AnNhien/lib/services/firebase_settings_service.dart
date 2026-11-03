@@ -41,8 +41,9 @@ class FirebaseProfileSetupService implements ProfileSetupService {
   final FirebaseUserData data;
   @override
   Future<void> saveSetup(String uid, ProfileSetup setup) => data.run(() async {
-        if (data.auth.currentUser?.uid != uid)
+        if (data.auth.currentUser?.uid != uid) {
           throw const AppException('Phiên đăng nhập đã thay đổi.');
+        }
         if (setup.displayName.trim().isEmpty ||
             setup.displayName.length > 80 ||
             setup.wakeHour < 0 ||

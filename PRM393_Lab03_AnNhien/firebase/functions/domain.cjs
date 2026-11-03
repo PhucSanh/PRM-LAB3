@@ -77,7 +77,7 @@ function createDomain(db, {now = () => Date.now(), generateCode = () => String(r
       }
       const oldMom=profile.data()?.pairedMomUid;
       if(oldMom && oldMom!==data.momUid) tx.delete(db.doc(`users/${oldMom}/caregivers/${uid}`));
-      tx.set(db.doc(`users/${data.momUid}/caregivers/${uid}`),{createdAt:FieldValue.serverTimestamp()});
+      tx.set(db.doc(`users/${data.momUid}/caregivers/${uid}`),{displayName:profile.data()?.displayName||'Người thân',createdAt:FieldValue.serverTimestamp()});
       tx.update(user(uid),{pairedMomUid:data.momUid});
       tx.delete(ref); tx.delete(db.doc(`pairingOwners/${data.momUid}`));
       return {momUid:data.momUid};

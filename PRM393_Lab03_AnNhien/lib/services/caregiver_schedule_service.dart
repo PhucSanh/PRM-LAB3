@@ -18,6 +18,7 @@ class ScheduleUndo {
 }
 
 abstract interface class CaregiverScheduleService {
+  Future<List<TaskItem>> templates(String momUid);
   Stream<List<ScheduleOccurrence>> watch(
       String momUid, DateTime from, DateTime through);
   Future<void> create(String momUid, TaskItem task);
@@ -30,9 +31,10 @@ abstract interface class CaregiverScheduleService {
 ({Map<String, TaskItem?> before, Map<String, TaskItem?> after})
     planScheduleChange(TaskItem current, DateTime day, TaskItem? replacement,
         ChangeScope scope, String newId) {
-  if (!current.occursOn(day))
+  if (!current.occursOn(day)) {
     throw const AppException(
         'Lần nhắc này đã thay đổi. Tải lại lịch rồi thử lại.');
+  }
   final key = dateKey(day);
   final before = <String, TaskItem?>{current.id: current};
   final after = <String, TaskItem?>{};
@@ -103,6 +105,23 @@ class FakeCaregiverScheduleService implements CaregiverScheduleService {
     return list;
   }
 
+  Future<void> acceptTasks(List<TaskItem> incoming) async {
+    _check();
+    for (final task in incoming) {
+      task.validate();
+    }
+    for (final task in incoming) {
+      tasks.putIfAbsent(task.id, () => task);
+    }
+    _changes.add(null);
+  }
+
+  @override
+  Future<List<TaskItem>> templates(String momUid) async {
+    _check();
+    return List.unmodifiable(tasks.values);
+  }
+
   @override
   Stream<List<ScheduleOccurrence>> watch(
           String momUid, DateTime from, DateTime through) =>
@@ -134,8 +153,9 @@ class FakeCaregiverScheduleService implements CaregiverScheduleService {
       TaskItem? replacement, ChangeScope scope) async {
     _check();
     final current = tasks[original.id];
-    if (current == null || current.revision != original.revision)
+    if (current == null || current.revision != original.revision) {
       throw const AppException('Lịch đã thay đổi. Tải lại rồi thử lại.');
+    }
     final plan = planScheduleChange(current, day, replacement, scope,
         '${current.id}-${DateTime.now().microsecondsSinceEpoch}');
     for (final e in plan.after.entries) {
@@ -154,8 +174,9 @@ class FakeCaregiverScheduleService implements CaregiverScheduleService {
     _check();
     if (change.used) throw const AppException('Thay đổi này đã được hoàn tác.');
     for (final e in change.after.entries) {
-      if (tasks[e.key]?.revision != e.value?.revision)
+      if (tasks[e.key]?.revision != e.value?.revision) {
         throw const AppException('Lịch đã được sửa tiếp. Không thể hoàn tác.');
+      }
     }
     for (final e in change.before.entries) {
       if (e.value == null) {

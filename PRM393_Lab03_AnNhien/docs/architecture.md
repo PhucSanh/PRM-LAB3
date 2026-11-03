@@ -336,3 +336,15 @@ PDF tiếng Việt có DejaVu Sans và license. Không đổi reportServiceProvi
 Cập nhật sau phê duyệt: rules F10 đã deploy và RC version 1 đã có ba defaults;
 bucket Storage vẫn chưa có. Giới hạn
 và quy trình nghiệm thu: [f10-verification.md](f10-verification.md).
+
+## Bổ sung Hiếu 04/11/2026 — F13/F14 và contract v2
+
+Nguồn chi tiết và cách chạy: [hieu-implementation-guide.md](hieu-implementation-guide.md).
+
+- `PairingService`: Fake và Firebase callable; `PairingViewModel` quản lý mã/busy/error. Grants, pointer mã và pairedMomUid chỉ backend ghi. Thu hồi grant không xoá tasks/completions.
+- `CaregiverScheduleService`: templates + stream occurrence, create/change/undo; Fake/Firebase dùng cùng plan scope. `CaregiverScheduleViewModel` quản lý ngày/tuần/tháng, generation chống callback listener cũ. `CaregiverFormViewModel` giữ ba bước, xung đột giờ, idempotency và telemetry.
+- `SuggestionService`: Fake/Firebase, send idempotent; receiver chỉ theo UID hiện tại. Backend resolve trong transaction. Màn demo F10 để test service, không thay màn G của Sanh.
+- Task v2: startDate/endDate `YYYY-MM-DD`, weekly (weekdays 1–7), monthly (monthDays 1–31 và lastDayOfMonth), excludedDates, durationMinutes, revision, timezone UTC+7. Status thực theo ngày ở completions; status trên template luôn pending. `setStatus(id,status)` cũ chỉ tác động hôm nay UTC+7.
+- V1 đọc tương thích có giới hạn được ghi trong guide; chưa migration cloud tự động. Settings/ProfileSetup đã có adapter Firebase, merge trên users/{uid}, không đổi chữ ký F2.
+- Điểm vào: `/pairing/code` (Bác), `/caregiver/pair`, `/caregiver/schedule?view=day|week|month`, wizard `/caregiver/task/new[/repeat|/review]`, `/caregiver/task/sent`, `/caregiver/task/:id?date=YYYY-MM-DD`.
+- Guard mặc định **tắt** theo yêu cầu demo; kiểm thử opt-in qua AUTH_GUARD. Rules không đổi thành public.

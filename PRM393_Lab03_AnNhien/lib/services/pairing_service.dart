@@ -6,7 +6,13 @@ class PairingCode {
   final DateTime expiresAt;
 }
 
+class PairingLink {
+  const PairingLink(this.uid, this.name);
+  final String uid, name;
+}
+
 abstract interface class PairingService {
+  Stream<List<PairingLink>> watchCaregivers();
   Future<PairingCode> createCode();
   Future<String> redeem(String code);
   Future<void> revoke(String momUid, String childUid);
@@ -17,6 +23,8 @@ class FakePairingService implements PairingService {
   final DateTime Function() now;
   PairingCode? current;
   bool consumed = false;
+  @override
+  Stream<List<PairingLink>> watchCaregivers() => Stream.value(const []);
   @override
   Future<PairingCode> createCode() async {
     consumed = false;

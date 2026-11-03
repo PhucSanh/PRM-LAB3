@@ -352,3 +352,20 @@ Chưa đối chiếu hình ảnh hoặc sửa Figma nên C01 không đánh dấu
 A02/A02e/A03/A04 hoãn: luồng số điện thoại/OTP/sinh trắc học không thuộc phương thức
 Google bắt buộc của Lab 3; không triển khai giả các màn xác thực này.
 `/session` và `/account` là màn hỗ trợ F1; không thay màn hồ sơ N06 của F8.
+
+## Cập nhật Hiếu — 04/11/2026
+
+Các mục dưới cập nhật trạng thái code local, không phải bằng chứng nghiệm thu cloud/Figma prototype.
+
+| Màn | Figma nguồn đã đọc | Route/state | Trạng thái code |
+|---|---|---|---|
+| C02/C02e | 1:3382 (C02); lỗi giữ mã đang nhập | /caregiver/pair, PairingViewModel | implemented; test Fake và backend Emulator |
+| Mã phía Bác | bổ sung điểm vào tài khoản cho F13 | /pairing/code | implemented; xác nhận, TTL, revoke |
+| C03/C04/C05 | 1:3148 và mô tả handoff | /caregiver/schedule + view | implemented; live data, ngày/tuần/tháng |
+| C06/C06e | 1:3036 | /caregiver/task/new | implemented; validation và thói quen từ catalog |
+| C07/C07m | 1:2764 và handoff | /caregiver/task/new/repeat | implemented; weekly/monthly/cuối tháng |
+| C08/C08w | 1:2960 | /caregiver/task/new/review + dialog | implemented; consent và xung đột giờ |
+| C09 | handoff Flow 11 | /caregiver/task/sent | implemented; phân biệt chờ nhận/đã thêm/đã sửa |
+| C10/C11/C12 | 75:2 và handoff | /caregiver/task/:id + scope/stop dialog | implemented; lịch sử và undo |
+
+Điều chỉnh responsive local cần Sanh đối chiếu/cập nhật Figma khi chốt UI: ô mã có nhãn thay sáu ô riêng; tháng hiện danh sách ngày có số việc để giữ vùng chạm; nút chế độ wrap khi chữ lớn; bốn thẻ thói quen dùng SVG gốc và widget F0. Chưa đánh dấu design parity done. Không sửa các frame Figma trong phiên này.

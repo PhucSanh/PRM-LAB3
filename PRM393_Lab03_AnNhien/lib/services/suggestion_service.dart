@@ -30,6 +30,8 @@ abstract interface class SuggestionService {
 }
 
 class FakeSuggestionService implements SuggestionService {
+  FakeSuggestionService({this.onAccept});
+  final Future<void> Function(List<TaskItem>)? onAccept;
   final suggestions = <String, ScheduleSuggestion>{};
   final acceptedTasks = <TaskItem>[];
   final _changes = StreamController<void>.broadcast(sync: true);
@@ -62,12 +64,14 @@ class FakeSuggestionService implements SuggestionService {
   Future<void> resolve(String id, List<int> selected,
       {Map<int, ({int hour, int minute})> times = const {}}) async {
     final s = suggestions[id];
-    if (s == null || s.status != 'pending')
+    if (s == null || s.status != 'pending') {
       throw const AppException('Gợi ý đã được xử lý.');
+    }
     if (selected.toSet().length != selected.length ||
         selected.any((i) => i < 0 || i >= s.tasks.length) ||
-        times.keys.any((i) => !selected.contains(i)))
+        times.keys.any((i) => !selected.contains(i))) {
       throw const AppException('Lựa chọn chưa hợp lệ.');
+    }
     final tasks = selected
         .map((i) => s.tasks[i].copyWith(
             id: 'suggestion-$id-$i',
@@ -77,6 +81,7 @@ class FakeSuggestionService implements SuggestionService {
     for (final t in tasks) {
       t.validate();
     }
+    await onAccept?.call(tasks);
     acceptedTasks.addAll(tasks);
     suggestions[id] = s.withStatus(selected.isEmpty
         ? 'dismissed'
@@ -89,8 +94,9 @@ class FakeSuggestionService implements SuggestionService {
   @override
   Future<void> undoDismiss(String id) async {
     final s = suggestions[id];
-    if (s == null || s.status != 'dismissed')
+    if (s == null || s.status != 'dismissed') {
       throw const AppException('Không thể hoàn tác.');
+    }
     suggestions[id] = s.withStatus('pending');
     _changes.add(null);
   }

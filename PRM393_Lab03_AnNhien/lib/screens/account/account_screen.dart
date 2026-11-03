@@ -46,6 +46,28 @@ class AccountScreen extends ConsumerWidget {
                 liveRegion: true,
                 child: Text(action.message!, style: text.bodyLarge)),
           ],
+          const SizedBox(height: AppSpacing.base),
+          AppButton(
+              label: 'Nhận lịch gợi ý (khu thử)',
+              icon: Icons.inbox,
+              kind: AppButtonKind.secondary,
+              wrapLabel: true,
+              onPressed: () =>
+                  context.push('/settings/firebase-demo/suggestions')),
+          const SizedBox(height: AppSpacing.betweenTargets),
+          AppButton(
+              label: 'Mã ghép nối của Bác',
+              icon: Icons.phonelink_setup,
+              kind: AppButtonKind.secondary,
+              wrapLabel: true,
+              onPressed: () => context.push('/pairing/code')),
+          const SizedBox(height: AppSpacing.betweenTargets),
+          AppButton(
+              label: 'Ghép nối và lịch của mẹ',
+              icon: Icons.calendar_month,
+              kind: AppButtonKind.secondary,
+              wrapLabel: true,
+              onPressed: () => context.push('/caregiver/schedule')),
           const SizedBox(height: AppSpacing.xl),
           AppButton(
               label: 'Tiếp tục',

@@ -9,11 +9,18 @@ class FirebaseCaregiverScheduleService implements CaregiverScheduleService {
   FirebaseCaregiverScheduleService(this.data);
   final FirebaseUserData data;
   CollectionReference<Map<String, dynamic>> _tasks(String momUid) {
-    if (data.auth.currentUser == null)
+    if (data.auth.currentUser == null) {
       throw const AppException('Cần đăng nhập trước khi xem lịch.');
+    }
     return data.db.collection('users').doc(momUid).collection('tasks');
   }
 
+  @override
+  Future<List<TaskItem>> templates(String momUid) =>
+      data.run(() async => (await _tasks(momUid).get())
+          .docs
+          .map((d) => TaskItem.fromMap(d.id, d.data()))
+          .toList());
   @override
   Stream<List<ScheduleOccurrence>> watch(
           String momUid, DateTime from, DateTime through) =>
@@ -99,12 +106,14 @@ class FirebaseCaregiverScheduleService implements CaregiverScheduleService {
         final newId = tasks.doc().id;
         return data.db.runTransaction((tx) async {
           final snapshot = await tx.get(tasks.doc(original.id));
-          if (!snapshot.exists)
+          if (!snapshot.exists) {
             throw const AppException('Việc này không còn trong lịch.');
+          }
           final current = TaskItem.fromMap(snapshot.id, snapshot.data()!);
-          if (current.revision != original.revision)
+          if (current.revision != original.revision) {
             throw const AppException(
                 'Lịch đã được sửa trên máy khác. Tải lại rồi thử lại.');
+          }
           final plan =
               planScheduleChange(current, day, replacement, scope, newId);
           for (final e in plan.after.entries) {
@@ -115,19 +124,22 @@ class FirebaseCaregiverScheduleService implements CaregiverScheduleService {
       });
   @override
   Future<void> undo(ScheduleUndo change) => data.run(() async {
-        if (change.used)
+        if (change.used) {
           throw const AppException('Thay đổi này đã được hoàn tác.');
+        }
         final tasks = _tasks(change.momUid);
         await data.db.runTransaction((tx) async {
           final snapshots = <String, TaskItem>{};
           for (final e in change.after.entries) {
             final doc = await tx.get(tasks.doc(e.key));
-            if (!doc.exists)
+            if (!doc.exists) {
               throw const AppException('Lịch đã thay đổi. Không thể hoàn tác.');
+            }
             final current = TaskItem.fromMap(doc.id, doc.data()!);
-            if (current.revision != e.value!.revision)
+            if (current.revision != e.value!.revision) {
               throw const AppException(
                   'Lịch đã được sửa tiếp. Không thể hoàn tác.');
+            }
             snapshots[e.key] = current;
           }
           for (final e in change.before.entries) {

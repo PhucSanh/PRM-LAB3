@@ -1,6 +1,7 @@
 import 'package:cloud_functions/cloud_functions.dart';
 import '../utils/app_error.dart';
 import 'pairing_service.dart';
+import 'firebase_repositories.dart';
 
 /// Tự mang Firebase auth token; không chứa credential hoặc quyền Admin trong app.
 class FirebaseCallableClient {
@@ -35,8 +36,23 @@ class FirebaseCallableClient {
 }
 
 class FirebasePairingService implements PairingService {
-  FirebasePairingService(this.client);
+  FirebasePairingService(this.client, this.data);
+  final FirebaseUserData data;
   final FirebaseCallableClient client;
+  @override
+  Stream<List<PairingLink>> watchCaregivers() async* {
+    try {
+      await for (final snapshot in data.collection('caregivers').snapshots()) {
+        yield snapshot.docs
+            .map((d) => PairingLink(
+                d.id, d.data()['displayName'] as String? ?? 'Người thân'))
+            .toList();
+      }
+    } catch (e) {
+      throw AppException('Chưa tải được người thân đã ghép nối.', cause: e);
+    }
+  }
+
   @override
   Future<PairingCode> createCode() async {
     final d = await client.call('createPairing', {});

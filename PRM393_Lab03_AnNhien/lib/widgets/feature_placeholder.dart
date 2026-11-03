@@ -25,7 +25,7 @@ class FeaturePlaceholder extends StatelessWidget {
     return Scaffold(
       appBar: showBack ? const AppBackBar() : null,
       body: SafeArea(
-        child: Padding(
+        child: SingleChildScrollView(
           padding: AppSpacing.screenPadding,
           child:
               Column(crossAxisAlignment: CrossAxisAlignment.start, children: [

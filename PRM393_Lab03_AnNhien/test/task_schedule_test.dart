@@ -35,6 +35,21 @@ void main() {
     expect(task(repeat: RepeatRule.someDays).occursOn(DateTime(2026, 11, 4)),
         true);
   });
+  test('conflicts include future recurrence, exceptions and midnight overlap',
+      () {
+    final a = task(repeat: RepeatRule.monthly, monthDays: [31])
+        .copyWith(startDate: '2026-11-02', endDate: '2030-12-31');
+    final b = task().copyWith(startDate: '2028-01-01');
+    expect(schedulesConflict(a, b), true);
+    expect(schedulesConflict(a, b.copyWith(hour: 10)), false);
+    expect(schedulesConflict(a, b.copyWith(endDate: '2027-01-01')), false);
+    final night = task(repeat: RepeatRule.once).copyWith(
+        startDate: '2026-11-02', hour: 23, minute: 50, durationMinutes: 30);
+    final morning = task(repeat: RepeatRule.once)
+        .copyWith(startDate: '2026-11-03', hour: 0, minute: 10);
+    expect(schedulesConflict(night, morning), true);
+    expect(schedulesConflict(night, morning.copyWith(minute: 30)), false);
+  });
   test('monthly missing dates are skipped, leap day and last day supported',
       () {
     final t = task(repeat: RepeatRule.monthly, monthDays: [31]);

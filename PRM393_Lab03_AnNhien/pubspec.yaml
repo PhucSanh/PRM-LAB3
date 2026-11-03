@@ -28,6 +28,8 @@ dev_dependencies:
   flutter_lints: ^6.0.0
   flutter_test:
     sdk: flutter
+  integration_test:
+    sdk: flutter
 
 flutter:
   uses-material-design: true
@@ -41,6 +43,7 @@ flutter:
         - asset: assets/fonts/BeVietnamPro-Bold.ttf
           weight: 700
   assets:
+    - assets/caregiver/
     - assets/fonts/DejaVuSans.ttf
   # TODO(A – Sanh, F0): thêm font Be Vietnam Pro vào assets/fonts/ rồi mở khối dưới.
   # fonts:

@@ -37,11 +37,17 @@ import 'report_service.dart';
 import 'settings_service.dart';
 import 'task_repository.dart';
 
+/// Có thể override bằng named Firebase app khi chạy Emulator; mặc định giữ project thật.
+final firestoreSdkProvider = Provider((ref) => FirebaseFirestore.instance);
+final authSdkProvider = Provider((ref) => FirebaseAuth.instance);
+final functionsSdkProvider =
+    Provider((ref) => FirebaseFunctions.instanceFor(region: 'asia-southeast1'));
+
 /// Nơi DUY NHẤT chọn bản giả hay bản Firebase. Chủ file: B – Hiếu.
 /// Production dùng Firebase. Fake vẫn có sẵn để override trong test.
 /// Test: `ProviderContainer(overrides: [taskRepositoryProvider.overrideWithValue(...)])`.
-final authServiceProvider =
-    Provider<AuthService>((ref) => FirebaseAuthService(FirebaseAuth.instance));
+final authServiceProvider = Provider<AuthService>(
+    (ref) => FirebaseAuthService(ref.watch(authSdkProvider)));
 final taskRepositoryProvider = Provider<TaskRepository>(
     (ref) => FirebaseTaskRepository(ref.watch(_userDataProvider)));
 final habitRepositoryProvider = Provider<HabitRepository>(
@@ -56,7 +62,7 @@ final remoteConfigServiceProvider = Provider<RemoteConfigService>(
     (ref) => FirebaseRemoteConfigService(FirebaseRemoteConfig.instance));
 final messagingServiceProvider = Provider<MessagingService>((ref) {
   final service = FirebaseMessagingService(FirebaseMessaging.instance,
-      FirebaseFirestore.instance, FirebaseAuth.instance);
+      ref.watch(firestoreSdkProvider), ref.watch(authSdkProvider));
   ref.onDispose(() {
     service.dispose();
   });
@@ -65,13 +71,14 @@ final messagingServiceProvider = Provider<MessagingService>((ref) {
 final reportServiceProvider = Provider<ReportService>((ref) =>
     FirebaseReportService(FirebaseAuth.instance, FirebaseStorage.instance));
 
-final _userDataProvider = Provider((ref) =>
-    FirebaseUserData(FirebaseFirestore.instance, FirebaseAuth.instance));
+final _userDataProvider = Provider((ref) => FirebaseUserData(
+    ref.watch(firestoreSdkProvider), ref.watch(authSdkProvider)));
 
 final profileServiceProvider = Provider<ProfileService>((ref) =>
-    FirebaseProfileService(FirebaseFirestore.instance, FirebaseAuth.instance));
+    FirebaseProfileService(
+        ref.watch(firestoreSdkProvider), ref.watch(authSdkProvider)));
 final sessionDataServiceProvider = Provider<SessionDataService>((ref) =>
-    FirebaseSessionDataService(FirebaseFirestore.instance,
+    FirebaseSessionDataService(ref.watch(firestoreSdkProvider),
         beforeClear: () async {
       await (ref.read(messagingServiceProvider) as FirebaseMessagingService)
           .prepareSignOut();
@@ -79,22 +86,27 @@ final sessionDataServiceProvider = Provider<SessionDataService>((ref) =>
 
 // Contract F2 (Hương), adapter Firebase (Hiếu).
 // Firebase giữ nguyên contract F2, lưu theo UID.
-final settingsServiceProvider =
-    Provider<SettingsService>((ref) => FirebaseSettingsService(ref.watch(_userDataProvider)));
+final settingsServiceProvider = Provider<SettingsService>(
+    (ref) => FirebaseSettingsService(ref.watch(_userDataProvider)));
 // TODO(Hiếu): bản thật (flutter_local_notifications – đề xuất package trong PR).
 final reminderServiceProvider =
     Provider<ReminderService>((ref) => FakeReminderService());
 // S02 giữ interface riêng để tương thích ViewModel của Hương.
-final profileSetupServiceProvider =
-    Provider<ProfileSetupService>((ref) => FirebaseProfileSetupService(ref.watch(_userDataProvider)));
+final profileSetupServiceProvider = Provider<ProfileSetupService>(
+    (ref) => FirebaseProfileSetupService(ref.watch(_userDataProvider)));
 
 /// F10 uses a labelled test PDF; F7 retains its own renderer contract.
 final demoReportServiceProvider = Provider<ReportService>((ref) =>
     FirebaseReportService(FirebaseAuth.instance, FirebaseStorage.instance,
         renderPdf: renderDemoPdf));
 
-final callableClientProvider=Provider((ref)=>FirebaseCallableClient(
-    FirebaseFunctions.instanceFor(region:'asia-southeast1')));
-final pairingServiceProvider=Provider<PairingService>((ref)=>FirebasePairingService(ref.watch(callableClientProvider)));
-final caregiverScheduleServiceProvider=Provider<CaregiverScheduleService>((ref)=>FirebaseCaregiverScheduleService(ref.watch(_userDataProvider)));
-final suggestionServiceProvider=Provider<SuggestionService>((ref)=>FirebaseSuggestionService(ref.watch(_userDataProvider),ref.watch(callableClientProvider)));
+final callableClientProvider =
+    Provider((ref) => FirebaseCallableClient(ref.watch(functionsSdkProvider)));
+final pairingServiceProvider = Provider<PairingService>((ref) =>
+    FirebasePairingService(
+        ref.watch(callableClientProvider), ref.watch(_userDataProvider)));
+final caregiverScheduleServiceProvider = Provider<CaregiverScheduleService>(
+    (ref) => FirebaseCaregiverScheduleService(ref.watch(_userDataProvider)));
+final suggestionServiceProvider = Provider<SuggestionService>((ref) =>
+    FirebaseSuggestionService(
+        ref.watch(_userDataProvider), ref.watch(callableClientProvider)));
