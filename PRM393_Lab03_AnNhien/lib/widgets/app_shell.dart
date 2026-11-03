@@ -23,13 +23,9 @@ class AppShell extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
+    // Không có AppBar riêng: "Tài khoản" gộp vào "Cài đặt" của từng tab
+    // (Hôm nay → Cài đặt → Tài khoản). TODO(Sanh, F8): S10 có lối vào /account.
     return Scaffold(
-      appBar: AppBar(automaticallyImplyLeading: false, actions: [
-        TextButton.icon(
-            onPressed: () => context.push('/account'),
-            icon: const Icon(Icons.account_circle_outlined),
-            label: const Text('Tài khoản')),
-      ]),
       body: navigationShell,
       bottomNavigationBar: DecoratedBox(
         decoration: BoxDecoration(
