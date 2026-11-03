@@ -53,3 +53,99 @@ Tài liệu API tham khảo: [Firebase callable](https://firebase.google.com/doc
 - Test shell/route cũ từng kỳ vọng mã placeholder ở màn đã triển khai; nay dùng fixtures Fake đầy đủ, chỉ giữ bảng placeholder cho màn thật sự chưa làm. Test auth opt-in vẫn kiểm tra guard, bản demo mặc định false.
 
 Kết quả tại mốc: **305 unit/widget tests PASS**, trong đó có flow gửi → mẹ nhận → lịch cập nhật, nhánh trùng giờ/lỗi/retry, và F13/F14 ở 360/412dp với chữ hệ thống 1x/2x. APK debug demo build PASS. Đang kiểm thử native Firebase trên Android Emulator; chưa dùng kết quả này để khẳng định cloud production hoặc ARTEMIS.
+
+## Mốc 4: hạ tầng kiểm chứng và CI
+
+### Kiểm tra tự động một lệnh
+
+Cần Flutter 3.47.3/Dart 3.13, Node 22, Java 21+; từ thư mục app:
+
+```bash
+bash scripts/check-hieu.sh
+```
+
+Lệnh chạy analyzer, toàn bộ Flutter tests, cài dependency Node từ lockfile,
+kiểm tra syntax Functions, rồi chạy rules/backend trên project `demo-an-nhien`.
+Đóng Firebase Emulator đang mở trước khi chạy (cổng 8080/9199 cần trống).
+Không đụng project production. `npm test --prefix firebase/functions` riêng cần
+FIRESTORE_EMULATOR_HOST; dùng script trên để dựng môi trường đúng.
+
+### Chạy giao diện Fake (không cần tài khoản/mạng)
+
+```bash
+flutter run -t lib/main_dev.dart
+flutter run -t lib/main_dev.dart --dart-define=INITIAL_ROUTE=/caregiver/schedule
+```
+
+Hub `/demo` có các lối vào. Mã demo là `123456`. Trong lịch mẹ, tạo việc ba bước,
+giữ “Mẹ nhận trước khi thêm”, gửi. Về hub → Nhận lịch gợi ý, chọn việc/giờ và nhận.
+Mở lịch mẹ để thấy việc mới. Dữ liệu mẫu chỉ nằm trong RAM và mất khi restart.
+
+### Firebase local thật trên hai Android Emulator
+
+Đây là SDK Auth/Firestore/Functions thật nhưng server là Emulator, không phải cloud.
+Bản `main_emulator.dart` dùng **named Firebase app** project `demo-an-nhien`,
+key tổng hợp chỉ đúng định dạng, không phải key sử dụng được trên Firebase thật.
+Tài khoản anonymous được tạo local; không cần bật Google provider của project thật.
+
+Terminal 1 (giữ chạy):
+
+```bash
+npm ci --prefix firebase/functions
+npm ci --prefix firebase/tests
+./firebase/tests/node_modules/.bin/firebase emulators:start --project demo-an-nhien --only auth,firestore,functions
+```
+
+Terminal 2, seed catalog local:
+
+```bash
+FIRESTORE_EMULATOR_HOST=127.0.0.1:8080 node firebase/scripts/seed-emulator.cjs
+```
+
+Hai AVD đang boot (thay ID bằng `flutter devices`):
+
+```bash
+flutter run -d emulator-5556 -t lib/main_emulator.dart --dart-define=DEMO_ROLE=elder
+flutter run -d emulator-5558 -t lib/main_emulator.dart --dart-define=DEMO_ROLE=caregiver
+```
+
+Máy Bác: Tài khoản → Mã ghép nối → Đồng ý, tạo mã. Máy Con: nhập mã và xem lịch.
+Tạo gợi ý, rồi trên máy Bác vào Tài khoản → Nhận lịch gợi ý (khu thử). Nhận việc,
+đổi giờ hoặc bỏ qua. Ngưng ghép nối ở một trong hai máy rồi kiểm tra mất quyền.
+Tắt guard mặc định vẫn áp dụng. HTTP local chỉ được phép trong Android debug manifest.
+
+Mặc định host từ AVD là `10.0.2.2`. Máy thật trong LAN dùng
+`--dart-define=EMULATOR_HOST=<IP-máy-tính>` và cấu hình emulator bind/LAN phù hợp;
+chỉ dùng trên mạng thử nghiệm do nhóm kiểm soát. Đổi role trên cùng app/AVD cần xoá
+**dữ liệu app local** hoặc dùng AVD khác; không tự đổi vai trò tài khoản đã chọn.
+
+### Native integration tự dựng backend
+
+Đóng backend Terminal 1 trước, giữ Android Emulator:
+
+```bash
+bash scripts/native-emulator-check.sh emulator-5556
+```
+
+Test tạo ba named Firebase apps/tài khoản khác nhau trên cùng AVD: mẹ/con/người lạ.
+Kiểm tra ghép nối, sai/reuse mã, profile/settings, caregiver CRUD, nhận gợi ý một
+phần/đổi giờ/idempotency, status theo ngày, sửa/undo và revoke. Không coi đây là
+hai máy vật lý hoặc bài ARTEMIS. Log và số lần chạy thực tế ghi trong phần kết quả.
+
+### GitHub
+
+`.github/` nằm ở **gốc repository**, bên ngoài thư mục Flutter. CODEOWNERS dùng
+username Hiếu từ git config và owner repo từ origin; không đoán username Hương/Khang.
+CI `verify.yml` chạy analyze/test/APK và Node/Emulator khi có PR hoặc push main.
+Chỉ kiểm tra syntax YAML local; chưa có GitHub Actions run vì chưa push.
+
+AI review là opt-in: chủ repo thêm secret `OPENAI_API_KEY`, đặt repository variable
+`AI_REVIEW_ENABLED=true`, rồi mở PR nội bộ. Action dùng sandbox read-only và drop-sudo,
+chỉ đọc base checkout + diff, không chạy code PR; kết quả nằm trong Summary của check.
+Không bật biến/secret, không gọi API và không phát sinh lượt review trong phiên này.
+Không gửi comment cho người khác. Hướng dẫn theo [OpenAI Docs](https://learn.chatgpt.com/docs/github-action).
+
+SDK backend đã nâng firebase-admin 14.5.0/firebase-functions 7.4.0; kiểm thử lại trên
+Node 22. npm audit còn 6 advisory moderate transitive (glob/minimatch qua Google
+SDK/rimraf); không ép override major ngoài contract của upstream. Không có high/critical
+trong audit đã chạy; không coi điều đó là bảo đảm toàn bộ hệ thống an toàn.

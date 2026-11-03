@@ -1,0 +1,18 @@
+# Root repository contains the Flutter app in PRM393_Lab03_AnNhien/.
+# Fallback maintainer is the verified GitHub repository owner.
+* @PhucSanh
+/.github/ @PhucSanh @lequanghieu2504
+/PRM393_Lab03_AnNhien/lib/services/ @lequanghieu2504
+/PRM393_Lab03_AnNhien/lib/models/ @lequanghieu2504
+/PRM393_Lab03_AnNhien/firebase/ @lequanghieu2504
+/PRM393_Lab03_AnNhien/firebase.json @lequanghieu2504
+/PRM393_Lab03_AnNhien/android/ @lequanghieu2504
+/PRM393_Lab03_AnNhien/lib/screens/account/ @lequanghieu2504
+/PRM393_Lab03_AnNhien/lib/screens/sign_in/ @lequanghieu2504
+/PRM393_Lab03_AnNhien/lib/screens/firebase_demo/ @lequanghieu2504
+/PRM393_Lab03_AnNhien/lib/screens/caregiver/ @lequanghieu2504
+/PRM393_Lab03_AnNhien/lib/viewmodels/*caregiver* @lequanghieu2504
+/PRM393_Lab03_AnNhien/lib/viewmodels/*pairing* @lequanghieu2504
+/PRM393_Lab03_AnNhien/docs/analytics-plan.md @lequanghieu2504
+# Hương/Khang usernames were not in repository evidence; maintainers can add
+# verified usernames for their screen paths without inventing accounts.

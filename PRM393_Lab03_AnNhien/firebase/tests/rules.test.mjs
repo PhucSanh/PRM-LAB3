@@ -26,6 +26,7 @@ test('task validates every field, enums, types and unknown fields', async () => 
   for (const patch of [{title:''},{title:'x'.repeat(81)},{hour:24},{minute:-1},{minute:60},{minute:1.5},{remind:'yes'},{status:'invalid'},{repeat:'weekly'},{habitKey:'invalid'},{admin:true}]) {
     await assertFails(setDoc(doc(db('mom'), 'users/mom/tasks/a'), {...task,...patch}));
   }
+  await assertFails(setDoc(doc(db('mom'), 'users/mom/tasks/legacy-injection'), {...task,startDate:'bad',weekdays:[9]}));
   const { minute, ...missing } = task;
   await assertFails(setDoc(doc(db('mom'), 'users/mom/tasks/a'), missing));
 });

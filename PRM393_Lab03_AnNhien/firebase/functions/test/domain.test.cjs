@@ -69,6 +69,7 @@ test('suggestion send retries persist one inbox; partial acceptance atomic and i
   await domain.redeemPairing(child,(await domain.createPairing(mom)).code);
   const send={momUid:mom,id:'req',tasks:[task,{...task,title:'Uống trà',hour:15}]};
   await domain.sendSuggestion(child,send);await domain.sendSuggestion(child,send);
+  await assert.rejects(domain.sendSuggestion(child,{...send,message:'Different payload'}),e=>e.code==='already-exists');
   assert.equal((await db.collection(`users/${mom}/notifications`).get()).size,1);
   await assert.rejects(domain.resolveSuggestion(mom,{id:'req',selected:[2]}),e=>e.code==='invalid-argument');
   assert.equal((await db.collection(`users/${mom}/tasks`).get()).size,0);

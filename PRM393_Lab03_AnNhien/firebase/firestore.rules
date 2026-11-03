@@ -17,7 +17,7 @@ service cloud.firestore {
         && d.hour is int && d.hour >= 0 && d.hour <= 23
         && d.minute is int && d.minute >= 0 && d.minute <= 59
         && d.status in ['pending','done','postponed','skipped'] && d.remind is bool
-        && (d.get('schemaVersion',1) == 1 && d.repeat in ['once','daily','someDays'] ||
+        && (d.get('schemaVersion',1) == 1 && d.keys().hasOnly(['title','habitKey','hour','minute','repeat','status','remind','revision','schemaVersion']) && d.repeat in ['once','daily','someDays'] ||
           d.schemaVersion == 2 && d.status == 'pending' && validRecurrence(d));
     }
     function date(d) { return d is string && d.matches('^[0-9]{4}-[0-9]{2}-[0-9]{2}$'); }

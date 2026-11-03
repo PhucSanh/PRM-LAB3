@@ -1,5 +1,6 @@
 'use strict';
 const {randomInt} = require('node:crypto');
+const {isDeepStrictEqual}=require('node:util');
 const {Timestamp, FieldValue} = require('firebase-admin/firestore');
 class DomainError extends Error { constructor(code, message) {super(message); this.code = code;} }
 const fail = (code, message) => {throw new DomainError(code, message);};
@@ -105,7 +106,7 @@ function createDomain(db, {now = () => Date.now(), generateCode = () => String(r
       const ref=db.doc(`users/${momUid}/suggestions/${id}`);
       const existing=await tx.get(ref);
       if(existing.exists) {
-        if(existing.data().senderUid!==uid) fail('already-exists','Lịch đã tồn tại.');
+        if(existing.data().senderUid!==uid || !isDeepStrictEqual(existing.data().tasks,tasks) || existing.data().message!==message) fail('already-exists','Mã yêu cầu đã dùng cho lịch khác. Tạo lịch mới rồi gửi lại.');
         return; // Same request id: do not create a second notification or schedule.
       }
       tx.create(ref,{senderUid:uid,status:'pending',tasks,message,createdAt:FieldValue.serverTimestamp(),acceptedIds:[]});
