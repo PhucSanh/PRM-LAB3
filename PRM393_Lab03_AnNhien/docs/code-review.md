@@ -75,3 +75,5 @@ GitHub Actions run để ghi nhận yêu cầu review trên PR đã đạt.
 | CR-H02 | Client đặt schema v1 rồi thêm startDate/weekday sai có thể đi qua nhánh validate legacy | Nhánh legacy chỉ nhận các field v1, test Emulator chặn v2 fields giả dạng legacy |
 
 Không ghi nhận các kiểm tra local này là bằng chứng chạy AI review trên GitHub.
+
+| CR-H03 | Tách chuỗi “từ lần này” tạo ID mới: completion của ngày đã xong vẫn tồn tại nhưng lịch mới có thể hiện thành Chưa làm | Lưu completionSourceId trỏ chuỗi cha; đọc trạng thái đi qua chuỗi nguồn có chống vòng lặp, ưu tiên status mới (kể cả pending do Hoàn tác). Unit test nhiều lần tách và native integration kiểm tra giữ done sau split |

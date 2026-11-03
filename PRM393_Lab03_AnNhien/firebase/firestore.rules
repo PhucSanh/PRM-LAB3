@@ -11,7 +11,7 @@ service cloud.firestore {
     function validTask(d) {
       return d.keys().hasAll(['title','habitKey','hour','minute','repeat','status','remind'])
         && d.keys().hasOnly(['title','habitKey','hour','minute','repeat','status','remind',
-          'schemaVersion','revision','startDate','endDate','weekdays','monthDays','lastDayOfMonth','excludedDates','durationMinutes','timezone'])
+          'schemaVersion','revision','completionSourceId','startDate','endDate','weekdays','monthDays','lastDayOfMonth','excludedDates','durationMinutes','timezone'])
         && d.title is string && d.title.size() > 0 && d.title.size() <= 80
         && d.habitKey in ['move','purpose','downshift','eighty','plant','tea','belong','family','tribe']
         && d.hour is int && d.hour >= 0 && d.hour <= 23
@@ -23,6 +23,7 @@ service cloud.firestore {
     function date(d) { return d is string && d.matches('^[0-9]{4}-[0-9]{2}-[0-9]{2}$'); }
     function validRecurrence(d) {
       return d.revision is int && d.revision >= 0
+        && (d.get('completionSourceId',null) == null || d.completionSourceId is string && d.completionSourceId.size() <= 128)
         && date(d.startDate) && (d.endDate == null || date(d.endDate))
         && d.timezone == 'Asia/Ho_Chi_Minh'
         && d.durationMinutes is int && d.durationMinutes >= 1 && d.durationMinutes <= 1440

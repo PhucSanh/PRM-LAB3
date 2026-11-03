@@ -1,3 +1,4 @@
+import 'today_view_model.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../services/suggestion_service.dart';
 import '../services/providers.dart';
@@ -17,9 +18,11 @@ class SuggestionDemoState {
 }
 
 class SuggestionDemoViewModel extends Notifier<SuggestionDemoState> {
+  int _generation = 0;
   @override
   SuggestionDemoState build() {
-    ref.watch(sessionProvider);
+    ref.watch(sessionProvider.select((s) => s.value?.uid));
+    _generation++;
     return const SuggestionDemoState();
   }
 
@@ -29,6 +32,9 @@ class SuggestionDemoViewModel extends Notifier<SuggestionDemoState> {
         await ref
             .read(suggestionServiceProvider)
             .resolve(id, selected, times: times);
+        if (ref.mounted && selected.isNotEmpty) {
+          ref.invalidate(todayViewModelProvider);
+        }
         try {
           await ref.read(analyticsServiceProvider).logEvent(
               selected.isEmpty ? 'dismiss_suggestion' : 'accept_suggestion',
@@ -39,10 +45,12 @@ class SuggestionDemoViewModel extends Notifier<SuggestionDemoState> {
       _run(() => ref.read(suggestionServiceProvider).undoDismiss(id));
   Future<bool> _run(Future<void> Function() action) async {
     if (state.busy) return false;
+    final generation = _generation;
     state = const SuggestionDemoState(busy: true);
     try {
       await action();
-      if (ref.mounted) state = const SuggestionDemoState();
+      if (!ref.mounted || generation != _generation) return false;
+      state = const SuggestionDemoState();
       return true;
     } catch (e, st) {
       try {
@@ -50,11 +58,12 @@ class SuggestionDemoViewModel extends Notifier<SuggestionDemoState> {
             .read(crashServiceProvider)
             .recordError(e, st, reason: 'suggestion_demo');
       } catch (_) {}
-      if (ref.mounted)
+      if (ref.mounted && generation == _generation) {
         state = SuggestionDemoState(
             message: e is AppException
                 ? e.userMessage
                 : 'Chưa xử lý được gợi ý. Bác thử lại nhé.');
+      }
       return false;
     }
   }

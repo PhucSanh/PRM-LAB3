@@ -1,3 +1,5 @@
+import 'local_reminder_service.dart';
+import 'reminder_runtime.dart';
 import 'package:cloud_functions/cloud_functions.dart';
 import 'caregiver_schedule_service.dart';
 import 'firebase_caregiver_schedule_service.dart';
@@ -36,6 +38,8 @@ import 'reminder_service.dart';
 import 'report_service.dart';
 import 'settings_service.dart';
 import 'task_repository.dart';
+
+final nativeReminderEventsEnabledProvider = Provider<bool>((ref) => false);
 
 /// Có thể override bằng named Firebase app khi chạy Emulator; mặc định giữ project thật.
 final firestoreSdkProvider = Provider((ref) => FirebaseFirestore.instance);
@@ -80,6 +84,8 @@ final profileServiceProvider = Provider<ProfileService>((ref) =>
 final sessionDataServiceProvider = Provider<SessionDataService>((ref) =>
     FirebaseSessionDataService(ref.watch(firestoreSdkProvider),
         beforeClear: () async {
+      final reminders = ref.read(reminderServiceProvider);
+      if (reminders is LocalReminderService) await reminders.clearAll();
       await (ref.read(messagingServiceProvider) as FirebaseMessagingService)
           .prepareSignOut();
     }));
@@ -88,9 +94,13 @@ final sessionDataServiceProvider = Provider<SessionDataService>((ref) =>
 // Firebase giữ nguyên contract F2, lưu theo UID.
 final settingsServiceProvider = Provider<SettingsService>(
     (ref) => FirebaseSettingsService(ref.watch(_userDataProvider)));
-// TODO(Hiếu): bản thật (flutter_local_notifications – đề xuất package trong PR).
-final reminderServiceProvider =
-    Provider<ReminderService>((ref) => FakeReminderService());
+// Android native: F2/F6 qua cùng interface; Fake chỉ dùng demo/test.
+final reminderServiceProvider = Provider<ReminderService>((ref) {
+  final auth = ref.watch(authSdkProvider);
+  final service = LocalReminderService(() => auth.currentUser?.uid);
+  ref.onDispose(service.dispose);
+  return service;
+});
 // S02 giữ interface riêng để tương thích ViewModel của Hương.
 final profileSetupServiceProvider = Provider<ProfileSetupService>(
     (ref) => FirebaseProfileSetupService(ref.watch(_userDataProvider)));
@@ -110,3 +120,13 @@ final caregiverScheduleServiceProvider = Provider<CaregiverScheduleService>(
 final suggestionServiceProvider = Provider<SuggestionService>((ref) =>
     FirebaseSuggestionService(
         ref.watch(_userDataProvider), ref.watch(callableClientProvider)));
+
+final reminderRuntimeProvider = Provider<ReminderRuntime>((ref) {
+  final runtime = ReminderRuntime(
+      ref.watch(authSdkProvider),
+      ref.watch(caregiverScheduleServiceProvider),
+      ref.watch(reminderServiceProvider) as LocalReminderService,
+      ref.watch(crashServiceProvider));
+  ref.onDispose(runtime.dispose);
+  return runtime;
+});

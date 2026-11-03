@@ -50,6 +50,28 @@ void main() {
     expect(schedulesConflict(night, morning), true);
     expect(schedulesConflict(night, morning.copyWith(minute: 30)), false);
   });
+  test(
+      'completion inheritance follows multiple scope splits and explicit undo wins',
+      () {
+    final a = task(),
+        b = task().copyWith(id: 'b', completionSourceId: 'walk'),
+        c = task().copyWith(id: 'c', completionSourceId: 'b');
+    final templates = {'walk': a, 'b': b, 'c': c};
+    expect(resolveOccurrenceStatus(c, templates, {'walk': TaskStatus.done}),
+        TaskStatus.done);
+    expect(
+        resolveOccurrenceStatus(
+            c, templates, {'walk': TaskStatus.done, 'b': TaskStatus.skipped}),
+        TaskStatus.skipped);
+    expect(
+        resolveOccurrenceStatus(
+            c, templates, {'walk': TaskStatus.done, 'c': TaskStatus.pending}),
+        TaskStatus.pending);
+    expect(
+        resolveOccurrenceStatus(
+            c, {'c': c, 'b': b.copyWith(completionSourceId: 'c')}, {}),
+        TaskStatus.pending);
+  });
   test('monthly missing dates are skipped, leap day and last day supported',
       () {
     final t = task(repeat: RepeatRule.monthly, monthDays: [31]);
@@ -95,6 +117,9 @@ void main() {
           .first;
       expect(monday.single.task.hour, scope == ChangeScope.all ? 7 : 8);
       expect(wed.single.task.hour, 7);
+      if (scope != ChangeScope.all) {
+        expect(wed.single.task.completionSourceId, 'walk');
+      }
       expect(fri.single.task.hour, scope == ChangeScope.occurrence ? 8 : 7);
       await service.undo(change);
       expect(service.tasks.length, 1);

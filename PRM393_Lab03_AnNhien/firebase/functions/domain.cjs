@@ -9,10 +9,10 @@ const validId = value => typeof value === 'string' && /^[a-zA-Z0-9_-]{1,128}$/.t
 const validDate = s => typeof s === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(s) &&
   Number.isFinite(Date.parse(s)) && new Date(s).toISOString().slice(0,10) === s;
 function validateTask(t) {
-  const allowed = ['revision','schemaVersion','title','habitKey','hour','minute','repeat','status','remind','startDate',
+  const allowed = ['completionSourceId','revision','schemaVersion','title','habitKey','hour','minute','repeat','status','remind','startDate',
     'endDate','weekdays','monthDays','lastDayOfMonth','excludedDates','durationMinutes','timezone'];
   if (!t || Object.keys(t).some(k=>!allowed.includes(k)) || t.schemaVersion!==2 ||
-      !Number.isInteger(t.revision) || t.revision<0 || typeof t.title!=='string' || !t.title.trim() || t.title.length>80 ||
+      t.completionSourceId!=null && (typeof t.completionSourceId!=='string'||t.completionSourceId.length>128) || !Number.isInteger(t.revision) || t.revision<0 || typeof t.title!=='string' || !t.title.trim() || t.title.length>80 ||
       !['move','purpose','downshift','eighty','plant','tea','belong','family','tribe'].includes(t.habitKey) ||
       !Number.isInteger(t.hour) || t.hour<0 || t.hour>23 || !Number.isInteger(t.minute) || t.minute<0 || t.minute>59 ||
       !['once','daily','someDays','weekly','monthly'].includes(t.repeat) || t.status!=='pending' ||

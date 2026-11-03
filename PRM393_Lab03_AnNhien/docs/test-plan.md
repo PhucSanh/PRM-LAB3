@@ -95,3 +95,18 @@ Các kết quả này không thay ARTEMIS hoặc kiểm tra thiết bị.
 | Hủy/xác nhận test crash, mở lại và thấy Console report | Chưa chạy | Chưa chạy | Chưa chạy |
 
 Fixture ARTEMIS hiện còn skip/TODO; không sửa thay Hương hoặc ghi kết quả giả.
+
+## Kiểm chứng bổ sung Hiếu — 04/11/2026
+
+`test/caregiver_flow_test.dart`: gửi form 3 bước → demo mẹ chọn nhận → lịch cập nhật;
+trùng giờ, lỗi/retry/idempotency; layout 360/412dp × chữ 1x/2x.
+`test/task_schedule_test.dart`: weekly/monthly/cuối tháng/leap year, scope, Undo,
+xung đột qua nửa đêm, completion ancestry.
+`integration_test/firebase_emulator_test.dart`: ba Firebase SDK sessions trên AVD,
+Auth/Firestore/Functions Emulator thật, phân quyền và split giữ completion.
+`integration_test/local_reminder_test.dart`: NotificationManager thật, active/pending,
+snooze không xoá ngày sau, cancel và dọn khi đổi phiên.
+
+Chạy bằng scripts trong [hieu-implementation-guide.md](hieu-implementation-guide.md).
+Các bài này **không phải ARTEMIS**. Fixture ARTEMIS hiện hành của Hương không bị
+đổi thành pass hoặc gỡ skip để tạo bằng chứng. Console/thiết bị vật lý vẫn cần nghiệm thu.

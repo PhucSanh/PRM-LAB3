@@ -348,3 +348,13 @@ Nguồn chi tiết và cách chạy: [hieu-implementation-guide.md](hieu-impleme
 - V1 đọc tương thích có giới hạn được ghi trong guide; chưa migration cloud tự động. Settings/ProfileSetup đã có adapter Firebase, merge trên users/{uid}, không đổi chữ ký F2.
 - Điểm vào: `/pairing/code` (Bác), `/caregiver/pair`, `/caregiver/schedule?view=day|week|month`, wizard `/caregiver/task/new[/repeat|/review]`, `/caregiver/task/sent`, `/caregiver/task/:id?date=YYYY-MM-DD`.
 - Guard mặc định **tắt** theo yêu cầu demo; kiểm thử opt-in qua AUTH_GUARD. Rules không đổi thành public.
+
+### Nhắc việc native — 04/11
+
+ReminderService production đã chuyển sang LocalReminderService; ReminderRuntime
+đồng bộ occurrence/completion theo UID khi start/resume và snapshot thay đổi.
+Timezone UTC+7, cửa sổ 30 ngày/128 pending, inexact alarm; xem giới hạn và kiểm chứng
+trong guide. Đăng xuất huỷ pending/active và chặn tap UID cũ. Fake giữ cho main_dev.
+Template sau split có completionSourceId trỏ cha; đọc status theo ancestry có
+chống vòng lặp, ưu tiên status trực tiếp của ID mới. Completions vẫn ở collection
+cũ, không copy lịch sử và không mất trạng thái đã xong chỉ vì ID chuỗi đổi.

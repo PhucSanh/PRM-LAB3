@@ -1,3 +1,4 @@
+import '../services/local_reminder_service.dart';
 import '../viewmodels/caregiver_schedule_view_model.dart';
 import '../screens/firebase_demo/suggestion_demo_screen.dart';
 import '../screens/caregiver/pairing_screen.dart';
@@ -45,11 +46,27 @@ final authGuardEnabledProvider = Provider<bool>(
 final initialRouteProvider = Provider<String>((ref) =>
     const String.fromEnvironment('INITIAL_ROUTE', defaultValue: '/today'));
 
+final localReminderOpenedProvider = StreamProvider<AppNotification>((ref) {
+  if (!ref.watch(nativeReminderEventsEnabledProvider)) {
+    return const Stream.empty();
+  }
+  final service = ref.watch(reminderServiceProvider);
+  return service is LocalReminderService
+      ? service.onOpened
+      : const Stream.empty();
+});
+
 final routerProvider = Provider<GoRouter>((ref) {
   final refresh = ValueNotifier<int>(0);
   ref.onDispose(refresh.dispose);
   String? lastUid;
   String? pendingNotification;
+  ref.listen(localReminderOpenedProvider, (_, next) {
+    next.whenData((item) {
+      pendingNotification = notificationTarget(item.route);
+    });
+    refresh.value++;
+  });
   ref.listen(notificationOpenedProvider, (_, next) {
     next.whenData((item) {
       pendingNotification = notificationTarget(item.route);

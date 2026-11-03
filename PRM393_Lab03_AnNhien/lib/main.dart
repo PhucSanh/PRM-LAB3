@@ -35,7 +35,8 @@ Future<void> main() async {
         .catchError((Object _) {});
     return true;
   };
-  final container = ProviderContainer();
+  final container = ProviderContainer(
+      overrides: [nativeReminderEventsEnabledProvider.overrideWithValue(true)]);
   container.listen(sessionProvider, (_, next) {
     next.whenData((user) {
       container.read(analyticsServiceProvider).setUserId(user?.uid);
@@ -56,6 +57,15 @@ Future<void> main() async {
     await container
         .read(crashServiceProvider)
         .recordError(error, stack, reason: 'messaging_init');
+  }
+  try {
+    await container.read(reminderRuntimeProvider).init();
+  } catch (error, stack) {
+    try {
+      await container
+          .read(crashServiceProvider)
+          .recordError(error, stack, reason: 'local_reminders_init');
+    } catch (_) {}
   }
   runApp(UncontrolledProviderScope(
       container: container, child: const AnNhienApp()));

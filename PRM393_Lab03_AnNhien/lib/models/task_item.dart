@@ -27,7 +27,8 @@ class TaskItem {
       this.excludedDates = const [],
       this.durationMinutes = 15,
       this.revision = 0,
-      this.occurrenceDate});
+      this.occurrenceDate,
+      this.completionSourceId});
   final String id, title, habitKey;
   final int hour, minute, durationMinutes, revision;
   final RepeatRule repeat;
@@ -39,6 +40,10 @@ class TaskItem {
 
   /// Chỉ ở bộ nhớ; được dùng khi hiển thị kết quả tasksForDay.
   final String? occurrenceDate;
+
+  /// Parent series for pre-existing completion records after a scope split.
+  /// A completion recorded on this task's own ID always takes precedence.
+  final String? completionSourceId;
   bool get isDone => status == TaskStatus.done;
 
   bool occursOn(DateTime day) {
@@ -119,7 +124,8 @@ class TaskItem {
           List<String>? excludedDates,
           int? durationMinutes,
           int? revision,
-          String? occurrenceDate}) =>
+          String? occurrenceDate,
+          String? completionSourceId}) =>
       TaskItem(
           id: id ?? this.id,
           title: title ?? this.title,
@@ -137,10 +143,12 @@ class TaskItem {
           excludedDates: excludedDates ?? this.excludedDates,
           durationMinutes: durationMinutes ?? this.durationMinutes,
           revision: revision ?? this.revision,
-          occurrenceDate: occurrenceDate ?? this.occurrenceDate);
+          occurrenceDate: occurrenceDate ?? this.occurrenceDate,
+          completionSourceId: completionSourceId ?? this.completionSourceId);
 
   Map<String, Object?> toMap() => {
         'schemaVersion': 2,
+        'completionSourceId': completionSourceId,
         'revision': revision,
         'title': title.trim(),
         'habitKey': habitKey,
@@ -175,7 +183,8 @@ class TaskItem {
       lastDayOfMonth: m['lastDayOfMonth'] as bool? ?? false,
       excludedDates: (m['excludedDates'] as List?)?.cast<String>() ?? const [],
       durationMinutes: (m['durationMinutes'] as num?)?.toInt() ?? 15,
-      revision: (m['revision'] as num?)?.toInt() ?? 0);
+      revision: (m['revision'] as num?)?.toInt() ?? 0,
+      completionSourceId: m['completionSourceId'] as String?);
 }
 
 /// Gregorian calendar/weekday patterns repeat every 400 years. Include all
@@ -210,4 +219,18 @@ bool schedulesConflict(TaskItem a, TaskItem b) {
     }
   }
   return false;
+}
+
+/// A scope split points at its parent. Walk the chain to preserve progress even
+/// after several edits; an explicit status on the new occurrence wins.
+TaskStatus resolveOccurrenceStatus(TaskItem task,
+    Map<String, TaskItem> templates, Map<String, TaskStatus> statuses) {
+  String? id = task.id;
+  final seen = <String>{};
+  while (id != null && seen.add(id)) {
+    final status = statuses[id];
+    if (status != null) return status;
+    id = (id == task.id ? task : templates[id])?.completionSourceId;
+  }
+  return TaskStatus.pending;
 }

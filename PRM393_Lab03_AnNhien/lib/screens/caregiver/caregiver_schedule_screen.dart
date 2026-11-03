@@ -27,23 +27,26 @@ class _CaregiverScheduleScreenState
   void initState() {
     super.initState();
     Future.microtask(() {
-      if (mounted)
+      if (mounted) {
         ref
             .read(caregiverScheduleViewModelProvider.notifier)
             .selectView(widget.view);
+      }
     });
   }
 
   @override
   void didUpdateWidget(CaregiverScheduleScreen old) {
     super.didUpdateWidget(old);
-    if (old.view != widget.view)
+    if (old.view != widget.view) {
       Future.microtask(() {
-        if (mounted)
+        if (mounted) {
           ref
               .read(caregiverScheduleViewModelProvider.notifier)
               .selectView(widget.view);
+        }
       });
+    }
   }
 
   @override

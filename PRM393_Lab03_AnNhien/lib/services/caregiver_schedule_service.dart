@@ -55,6 +55,7 @@ abstract interface class CaregiverScheduleService {
         before[newId] = null;
         after[newId] = replacement.copyWith(
             id: newId,
+            completionSourceId: current.id,
             repeat: RepeatRule.once,
             startDate: key,
             endDate: key,
@@ -69,6 +70,7 @@ abstract interface class CaregiverScheduleService {
         before[newId] = null;
         after[newId] = replacement.copyWith(
             id: newId,
+            completionSourceId: current.id,
             startDate: key,
             revision: 0,
             excludedDates: current.excludedDates

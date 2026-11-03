@@ -106,9 +106,10 @@ class CaregiverFormViewModel extends Notifier<CaregiverFormState> {
 
   bool validate() {
     try {
-      if (state.task.title.trim().isEmpty)
+      if (state.task.title.trim().isEmpty) {
         throw const FormatException(
             'Hãy nhập tên việc để mẹ biết cần làm gì. Ví dụ: Đi bộ buổi sáng.');
+      }
       state.task.validate();
       if (state.task.startDate == null) {
         throw const FormatException('Chọn ngày bắt đầu.');

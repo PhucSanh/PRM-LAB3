@@ -33,6 +33,7 @@ class LocalAccount {
     final app = await Firebase.initializeApp(
         name: name,
         options: const FirebaseOptions(
+            // Synthetic format-only key: usable exclusively with local emulators.
             apiKey: 'AIzaSy000000000000000000000000000000000',
             appId: '1:123456789:android:0123456789abcdef',
             messagingSenderId: '123456789',
@@ -145,6 +146,13 @@ void main() {
               .single
               .endDate,
           isNotNull);
+      expect(
+          (await repo.tasksForDay(today))
+              .where((t) => t.completionSourceId == task.id && t.hour == 7)
+              .single
+              .status,
+          TaskStatus.done,
+          reason: 'Splitting a series must preserve the completed occurrence.');
       await schedule.undo(edit);
       await mom.pairing.revoke(mom.uid, child.uid);
       await expectLater(

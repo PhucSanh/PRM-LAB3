@@ -149,3 +149,114 @@ SDK backend đã nâng firebase-admin 14.5.0/firebase-functions 7.4.0; kiểm th
 Node 22. npm audit còn 6 advisory moderate transitive (glob/minimatch qua Google
 SDK/rimraf); không ép override major ngoài contract của upstream. Không có high/critical
 trong audit đã chạy; không coi điều đó là bảo đảm toàn bộ hệ thống an toàn.
+
+## Mốc 5: ReminderService Android thật
+
+Production `main.dart` đã dùng LocalReminderService và ReminderRuntime thay Fake:
+
+- Xin/kiểm tra quyền Android; lời nhắc thử N01 hiện qua NotificationManager thật.
+- Lập lịch UTC+7 cho occurrence chưa xong/chưa bỏ qua, loại ngày ngoài recurrence.
+  Đồng bộ khi mở app, trở lại foreground hoặc tasks/completions đổi trên Firestore;
+  lịch từ máy Con được đặt nhắc trên máy Bác khi máy Bác đồng bộ.
+- Hẹn tối đa **128 occurrence gần nhất trong 30 ngày**. App cần được mở lại để
+  gia hạn cửa sổ này; không cam kết chạy lịch vô hạn nếu app không mở hơn 30 ngày.
+- Dùng inexactAllowWhileIdle, không xin SCHEDULE_EXACT_ALARM; Android có thể dời
+  thời điểm khi Doze/tiết kiệm pin. Không hứa giao đúng phút trong mọi chế độ máy.
+- Huỷ theo task, dời chỉ occurrence hôm nay (giữ những ngày sau), xoá pending/active
+  khi đăng xuất. Payload gắn UID, không mở lời nhắc tài khoản cũ; tray không chứa
+  tên việc riêng. Tap mở route F6, bản thân màn F6 vẫn thuộc Khang.
+- Native init/tap events chỉ bật ở entrypoint Firebase; demo Fake và test fixtures
+  tiếp tục không gọi plugin thật. main_emulator dùng SDK local; để thử độc lập
+  notification plugin dùng integration test dưới đây.
+- Android có drawable notification riêng, desugaring và receivers để khôi phục
+  alarm sau reboot. Chưa chạy reboot/Doze/cold-start tap trên máy vật lý.
+
+Test planner kiểm tra UTC+7, dedupe, giới hạn count, trạng thái, ngày và UID. Native
+plugin trên AVD API 37 đã kiểm tra showTest hiện trong active notifications,
+zonedSchedule tạo pending, snooze, cancel, clearAll. Test này không phải chứng
+minh thông báo đã được Android giao đúng phút lúc ngủ máy.
+
+```bash
+bash scripts/native-notification-check.sh emulator-5556
+# Nếu adb chưa có trong PATH:
+ADB="$ANDROID_HOME/platform-tools/adb" bash scripts/native-notification-check.sh emulator-5556
+```
+
+Script chờ Flutter cài APK test rồi cấp quyền thông báo **chỉ trên AVD được chọn**,
+chạy test và trả mã lỗi thật. Flutter có thể gỡ app test sau khi kết thúc.
+Bản app thông thường xin quyền qua giao diện F2, không tự cấp quyền bằng adb.
+
+Bổ sung CR-H03: khi tách chuỗi, `completionSourceId` trỏ ID cha. Đọc status đi qua
+chuỗi cha nếu chưa có status trên occurrence mới, có chống vòng lặp. Status ghi
+trên task mới luôn ưu tiên, gồm cả pending sau Hoàn tác. Nhờ đó sửa lịch của ngày
+đã xong không làm ngày đó trở lại Chưa làm. Mỗi lần tách giữ các template cha và
+completion cũ; không cần copy hàng loạt completion trong transaction.
+
+## Phần cần nghiệm thu tiếp (không đánh dấu done)
+
+1. Production: deploy Functions + rules v2 sau khi chủ dự án chốt môi trường/billing.
+   Không deploy Storage khi chưa có bucket. Các lệnh dưới là hướng dẫn, chưa chạy:
+
+   ```bash
+   ./firebase/tests/node_modules/.bin/firebase deploy --project prm393-145c9 --only firestore:rules,functions
+   ```
+
+   Deploy cả bộ Functions gồm pairing, suggestion và inbox trigger. Không chuyển
+   rules sang public khi guard UI đang tắt. Sao lưu/export dữ liệu trước migration
+   nếu nhóm đã có task v1 thật; đọc tương thích không phải migration hoàn chỉnh.
+2. Google Sign-In/cancel/logout và đổi tài khoản trên Firebase production. Native
+   test local dùng Auth Emulator anonymous, không thay Google provider/OAuth/SHA.
+3. FCM foreground/background/cold start, token đổi/thu hồi, notification tap thật,
+   Crashlytics crash/non-fatal/custom keys, Remote Config đổi từ Console và ảnh
+   DebugView ≥7 business events. Chưa có bằng chứng cloud mới trong phiên này.
+4. Storage/billing/PDF tuần: renderer lịch F7 cần Hương inject; demo PDF không thay
+   xuất lịch tuần. Không tự bật billing, tạo bucket hay dùng link upload giả.
+5. ARTEMIS của nhóm: fixture còn TODO/skip. Các test Flutter/native đã chạy không
+   đổi tên thành ARTEMIS. Cần chạy bài ARTEMIS thực mỗi test ≥3 lần và lưu evidence.
+6. Figma: code đã đọc context gốc C02/C03/C06/C07/C08/C10; còn chốt/cập nhật các
+   thay đổi responsive đã nêu. Chưa sửa file Figma hoặc hoàn thiện prototype F10.
+7. GitHub: chưa push/mở PR/chạy Actions, chưa bật AI review ngoài repo. Commit
+   CR-H01 có tự review local; điều kiện “review trên PR” vẫn cần link PR thật.
+8. UI G01–G12 của Sanh và các màn F3–F9/F11 của thành viên khác giữ phạm vi cũ;
+   đây là phần Hiếu và adapter, không ghi nhận toàn bộ Lab 3 đã hoàn thành.
+
+## Đọc code để trình bày với thầy
+
+- UI → `CaregiverFormViewModel` → interface `CaregiverScheduleService` hoặc
+  `SuggestionService`; Firebase chỉ nằm ở adapter/backend. Fake override tại
+  providers để test không phụ thuộc mạng.
+- `CaregiverScheduleViewModel` có Loading/Empty/Error/Data; listener cũ bị chặn
+  bằng generation khi đổi ngày hoặc phiên. Form có busy/error và giữ bản nháp.
+- Rules dùng grant ở `users/{momUid}/caregivers/{childUid}`; role/pairedMomUid chỉ
+  điều hướng, không thay quyền. Pairing transaction cấp grant sau khi consume mã.
+- `resolveSuggestion` tạo task + đổi trạng thái atomically. Request retry cùng
+  nội dung không tạo trùng; request ID cũ với nội dung khác báo lỗi.
+- Tiến độ theo ngày nằm riêng; `completionSourceId` giữ lịch sử khi split. Revision
+  ngăn Undo ghi đè một sửa đổi mới. Undo không phải ghi đè tuỳ ý snapshot cũ.
+- ReminderRuntime theo dõi dữ liệu của UID hiện tại để đặt alarm Android; FCM là
+  kênh thông báo server khác. Notification inbox được ghi trước push.
+- Test Fake, Emulator, native Android và cloud Console là các lớp bằng chứng khác
+  nhau. Bảng nghiệm thu chỉ ghi lớp đã thực sự chạy.
+
+## Kết quả và artifact bàn giao
+
+Bảng bằng chứng: [evidence/hieu/verification.md](evidence/hieu/verification.md).
+Source đã qua analyzer sạch, 308 unit/widget tests, 19 rules/backend Emulator tests,
+ít nhất ba lượt native Firebase thành công và native notification plugin test.
+Lượt native cuối kiểm tra thêm CR-H03; ảnh AVD nằm trong thư mục evidence.
+
+Tạo lại APK demo và APK Firebase (guard mặc định vẫn tắt):
+
+```bash
+flutter build apk --debug -t lib/main_dev.dart
+cp build/app/outputs/flutter-apk/app-debug.apk build/app/outputs/flutter-apk/an-nhien-demo-debug.apk
+flutter build apk --debug -t lib/main.dart
+```
+
+Demo: `build/app/outputs/flutter-apk/an-nhien-demo-debug.apk`.
+Firebase: `build/app/outputs/flutter-apk/app-debug.apk`.
+APK/debug build nằm trong thư mục ignored, không commit binary lớn vào Git.
+
+Các mốc đã commit: `61ece98` (F1/demo), `11876cb` (backend), `1796edb` (F13/F14),
+`b3a00a0` (CI/CR/native harness). Mốc nhắc việc native và CR-H03 nằm ở commit bàn giao
+sau cùng; dùng `git log -5 --oneline` để xem SHA thay vì ghi SHA tự tham chiếu trong file.

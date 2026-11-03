@@ -105,11 +105,12 @@ class _SuggestionDemoScreenState extends ConsumerState<SuggestionDemoScreen> {
                                   final ok = await vm.resolve(
                                       suggestion.id, selected,
                                       times: overrides);
-                                  if (ok && context.mounted)
+                                  if (ok && context.mounted) {
                                     ScaffoldMessenger.of(context).showSnackBar(
                                         const SnackBar(
                                             content: Text(
                                                 'Đã thêm việc Bác chọn vào lịch.')));
+                                  }
                                 }),
                             AppButton(
                                 label: 'Bỏ qua',
@@ -121,11 +122,12 @@ class _SuggestionDemoScreenState extends ConsumerState<SuggestionDemoScreen> {
                                     : () async {
                                         if (await vm
                                                 .resolve(suggestion.id, []) &&
-                                            context.mounted)
+                                            context.mounted) {
                                           showUndoSnackbar(context,
                                               title: 'Đã bỏ qua gợi ý.',
                                               onUndo: () =>
                                                   vm.undo(suggestion.id));
+                                        }
                                       }),
                           ])
                       ]),

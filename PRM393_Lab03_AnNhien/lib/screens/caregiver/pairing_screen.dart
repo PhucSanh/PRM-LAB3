@@ -166,8 +166,9 @@ class _PairingScreenState extends ConsumerState<PairingScreen> {
                                             value: true,
                                             kind: AppButtonKind.dangerOutline)
                                       ]);
-                                  if (yes == true)
+                                  if (yes == true) {
                                     await vm.revoke(uid, link.uid);
+                                  }
                                 }),
                   ]),
                 ),

@@ -30,14 +30,20 @@ class FirebaseCaregiverScheduleService implements CaregiverScheduleService {
         void emit() {
           if (tasks == null || statuses == null) return;
           final list = <ScheduleOccurrence>[];
+          final templates = {for (final t in tasks!) t.id: t};
           for (var day = calendarDate(from);
               !day.isAfter(through);
               day = day.add(const Duration(days: 1))) {
+            final dailyStatuses = {
+              for (final e in statuses!.entries)
+                if (e.key.endsWith('_${dateKey(day)}'))
+                  e.key.substring(0, e.key.length - 11): e.value
+            };
             for (final task in tasks!.where((t) => t.occursOn(day))) {
               list.add(ScheduleOccurrence(
                   task.copyWith(
-                      status: statuses!['${task.id}_${dateKey(day)}'] ??
-                          TaskStatus.pending,
+                      status: resolveOccurrenceStatus(
+                          task, templates, dailyStatuses),
                       occurrenceDate: dateKey(day)),
                   day));
             }

@@ -162,9 +162,10 @@ void main() {
           await tester.pumpAndSettle();
           expect(tester.takeException(), isNull,
               reason: '$route at $width x$scale');
-          if (route == '/caregiver/schedule?view=month')
+          if (route == '/caregiver/schedule?view=month') {
             expect(c.read(caregiverScheduleViewModelProvider).view,
                 CalendarView.month);
+          }
           if (const bool.fromEnvironment('CAPTURE_UI') &&
               width == 360 &&
               scale == 1 &&
