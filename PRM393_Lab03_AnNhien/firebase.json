@@ -15,7 +15,13 @@
     "ui": {
       "enabled": false
     },
-    "singleProjectMode": true
+    "singleProjectMode": true,
+    "functions": {
+      "port": 5001
+    },
+    "auth": {
+      "port": 9099
+    }
   },
   "flutter": {
     "platforms": {
@@ -35,5 +41,9 @@
         }
       }
     }
+  },
+  "functions": {
+    "source": "firebase/functions",
+    "codebase": "an-nhien"
   }
 }

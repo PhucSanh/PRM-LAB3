@@ -24,3 +24,18 @@ flutter test test/auth_routing_test.dart test/account_view_model_test.dart test/
 Tách tuỳ chọn guard khỏi code comment; giữ mặc định false. Khôi phục logic auth/role/onboarding cho test opt-in; notification pending được xử lý độc lập khi demo. Không bật guard của bản demo. Test auth bật riêng nên không cần bỏ test hay thay expected cho qua.
 
 Các phần tiếp theo và kết quả kiểm tra sẽ được bổ sung sau mỗi mốc.
+
+## Mốc 2: contract lịch v2 và backend ghép nối/gợi ý
+
+- TaskItem bổ sung startDate/endDate, weekly/monthly, weekdays/monthDays/cuối tháng, excludedDates, duration và revision. Ngày không tồn tại (31/2) không được tạo; ngày 31 hằng tháng bỏ qua tháng thiếu ngày 31. Giờ lịch cố định UTC+7 (`Asia/Ho_Chi_Minh`).
+- `TaskRepository` giữ chữ ký cũ. `save()` tự thêm ngày bắt đầu nếu caller F2 chưa truyền; `tasksForDay()` lọc đúng ngày; `setStatus()` ghi `completions/{taskId}_YYYY-MM-DD`, không đổi trạng thái cả chuỗi. Caller chọn ngày khác hôm nay cần API riêng, không dùng setStatus cũ.
+- Đọc v1 vẫn được; `someDays` cũ thiếu weekdays không tự đoán ngày. Daily v1 thiếu ngày vẫn chạy mỗi ngày, once v1 thiếu ngày không hiện. Save tiếp theo ghi v2; không có migration hàng loạt lên cloud.
+- Sửa 1 lần: loại ngày đó khỏi chuỗi và tạo task once. Sửa từ lần này: kết thúc chuỗi cũ trước ngày chọn rồi tạo chuỗi mới. Sửa tất cả: giữ ID. Ngưng: endDate trước ngày chọn, có thể sớm hơn startDate để biểu diễn chuỗi chưa bắt đầu đã ngưng. Không xoá completions. Undo kiểm tra revision để không ghi đè sửa đổi mới của máy khác.
+- SettingsService và ProfileSetupService có adapter Firebase, merge theo UID; giữ interface F2 để Hương không phải đổi ViewModel. UI áp dụng setting toàn app vẫn thuộc F8.
+- Backend `firebase/functions`: create/redeem/revoke pairing, send/resolve suggestion, undo dismiss, trigger inbox → FCM. Auth qua callable SDK, quyền Admin chỉ ở backend. Mã một lần, TTL 10 phút, 5 lần thử/10 phút theo UID; mã mới vô hiệu mã trước, mã không đọc trực tiếp từ client. Quyền grant được thu hồi khi đổi mẹ hoặc ngưng ghép nối.
+- Gợi ý default chờ mẹ nhận. Backend nhận tất cả/từng phần, đổi giờ, bỏ qua/hoàn tác bỏ qua; tạo tasks và cập nhật status cùng transaction. Request ID cố định tránh tạo trùng khi retry. Trạng thái bỏ qua và nội dung gợi ý chỉ Bác đọc; không gửi phản hồi bỏ qua cho Con cháu.
+- Rules vẫn private dù guard UI tắt; grants/pairings/suggestion writes chỉ backend. Caregiver có grant được quản lý lịch của mẹ, không được tự ghi completions.
+
+Kiểm chứng mốc: **9 tests Dart contract/scope/pairing/suggestion PASS**, **19 tests backend + Firestore/Storage Emulator PASS, 0 skip**. Bộ auth đang được cập nhật fixtures vì route F14 đã chuyển từ placeholder sang màn thật. Chưa deploy rules/functions mới lên project thật.
+
+Tài liệu API tham khảo: [Firebase callable](https://firebase.google.com/docs/functions/callable), [Firestore transaction](https://firebase.google.com/docs/firestore/manage-data/transactions).

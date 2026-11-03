@@ -79,21 +79,45 @@ class FirebaseHabitRepository implements HabitRepository {
       });
 }
 
-/// CRUD is prepared, but calendar operations deliberately fail until the shared
-/// TaskItem date/recurrence contract has been agreed. Never show all days as today.
+/// Giữ contract F3/F4; trạng thái hiện tại luôn thuộc ngày UTC+7 hôm nay.
 class FirebaseTaskRepository implements TaskRepository {
   FirebaseTaskRepository(this.data);
   final FirebaseUserData data;
-  static const schemaPending =
-      AppException('Lịch đang chờ thống nhất dữ liệu ngày và lặp lại.');
+  DateTime get today => DateTime.now().toUtc().add(const Duration(hours: 7));
   @override
-  Future<List<TaskItem>> tasksForDay(DateTime day) async => throw schemaPending;
+  Future<List<TaskItem>> tasksForDay(DateTime day) => data.run(() async {
+    final tasks = await data.collection('tasks').get();
+    final statuses = await data.collection('completions').where('date', isEqualTo: dateKey(day)).get();
+    final byTask = {for (final d in statuses.docs) d.data()['taskId']: d.data()['status']};
+    return tasks.docs.map((d) => TaskItem.fromMap(d.id, d.data()))
+      .where((t) => t.occursOn(day)).map((t) => t.copyWith(
+        status: TaskStatus.values.asNameMap()[byTask[t.id]] ?? TaskStatus.pending,
+        occurrenceDate: dateKey(day))).toList()
+      ..sort((a,b) => (a.hour * 60 + a.minute).compareTo(b.hour * 60 + b.minute));
+  });
   @override
-  Future<void> save(TaskItem task) async => throw schemaPending;
+  Future<void> save(TaskItem task) => data.run(() async {
+    final normalized = task.copyWith(startDate: task.startDate ?? dateKey(today));
+    normalized.validate();
+    final doc=data.collection('tasks').doc(task.id);
+    await data.db.runTransaction((tx) async {
+      final existing=await tx.get(doc);
+      final revision=existing.exists ? (existing.data()?['revision'] as int? ?? 0)+1 : 0;
+      tx.set(doc,normalized.copyWith(revision:revision).toMap());
+    });
+  });
   @override
-  Future<void> setStatus(String taskId, TaskStatus status) async =>
-      throw schemaPending;
+  Future<void> setStatus(String taskId, TaskStatus status) => data.run(() async {
+    final key = dateKey(today);
+    final task = await data.collection('tasks').doc(taskId).get();
+    if (!task.exists || !TaskItem.fromMap(taskId, task.data()!).occursOn(today)) {
+      throw const AppException('Việc này không nằm trong lịch hôm nay.');
+    }
+    await data.collection('completions').doc('${taskId}_$key').set({
+      'taskId': taskId, 'date': key, 'status': status.name,
+      'updatedAt': FieldValue.serverTimestamp(),
+    });
+  });
   @override
-  Future<void> delete(String taskId) =>
-      data.run(() => data.collection('tasks').doc(taskId).delete());
+  Future<void> delete(String taskId) => data.run(() => data.collection('tasks').doc(taskId).delete());
 }
