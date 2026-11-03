@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'router/app_router.dart';
 import 'theme/app_theme.dart';
 import 'theme/display_settings.dart';
+import 'viewmodels/display_settings_sync.dart';
 import 'viewmodels/inbox_view_model.dart';
 
 class AnNhienApp extends ConsumerStatefulWidget {
@@ -17,6 +18,7 @@ class _AnNhienAppState extends ConsumerState<AnNhienApp> {
   final messenger = GlobalKey<ScaffoldMessengerState>();
   @override
   Widget build(BuildContext context) {
+    ref.watch(displaySettingsSyncProvider); // F8: áp cài đặt đã lưu khi mở app.
     final fontScale = ref.watch(fontScaleProvider);
     final highContrast = ref.watch(highContrastProvider);
     ref.listen(foregroundNotificationProvider, (_, next) {

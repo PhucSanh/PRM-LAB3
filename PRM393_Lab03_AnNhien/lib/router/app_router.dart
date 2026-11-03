@@ -1,4 +1,3 @@
-import '../screens/firebase_demo/profile_demo_entry_screen.dart';
 import '../screens/firebase_demo/inbox_screen.dart';
 import '../screens/firebase_demo/firebase_demo_screen.dart';
 import '../models/app_notification.dart';
@@ -15,6 +14,10 @@ import '../screens/onboarding/notifications_screen.dart';
 import '../screens/onboarding/setup_profile_screen.dart';
 import '../screens/onboarding/try_reminder_screen.dart';
 import '../screens/onboarding/welcome_screen.dart';
+import '../screens/settings/data_screen.dart';
+import '../screens/settings/help_screen.dart';
+import '../screens/settings/profile_screen.dart';
+import '../screens/settings/settings_screen.dart';
 import '../viewmodels/account_view_model.dart';
 import '../viewmodels/today_view_model.dart';
 import '../services/providers.dart';
@@ -100,11 +103,11 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(path: '/reminder/:taskId', builder: (_, __) => ph('S14 · F6', 'Lời nhắc đến giờ', 'Khang')),
       GoRoute(path: '/settings/reminders', builder: (_, __) => ph('N07 · F6', 'Cài đặt nhắc việc', 'Khang')),
       // F8 Cài đặt & hồ sơ – Sanh (khu demo Firebase F10 – Hiếu)
-      GoRoute(path: '/settings', builder: (_, __) => ph('S10 · F8', 'Cài đặt hiển thị', 'Sanh')),
-      GoRoute(path: '/settings/profile', builder: (_, __) => const ProfileDemoEntryScreen()),
+      GoRoute(path: '/settings', builder: (_, __) => const SettingsScreen()),
+      GoRoute(path: '/settings/profile', builder: (_, __) => const ProfileScreen()),
       GoRoute(path: '/settings/firebase-demo', builder: (_, __) => const FirebaseDemoScreen()),
-      GoRoute(path: '/settings/help', builder: (_, __) => ph('N08 · F8', 'Cách dùng đơn giản', 'Sanh')),
-      GoRoute(path: '/settings/data', builder: (_, __) => ph('N20 · F8', 'Dữ liệu trên điện thoại', 'Sanh')),
+      GoRoute(path: '/settings/help', builder: (_, __) => const HelpScreen()),
+      GoRoute(path: '/settings/data', builder: (_, __) => const DataScreen()),
       // F10 Firebase – Hiếu
       GoRoute(path: '/inbox', builder: (_, __) => const InboxScreen()),
       // Chế độ Con cháu: mọi route /caregiver/* nằm ngoài shell của Bác.

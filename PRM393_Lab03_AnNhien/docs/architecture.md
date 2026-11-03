@@ -130,8 +130,8 @@ Màn dùng `switch (state)` để vẽ đủ 4 trạng thái. Hành động mộ
 | `/week` (tab 1) · `/week/:date` · `/week/:date/task/:id` | S07 · S11 / S11b · S04 | F7 | placeholder |
 | `/habits` (tab 2) · `/habits/:key` | S08 · S16 | F9 | placeholder |
 | `/family` (tab 3) · `/family/add` · `/family/:personId/edit` · `/family/:personId/share` | S09 · S12 · N09 · S17 | F11 | placeholder |
-| `/settings` · `/settings/profile` | S10 · N06 (+ khu demo F10) | F8 | placeholder |
-| `/settings/reminders` · `/settings/help` · `/settings/data` | N07 · N08 · N20 | F6 · F8 · F8 | placeholder |
+| `/settings` · `/settings/profile` | S10 · N06 (+ khu demo F10) | F8 | `/settings` có (`SettingsScreen`, S10 – bước 02); `/settings/profile` có (`ProfileScreen`, N06 – bước 03; cuối màn là `FirebaseDemoEntry` → `/settings/firebase-demo`, khu demo F10 của Hiếu) |
+| `/settings/reminders` · `/settings/help` · `/settings/data` | N07 · N08 · N20 | F6 · F8 · F8 | `/settings/reminders` placeholder; `/settings/help` có (`HelpScreen`, tĩnh – bước 04); `/settings/data` có (`DataScreen`, tĩnh – bước 04, câu chữ DT-30) |
 | `/inbox` | Hộp thông báo | F10 | placeholder |
 | `/caregiver/pair` | C02 / C02e | F13 | placeholder |
 | `/caregiver/schedule?view=day\|week\|month` | C03 / C04 / C05 | F14 | placeholder |
@@ -162,7 +162,7 @@ Quy tắc điều hướng từ handoff: tab dùng `StatefulShellRoute`; Back h�
 | `ProfileService` | `ensureProfile(user)`, `watch(uid)`, `setRole(uid, role)`, `markOnboarded(uid)` | Firestore `users/{uid}` (`FirebaseProfileService`, đã có). **Thiếu** hàm lưu hồ sơ S02 (`displayName`, `honorific`, `wakeTime`) – F2 đề xuất, chờ Hiếu |
 | `SettingsService` (F2 thêm, **chỉ có Fake**) | `watch()` → `AppSettings`, `setFontScale`, `setHighContrast`, `setReadAloud`, `setVibrate`; `FakeSettingsService(failOnSave:)` | TODO(Hiếu): Firestore `users/{uid}` + cache máy. Model `lib/models/app_settings.dart` (F2 đề xuất) |
 | `ReminderService` (F2 thêm, **chỉ có Fake**) | `hasPermission()`, `requestPermission()`, `schedule(task)`, `cancel(id)`, `snooze(id, minutes)`, `showTest()`; `FakeReminderService(permissionGranted:, alreadyGranted:, failOnShowTest:)` | TODO(Hiếu / Khang): flutter_local_notifications (đề xuất package trong PR) |
-| `ProfileSetupService` (F2 thêm, **tạm**, chỉ có Fake) | `saveSetup(uid, ProfileSetup)` – `displayName`, `honorific` (`ong` / `ba`), `wakeTime` ("HH:mm"); `FakeProfileSetupService(failOnSave:)` | TODO(Hiếu): gộp vào `ProfileService` + bản Firebase ghi `users/{uid}`, thêm `honorific` / `wakeTime` vào `UserProfile`, rồi xoá service tạm |
+| `ProfileSetupService` (F2 thêm, **tạm**, chỉ có Fake) | `saveSetup(uid, ProfileSetup)` – `displayName`, `honorific` (`ong` / `ba`), `wakeTime` ("HH:mm"); F8 thêm `watchSetup(uid)` → `Stream<ProfileSetup?>` (N06 đọc cách gọi + giờ thức dậy, `null` = chưa lưu); `FakeProfileSetupService(failOnSave:, seed:)` | TODO(Hiếu): gộp vào `ProfileService` + bản Firebase ghi / đọc `users/{uid}` (cả `watchSetup`), thêm `honorific` / `wakeTime` vào `UserProfile`, rồi xoá service tạm |
 
 ### 8.2 Cần thêm (người làm feature thêm interface + Fake, Hiếu viết bản Firebase)
 
@@ -196,8 +196,9 @@ Mỗi ViewModel còn dùng `AnalyticsService` (ghi event) và `CrashService` (l�
 | `ReminderSettingsViewModel` | F6 | Khang | N07 | ReminderService, SettingsService |  |
 | `WeekViewModel` | F7 | Hương | S07 | TaskRepository, ReportService |  |
 | `DayDetailViewModel` | F7 (chủ), F12 thêm state G08* | Hương (chủ) | S11, S11b, G08, G08b, G08c, G08d | TaskRepository |  |
-| `SettingsViewModel` | F8 | Sanh | S10 | SettingsService, AuthService |  |
-| `ProfileViewModel` | F8 (chủ), F10 thêm khu demo | Sanh (chủ) | N06 | ProfileService |  |
+| `SettingsViewModel` | F8 | Sanh | S10 | SettingsService; Đăng xuất dùng `SignOutViewModel` (F1, đã log `logout` + xoá dữ liệu trên máy), không gọi `AuthService` trực tiếp | S10 xong (bước 02, `SettingsScreen`); khung từ bước 01: `UiState<AppSettings>`, `setFontScale` / `setHighContrast` / `setReadAloud` / `setVibrate` → `SettingChange`, `undo`, `retry` |
+| `displaySettingsSyncProvider` | F8 | Sanh | (toàn app – `app.dart` watch) | SettingsService → `fontScaleProvider`, `highContrastProvider` | ✅ (bước 01): áp cài đặt đã lưu khi mở lại app |
+| `ProfileViewModel` | F8 (chủ), F10 thêm khu demo | Sanh (chủ) | N06 | ProfileService (tên), ProfileSetupService (`watchSetup` / `saveSetup` – cách gọi, giờ thức dậy), AuthService (uid) | N06 xong (bước 03, `ProfileScreen`): `UiState<ProfileForm>`, `load` / `retry`, `changeName` / `changeHonorific` / `changeWakeTime` (tính `dirty`), `save` → `ProfileSaved` (Hoàn tác: `undo`), `discard`; không log analytics (analytics-plan không có event N06) |
 | `HabitsViewModel` | F9 | Hương | S08 | HabitRepository, TaskRepository |  |
 | `HabitDetailViewModel` | F9 | Hương | S16 | HabitRepository, TaskRepository |  |
 | `FamilyViewModel` | F11 | Hương | S09, S09b, N21 | FamilyRepository, SuggestionService |  |
@@ -246,8 +247,8 @@ Token lấy từ `lab2/design-tokens.md` (bảng `colors`, `typography`, `spacin
 | `app_colors.dart` | `AppColors` (đủ màu DESIGN.md, thêm `success`, `warningStrong`, `shadowLevel1/2`), `AppColorsHighContrast`, `HabitPalette` (9 màu + `onAccent` trắng) |
 | `app_spacing.dart` | `AppSpacing` (4…48, `screen` 20, `betweenTargets` 20), `AppRadius` (8, 12, 14, 16, 24, `full` 999 + `…All`), `AppSizes` (`minTarget` 72, `icon` 32, `habitIcon` 48, `accentBar` 6, `border` 2, `appBar` 88, `navBar` 96…) |
 | `app_theme.dart` | `AppTheme.light()`, `AppTheme.highContrast()` (cùng hàm dựng, chỉ đổi `ColorScheme`), `AppText.bodyLgStrong`, `AppText.numericLg` |
-| `display_settings.dart` | `AppFontScale { vua 1.0, lon 1.15, ratLon 1.3 }`, `fontScaleProvider` (mặc định `lon` theo Figma S01/S10), `highContrastProvider` (mặc định tắt), `maxTextScale` 2.0 – giữ trong bộ nhớ, F8 nối `SettingsService` |
-| `app_icons.dart` | `AppIcons`: 22 icon khung Components (`138:2`) + 4 icon tab + nhóm Form (`info`, `chevronDown`, `save`, `radioOn/Off`) + 7 icon thói quen `habit…` (cùng `walk`, `home`) + nhóm thẻ việc (`statusSkipped`, `statusPostponed`, `later`, `skipToday`, `stopReading`, `suggestion`, `view`, `chevronRight`) → `IconData` Material gần nhất (DT-09) |
+| `display_settings.dart` | `AppFontScale { vua 1.0, lon 1.15, ratLon 1.3 }`, `fontScaleProvider` (mặc định `lon` theo Figma S01/S10), `highContrastProvider` (mặc định tắt), `maxTextScale` 2.0 – giữ trong bộ nhớ; F8 nối `SettingsService` qua `displaySettingsSyncProvider` (`lib/viewmodels/display_settings_sync.dart`, `app.dart` watch) |
+| `app_icons.dart` | `AppIcons`: 22 icon khung Components (`138:2`) + 4 icon tab + nhóm Form (`info`, `chevronDown`, `save`, `radioOn/Off`) + 7 icon thói quen `habit…` (cùng `walk`, `home`) + nhóm thẻ việc (`statusSkipped`, `statusPostponed`, `later`, `skipToday`, `stopReading`, `suggestion`, `view`, `chevronRight`) + nhóm Cài đặt S10 (`settings`, `textSize`, `contrast`, `vibrate`, `bellRing`, `bookOpen`, `smartphone`, `logout` – F8 bước 02, DT-28) + hồ sơ N06 (`smile`, `sunrise` – F8 bước 03, DT-29) → `IconData` Material gần nhất (DT-09) |
 
 Chữ (Be Vietnam Pro, bundle trong `assets/fonts/`, khai báo ở `pubspec.yaml`): `display` 34 · `headline` 30 · `title-md` 26 · `title-lg` 24 · `body-lg` 24 · `label-btn` 22 · `body-md` / `caption` / `label-nav` 20. Cả 15 kiểu của `TextTheme` đều được điền nên không có chữ < 20 sp (kể cả widget Material dùng `labelSmall`, `titleSmall`).
 
@@ -278,6 +279,8 @@ Màn và widget lấy màu qua `Theme.of(context).colorScheme` (để tương ph
 | `ChoiceGroup<T>(options: [ChoiceOption(value, label, description, icon, previewScale)], value, onChanged, layout: ChoiceLayout.list / segmented)` (đang chọn: dấu tích + "Đang chọn" + nền `primaryContainer`; Semantics radio; mỗi ô cao ≥ 72, cách nhau 20; `previewScale` vẽ chữ mẫu đúng cỡ cho S01 / S10) | S01, S02, S06, S10, S12, N12, C01, C07 | có |
 | `ReadAloudButton(onPressed, speaking)` ("🔊 Đọc to"; đang đọc: dòng "Đang đọc…" `liveRegion` + nút "Dừng đọc"). Widget không gọi TTS: ViewModel gọi `SpeechService` và trả `speaking` | S04, S14, S16 | có |
 | `SuggestionCard(fromName, itemCount, previewTitles, onOpen, onDismiss)` (thẻ G12: "Mai gửi Bác 2 việc", tối đa 3 tên việc, "Chưa thêm vào lịch. Bác tự chọn.", "Xem gợi ý" + "Bỏ qua gợi ý" tuỳ chọn; cách đặt lên S03 ghi trong comment của widget) | S03 (F3 chỉ đặt widget, F12 làm nội dung) | có |
+| `SectionCard(icon, title, child)` (khung thẻ trắng viền `outlineVariant`, bo 16; đầu thẻ icon 32 + tiêu đề `titleLarge` đọc là heading) – F8 bước 02 thêm | S10 (thẻ Cỡ chữ, thẻ công tắc); N06, F12 dùng được | có |
+| `NavRow(icon, title, subtitle, onTap)` (hàng điều hướng dạng thẻ: ô icon 48 nền `primaryContainer`, chữ xuống dòng không cắt, › cuối hàng, cả hàng bấm, ≥ 72) – F8 bước 02 thêm | S10 (Cách dùng đơn giản, Thông tin của Bác, Lời nhắc, Dữ liệu trên điện thoại) | có |
 
 Màn của mọi người **chỉ** dùng widget ở đây. Thiếu widget → báo Sanh, không tự làm bản riêng trong thư mục màn.
 

@@ -39,11 +39,10 @@ const _placeholders = {
   '/family/add': 'S12 · F11',
   '/family/p1/edit': 'N09 · F11',
   '/family/p1/share': 'S17 · F11',
-  '/settings': 'S10 · F8',
-  '/settings/profile': 'N06 · F8/F10',
+  // '/settings' (S10) đã là màn thật – xem test/settings_screen_test.dart.
+  // '/settings/profile' (N06) đã là màn thật – xem test/profile_screen_test.dart.
   '/settings/reminders': 'N07 · F6',
-  '/settings/help': 'N08 · F8',
-  '/settings/data': 'N20 · F8',
+  // '/settings/help' (N08), '/settings/data' (N20) đã là màn thật – xem test/settings_static_screens_test.dart.
   '/inbox': 'F10',
   '/caregiver/pair': 'C02 · F13',
   '/caregiver/schedule': 'C03 · F14',
