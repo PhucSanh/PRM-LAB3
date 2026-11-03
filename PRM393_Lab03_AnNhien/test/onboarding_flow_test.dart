@@ -173,6 +173,7 @@ void main() {
     await tapText(tester, 'Vẫn để sau');
     expect(find.text('Bác muốn làm gì?'), findsOneWidget);
 
+    await tester.scrollUntilVisible(find.text('Để sau'), 200);
     await tapText(tester, 'Để sau');
     expect(find.text('S03 Hôm nay'), findsOneWidget);
     expect(reminder.scheduled, isEmpty);

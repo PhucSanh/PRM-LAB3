@@ -95,9 +95,9 @@ void main() {
         await pumpN04(tester, width: width, textScale: scale);
         expect(tester.takeException(), isNull);
         expectOnScreen(tester, 'Tiếp tục');
-        expectOnScreen(tester, 'Để sau');
         await tester.scrollUntilVisible(
             find.textContaining('Bác cứ chọn thử'), 200);
+        await tester.scrollUntilVisible(find.text('Để sau'), 200);
         expect(tester.takeException(), isNull);
 
         await tapText(tester, 'Tiếp tục');
@@ -148,6 +148,7 @@ void main() {
   testWidgets('"Để sau" ở N04 → /today, không lưu việc, vẫn onboarding',
       (tester) async {
     await pumpN04(tester);
+    await tester.scrollUntilVisible(find.text('Để sau'), 200);
     await tapText(tester, 'Để sau');
     expect(find.text('S03'), findsOneWidget);
     expect((await tester.runAsync(() => tasks.tasksForDay(DateTime.now())))!,

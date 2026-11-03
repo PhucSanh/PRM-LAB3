@@ -173,6 +173,15 @@ class _Pick extends StatelessWidget {
           ),
         const FieldMessage.hint(
             'Bác cứ chọn thử, bước tiếp theo Bác mới bấm lưu vào lịch nhé.'),
+        // "Để sau" nằm cuối danh sách cuộn để thanh đáy chỉ ghim 1 nút,
+        // chừa chỗ cho các thẻ thói quen.
+        AppButton(
+          label: 'Để sau',
+          icon: AppIcons.later,
+          kind: AppButtonKind.text,
+          busy: data.saving,
+          onPressed: onLater,
+        ),
       ],
       footer: [
         ..._errorLine(data),
@@ -180,13 +189,6 @@ class _Pick extends StatelessWidget {
           label: 'Tiếp tục',
           icon: AppIcons.arrowRight,
           onPressed: data.saving ? null : onNext,
-        ),
-        AppButton(
-          label: 'Để sau',
-          icon: AppIcons.later,
-          kind: AppButtonKind.text,
-          busy: data.saving,
-          onPressed: onLater,
         ),
       ],
     );
