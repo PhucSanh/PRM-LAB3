@@ -1,3 +1,4 @@
+import '../models/user_profile.dart';
 import '../screens/firebase_demo/profile_demo_entry_screen.dart';
 import '../screens/firebase_demo/inbox_screen.dart';
 import '../screens/firebase_demo/firebase_demo_screen.dart';
@@ -29,6 +30,10 @@ import '../widgets/feature_placeholder.dart';
 /// Ai làm màn nào: thay `FeaturePlaceholder` bằng màn thật của mình.
 final notificationOpenedProvider = StreamProvider<AppNotification>(
     (ref) => ref.watch(messagingServiceProvider).onOpened);
+
+/// Demo mặc định mở tự do. Chỉ bật chủ động bằng --dart-define=AUTH_GUARD=true.
+final authGuardEnabledProvider = Provider<bool>((ref) =>
+    const bool.fromEnvironment('AUTH_GUARD', defaultValue: false));
 
 final routerProvider = Provider<GoRouter>((ref) {
   final refresh = ValueNotifier<int>(0);
@@ -71,15 +76,44 @@ final routerProvider = Provider<GoRouter>((ref) {
   router = GoRouter(
     initialLocation: '/today',
     refreshListenable: refresh,
-    // TẠM TẮT chặn đăng nhập Google để build / test UI trước.
-    // Bỏ comment khối dưới trước khi commit / nộp.
-    // redirect: (context, state) {
-    //   final signedIn = session.value != null;
-    //   final atSignIn = state.matchedLocation == '/sign-in';
-    //   if (!signedIn) return atSignIn ? null : '/sign-in';
-    //   if (atSignIn) return '/today';
-    //   return null;
-    // },
+    redirect: (context, state) {
+      final path = state.uri.path;
+      // Giữ guard TẮT trong bản demo theo yêu cầu 03/11.
+      if (ref.read(authGuardEnabledProvider)) {
+        final session = ref.read(sessionProvider);
+        final profile = ref.read(profileProvider);
+        if (ref.read(signOutViewModelProvider).busy || session.isLoading) {
+          return path == '/session' ? null : '/session';
+        }
+        if (session.value == null) {
+          return path == '/sign-in' ? null : '/sign-in';
+        }
+        if (path == '/account') return null;
+        if (profile.isLoading || profile.hasError || profile.value == null) {
+          return path == '/session' ? null : '/session';
+        }
+        final user = profile.value!;
+        if (user.role == null) return path == '/role' ? null : '/role';
+        if (user.role == UserRole.elder && !user.onboarded) {
+          if (path == '/welcome' || path.startsWith('/setup')) return null;
+          return '/welcome';
+        }
+        if (user.role == UserRole.caregiver && user.pairedMomUid == null) {
+          return path == '/caregiver/pair' ? null : '/caregiver/pair';
+        }
+        if (['/sign-in', '/session', '/role', '/welcome'].contains(path) ||
+            path.startsWith('/setup')) {
+          return user.role == UserRole.caregiver
+              ? '/caregiver/schedule' : '/today';
+        }
+      }
+      final target = pendingNotification;
+      if (target != null) {
+        pendingNotification = null;
+        return target == path ? null : target;
+      }
+      return null;
+    },
     routes: [
       // F1 Tài khoản + vai trò – Hiếu
       GoRoute(path: '/sign-in', builder: (_, __) => const SignInScreen()),

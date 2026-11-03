@@ -175,6 +175,7 @@ void main() {
 ProviderContainer makeContainer(FakeAuthService auth, ProfileService profiles,
         {FakeSessionDataService? cache, MessagingService? messages}) =>
     ProviderContainer(overrides: [
+      authGuardEnabledProvider.overrideWithValue(true),
       authServiceProvider.overrideWithValue(auth),
       profileServiceProvider.overrideWithValue(profiles),
       messagingServiceProvider
