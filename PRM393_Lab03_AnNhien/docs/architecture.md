@@ -125,7 +125,7 @@ Màn dùng `switch (state)` để vẽ đủ 4 trạng thái. Hành động mộ
 | `/task/date` · `/task/repeat` · `/task/scope` | N11 · N12 · N13 (màn con, `pop(result)`) | F4 | placeholder |
 | `/today/voice` | V00–V05 | F5 | placeholder |
 | `/today/all` | S11 chế độ hôm nay | F7 | placeholder |
-| `/today/suggestions/:id` | G03–G09 | F12 | placeholder |
+| `/today/suggestions/:id?from=popup\|card\|push\|family` | G03–G09 (state của `SuggestionReviewScreen`, xong bước 03–04) | F12 | có |
 | `/reminder/:taskId` | S14 (mở từ notification `fullScreenIntent`; `?preview=true` từ S10) | F6 | placeholder |
 | `/week` (tab 1) · `/week/:date` · `/week/:date/task/:id` | S07 · S11 / S11b · S04 | F7 | placeholder |
 | `/habits` (tab 2) · `/habits/:key` | S08 · S16 | F9 | placeholder |
@@ -137,7 +137,7 @@ Màn dùng `switch (state)` để vẽ đủ 4 trạng thái. Hành động mộ
 | `/caregiver/schedule?view=day\|week\|month` | C03 / C04 / C05 | F14 | placeholder |
 | `/caregiver/task/new` → `/repeat` → `/review` → `/caregiver/task/sent` | C06 → C07 → C08 (+ C08w) → C09 | F14 | placeholder |
 | `/caregiver/task/:id` | C10 (+ C11, C12 dialog) | F14 | placeholder |
-| `/caregiver/suggest` | G01 → G02 | F12 | placeholder |
+| `/caregiver/suggest` | G01 → G01b → G02 (state của một màn `SuggestionComposeScreen`) | F12 | có |
 | `/dev/widgets` | Trang xem thử widget F0 (`WidgetGallery`) – **chỉ khai báo khi `kDebugMode`**; khi bật `redirect` thì phải đăng nhập mới vào được | F0 | có (debug) |
 
 Việc của F0 (Sanh) – đã làm ở bước 01 (02/11/2026): mọi route trên đã khai báo trong `app_router.dart`, màn chưa làm là `FeaturePlaceholder` ghi mã màn · feature · người theo bản chia task 02/11; nhóm route theo feature bằng comment `// F<số> <tên> – <người>`. `/caregiver/schedule` chọn C03 / C04 / C05 theo query `view`. Kiểm tra bằng `test/router_test.dart`. Khối `redirect` (chưa đăng nhập → `/sign-in`, đã đăng nhập ở `/sign-in` → `/today`) **đang tạm comment** để test UI không cần đăng nhập Google; bỏ comment trước khi nộp (đề chấm: chưa đăng nhập không vào được app). Khi còn comment thì `test/auth_routing_test.dart` fail.
@@ -163,6 +163,7 @@ Quy tắc điều hướng từ handoff: tab dùng `StatefulShellRoute`; Back h�
 | `SettingsService` (F2 thêm, **chỉ có Fake**) | `watch()` → `AppSettings`, `setFontScale`, `setHighContrast`, `setReadAloud`, `setVibrate`; `FakeSettingsService(failOnSave:)` | TODO(Hiếu): Firestore `users/{uid}` + cache máy. Model `lib/models/app_settings.dart` (F2 đề xuất) |
 | `ReminderService` (F2 thêm, **chỉ có Fake**) | `hasPermission()`, `requestPermission()`, `schedule(task)`, `cancel(id)`, `snooze(id, minutes)`, `showTest()`; `FakeReminderService(permissionGranted:, alreadyGranted:, failOnShowTest:)` | TODO(Hiếu / Khang): flutter_local_notifications (đề xuất package trong PR) |
 | `ProfileSetupService` (F2 thêm, **tạm**, chỉ có Fake) | `saveSetup(uid, ProfileSetup)` – `displayName`, `honorific` (`ong` / `ba`), `wakeTime` ("HH:mm"); `FakeProfileSetupService(failOnSave:)` | TODO(Hiếu): gộp vào `ProfileService` + bản Firebase ghi `users/{uid}`, thêm `honorific` / `wakeTime` vào `UserProfile`, rồi xoá service tạm |
+| `SuggestionService` (F12 thêm, **chỉ có Fake**; F12, F14 C08 dùng) | `send(momUid, s)`, `watchPending(momUid)` → `Stream<List<Suggestion>>` (chỉ `pending`, mới nhất trước), `byId(momUid, id)`, `markPopupShown(momUid, id)`, `accept(momUid, id, items)` (chỉ đổi `status`: hết → `accepted`, còn việc → `partial`; gọi lại được để nhận tiếp), `dismiss(momUid, id)`, `undoDismiss(momUid, id)` – không báo người gửi (FR08); **không** tạo việc (ViewModel gọi `TaskRepository.save`). `FakeSuggestionService(withSample:, delay:, failOnSend:, failOnLoad:, failOnAccept:)`, `momNotified`, `senderNotified` (= 0), `figmaSample()`. Model `lib/models/suggestion.dart` | TODO(Hiếu): Firestore `users/{momUid}/suggestions` + FCM "có gợi ý mới" mở `/today/suggestions/:id`; rules con cháu đã ghép nối **tạo**, mẹ cập nhật `status` / `popupShown` / `items[].accepted` |
 
 ### 8.2 Cần thêm (người làm feature thêm interface + Fake, Hiếu viết bản Firebase)
 
@@ -170,7 +171,6 @@ Quy tắc điều hướng từ handoff: tab dùng `StatefulShellRoute`; Back h�
 | --- | --- | --- | --- |
 | `TaskRepository` (bổ sung) | `tasksInRange(from, to)`, `postpone(id, to)`, `undo(change)`, `softDelete(id, scope)` | F3, F4, F7, F9 | Firestore |
 | `SpeechService` | `listen()` → text, `parse(text)` → `TaskDraft`, `speak(text)` | F5, đọc to ở S04 / S14 / S16 | speech_to_text, flutter_tts (`vi-VN`) |
-| `SuggestionService` | `send(momUid, s)`, `watchPending()`, `byId(id)`, `accept(id, items)`, `dismiss(id)`, `undoDismiss(id)` | F12, F14 (C08) | Firestore `users/{momUid}/suggestions` + FCM |
 | `PairingService` | `createCode()` (máy mẹ), `pair(code)` (máy con cháu), `pairedMom()` | F13 | Firestore `pairings/{code}` (hết hạn 10 phút) |
 | `CaregiverScheduleService` | `tasksOfMom(range)`, `checkConflict(draft)`, `recurringDetail(id)`, `updateRecurring(id, scope)`, `stopRecurring(id)` | F14 | Firestore `users/{momUid}/tasks` (quyền qua ghép nối) |
 
@@ -203,9 +203,9 @@ Mỗi ViewModel còn dùng `AnalyticsService` (ghi event) và `CrashService` (l�
 | `FamilyViewModel` | F11 | Hương | S09, S09b, N21 | FamilyRepository, SuggestionService |  |
 | `RelativeFormViewModel` | F11 | Hương | S12, S12a, S12e, N09, N15 | FamilyRepository |  |
 | `ShareMessageViewModel` | F11 | Hương | S17, S17b, N10 | FamilyRepository, TaskRepository |  |
-| `SuggestionComposeViewModel` | F12 | Sanh | G01, G01b, G02 | SuggestionService |  |
-| `SuggestionReviewViewModel` | F12 | Sanh | G03, G03b, G04, G05, G05b, G06, G07, G07b, G09 | SuggestionService, TaskRepository |  |
-| `SuggestionInboxViewModel` | F12 | Sanh | G10, G11, G12 | SuggestionService |  |
+| `SuggestionComposeViewModel` (autoDispose) | F12 | Sanh | G01, G01b, G02 | SuggestionService, ProfileService (`pairedMomUid`), AuthService, HabitRepository (tên thói quen) | xong (bước 02): `selectTime`, `setMessage`, `requestSend`, `editAgain`, `send` |
+| `SuggestionReviewViewModel` (autoDispose, family `(id, entry)`) | F12 | Sanh | G03, G03b, G04, G05, G05b, G06, G07, G07b, G09 | SuggestionService, TaskRepository, ReminderService | xong G03 → G09 (bước 03–04): `load`, `startChangeTime`, `pickTime`, `saveNewTime`, `cancelChangeTime`, `acceptAll`, `startChoosing`, `toggle`, `backToReview`, `continueChoosing`, `dismiss`, `undoDismiss` |
+| `SuggestionInboxViewModel` | F12 | Sanh | G10, G11, G12 | SuggestionService, sessionProvider (uid Bác) | xong (bước 05): `pendingCard`, `popupToShow`, `sentToday`, `dayLabel`, `markPopupShown`, `later`; popup qua `SuggestionPopupListener` (bọc `AppShell`) |
 | `PairingViewModel` | F13 | Hiếu | C02, C02e | PairingService |  |
 | `MomScheduleViewModel` | F14 | Hiếu | C03, C04, C05 | CaregiverScheduleService |  |
 | `CaregiverTaskFormViewModel` | F14 | Hiếu | C06, C06e, C07, C07m, C08, C08w, C09 | CaregiverScheduleService, SuggestionService |  |
@@ -216,11 +216,11 @@ Mỗi ViewModel còn dùng `AnalyticsService` (ghi event) và `CrashService` (l�
 | Đường dẫn | Trường chính | Ai đọc / ghi | Feature |
 | --- | --- | --- | --- |
 | `users/{uid}` | `role` (`elder` / `caregiver`), `displayName`, `honorific` (Ông / Bà / Bác), `wakeTime`, `onboarded`, `fontScale` (1.0 / 1.15 / 1.3), `highContrast`, `readAloud`, `vibrate`, `pairedMomUid` (máy con cháu), `fcmTokens[]` | chủ tài khoản | F1, F2, F8 |
-| `users/{uid}/tasks/{taskId}` | `title` (≤ 80), `habitKey`, `hour`, `minute`, `startDate`, `repeat` (`once` / `daily` / `someDays`) + `weekdays[]` hoặc `rrule` (việc con cháu lập, RFC 5545), `durationMin`, `remind`, `remindBeforeMin`, `createdBy`, `deletedAt` (xoá mềm 7 ngày) | chủ; con cháu đã ghép nối **đọc** | F3, F4, F5, F7, F14 |
+| `users/{uid}/tasks/{taskId}` | `title` (≤ 80), `habitKey`, `hour`, `minute`, `startDate` (`TaskItem.startDate`, F12 thêm, lưu `yyyy-MM-dd` – Hiếu chốt), `repeat` (`once` / `daily` / `someDays`) + `weekdays[]` hoặc `rrule` (việc con cháu lập, RFC 5545), `durationMin` (`TaskItem.durationMin`, F12 thêm), `remind`, `remindBeforeMin`, `createdBy`, `deletedAt` (xoá mềm 7 ngày) | chủ; con cháu đã ghép nối **đọc** | F3, F4, F5, F7, F14 |
 | `users/{uid}/completions/{date_taskId}` | `taskId`, `date`, `status` (done / postponed / skipped), `postponedTo`, `reason`, `at` | chủ; con cháu đã ghép nối **đọc** (C10 "6 lần gần nhất") | F3, F6, F9, F14 |
 | `users/{uid}/family/{personId}` | `name`, `relation` (Con / Cháu / Bạn bè / Khác), `phone`, `quickCall`, `lastCalledAt` | chủ | F11 |
 | `users/{uid}/notifications/{id}` | `title`, `body`, `receivedAt`, `route`, `read` | chủ | F10 |
-| `users/{momUid}/suggestions/{id}` | `fromUid`, `fromName`, `message`, `items[{title, habitKey, date, hour, minute, durationMin}]`, `status` (pending / accepted / partial / dismissed), `popupShown`, `createdAt` | con cháu đã ghép nối **tạo**; mẹ đọc + cập nhật | F12, F14 |
+| `users/{momUid}/suggestions/{id}` | `fromUid`, `fromName`, `message`, `fromRelation` (F12 đề xuất), `items[{title, habitKey, date (`yyyy-MM-dd`), hour, minute, durationMin, timeOptions[{hour, minute}] (F12 đề xuất), accepted (F12 đề xuất)}]`, `status` (pending / accepted / partial / dismissed), `popupShown`, `createdAt` – Hiếu chốt các trường đề xuất | con cháu đã ghép nối **tạo**; mẹ đọc + cập nhật | F12, F14 |
 | `pairings/{code}` | `momUid`, `expiresAt` (+10 phút), `usedBy` | máy mẹ tạo; con cháu đọc 1 lần khi nhập mã | F13 |
 | `habits/{key}` | `name`, `description`, `order`, `origin` (Blue Zones), `suggestions[]` | ai đăng nhập cũng đọc; không ai ghi từ app | F9 |
 | Storage `reports/{uid}/{week}.pdf` | PDF ≤ 5 MB | chủ | F7 |
@@ -277,7 +277,7 @@ Màn và widget lấy màu qua `Theme.of(context).colorScheme` (để tương ph
 | `SwitchRow(title, subtitle, value, onChanged, icon)` (cả hàng bấm được, "Đang bật / Đang tắt", `Semantics(toggled)`, cao ≥ 72; chữ > 1.5 thì công tắc xuống dòng) | S10, S12, N07, C08 | có |
 | `ChoiceGroup<T>(options: [ChoiceOption(value, label, description, icon, previewScale)], value, onChanged, layout: ChoiceLayout.list / segmented)` (đang chọn: dấu tích + "Đang chọn" + nền `primaryContainer`; Semantics radio; mỗi ô cao ≥ 72, cách nhau 20; `previewScale` vẽ chữ mẫu đúng cỡ cho S01 / S10) | S01, S02, S06, S10, S12, N12, C01, C07 | có |
 | `ReadAloudButton(onPressed, speaking)` ("🔊 Đọc to"; đang đọc: dòng "Đang đọc…" `liveRegion` + nút "Dừng đọc"). Widget không gọi TTS: ViewModel gọi `SpeechService` và trả `speaking` | S04, S14, S16 | có |
-| `SuggestionCard(fromName, itemCount, previewTitles, onOpen, onDismiss)` (thẻ G12: "Mai gửi Bác 2 việc", tối đa 3 tên việc, "Chưa thêm vào lịch. Bác tự chọn.", "Xem gợi ý" + "Bỏ qua gợi ý" tuỳ chọn; cách đặt lên S03 ghi trong comment của widget) | S03 (F3 chỉ đặt widget, F12 làm nội dung) | có |
+| `SuggestionCard(fromName, itemCount, previewTitles, onOpen, onDismiss)` (thẻ G12: "Mai gửi Bác 2 việc", tối đa 3 tên việc, "Chưa thêm vào lịch. Bác tự chọn.", "Xem gợi ý" + "Bỏ qua gợi ý" tuỳ chọn; cách đặt lên S03 ghi trong comment của widget; S03 **không** truyền `previewTitles` / `onDismiss` – DT-33) | S03 (F3 chỉ đặt widget, F12 làm nội dung) | có |
 
 Màn của mọi người **chỉ** dùng widget ở đây. Thiếu widget → báo Sanh, không tự làm bản riêng trong thư mục màn.
 
