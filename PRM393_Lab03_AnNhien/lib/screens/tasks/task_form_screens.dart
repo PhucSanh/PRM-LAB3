@@ -34,6 +34,8 @@ String _repeatText(TaskFormState state) => switch (state.repeat) {
       RepeatRule.once => 'Một lần',
       RepeatRule.daily => 'Mỗi ngày',
       RepeatRule.someDays => 'Vài ngày trong tuần',
+      RepeatRule.weekly => 'Mỗi tuần',
+      RepeatRule.monthly => 'Mỗi tháng',
     };
 
 class ActivitySelectionScreen extends ConsumerStatefulWidget {
