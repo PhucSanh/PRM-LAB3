@@ -51,9 +51,19 @@ Figma: không cần cho bước này.
 
 ## Kết quả chạy (agent tự điền khi xong)
 
-- Ngày chạy:
+- Ngày chạy: 02/11/2026
 - File đã tạo / sửa:
-- Lệch Figma (nếu có, lý do):
+  - Kiểm tra trùng: `ProfileService` **đã có** (Hiếu, commit 8167e6b, có cả bản Firebase) → dùng lại, không viết bản thứ hai. Hàm hiện có: `ensureProfile`, `watch(uid)`, `setRole`, `markOnboarded(uid)`; **chưa có** hàm lưu hồ sơ S02. `SettingsService`, `ReminderService` chưa có ở nhánh nào (chỉ có trong docs) → đã tạo.
+  - Tạo: `lib/models/app_settings.dart` (người dùng đồng ý đặt ở `lib/models/`, Hiếu chốt trong PR), `lib/services/settings_service.dart`, `lib/services/reminder_service.dart`, `lib/viewmodels/onboarding_view_model.dart`, `lib/viewmodels/try_reminder_view_model.dart`, `lib/viewmodels/first_task_view_model.dart`, `test/f2_services_test.dart`, `test/f2_view_models_test.dart`.
+  - Sửa: `lib/services/providers.dart` (người dùng đồng ý; chỉ thêm 2 import + `settingsServiceProvider`, `reminderServiceProvider` trỏ Fake, có `TODO(Hiếu)`), `docs/architecture.md` mục 8.1 / 8.2 / 9.
+  - Không sửa `profile_service.dart`, `firebase_profile_service.dart`, `user_profile.dart` (người dùng chọn gửi đề xuất cho Hiếu).
+- Lệch Figma (nếu có, lý do): không (bước này không vẽ màn). Giờ mặc định (thức dậy 6:00, việc đầu tiên 7:00) là tạm, có TODO đối chiếu Figma ở bước 03 / 06.
 - `flutter analyze` / `flutter test`:
+  - `flutter analyze`: 1 warning **có sẵn**, không do bước này – `unused_local_variable 'pendingNotification'` ở `lib/router/app_router.dart:32` (từ commit 8f29e6f). File mới sạch.
+  - `flutter test test/f2_services_test.dart test/f2_view_models_test.dart`: 17/17 qua.
+  - `flutter test` toàn bộ: 68 lỗi **có sẵn** ở `auth_routing_test` (9), `router_test` (44), `text_scale_overflow_test` (14), `theme_test` (1) – đã kiểm tra bằng cách tạm bỏ thay đổi `providers.dart`: vẫn đúng 68 lỗi (+5 / −68) ở 4 file này. Nguyên nhân thấy được: `router_test` tìm chữ placeholder ("C01 · F1"…) nhưng `app_router.dart` đã bị viết lại; timer chờ 0.8 s còn treo. Không sửa (ngoài phạm vi).
+  - `dart format`: chỉ chạy cho các file của bước này để không đổi định dạng file người khác.
 - Việc người dùng cần làm tay:
-- Commit gợi ý:
+  - Gửi Hiếu: (1) thêm hàm lưu hồ sơ S02 vào `ProfileService` + Fake + Firebase, ví dụ `Future<void> saveSetup(String uid, {required String displayName, required String honorific, required int wakeHour, required int wakeMinute})`, ghi `users/{uid}.displayName / honorific / wakeTime`; (2) thêm `honorific`, `wakeTime` vào `UserProfile` (`fromMap` / `copyWith`), chốt định dạng `wakeTime` (đề xuất chuỗi `"HH:mm"`); (3) chốt `lib/models/app_settings.dart` + viết `FirebaseSettingsService` (`fontScale` lưu số 1.0 / 1.15 / 1.3); (4) bản thật `ReminderService` (cần package `flutter_local_notifications` – Hiếu / Khang đề xuất); (5) xem 68 test lỗi sẵn ở router / auth.
+  - Bước 03 (S02) bị chặn ở `submitProfile()` cho tới khi có (1) + (2).
+- Commit gợi ý: `feat(F2): thêm SettingsService, ReminderService (Fake) và khung ViewModel onboarding`

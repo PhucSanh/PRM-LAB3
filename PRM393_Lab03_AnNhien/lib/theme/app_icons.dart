@@ -62,4 +62,18 @@ abstract final class AppIcons {
 
   // Trạng thái chung (state_views).
   static const retry = Icons.rotate_left; // rotate-ccw – Thử lại
+
+  // Cài đặt S10 (Figma `1:2325` / `1:2474`; F8 bước 02 đề xuất, F0 duyệt).
+  static const settings = Icons.settings_outlined; // settings – tiêu đề "Cài đặt"
+  static const textSize = Icons.title; // type – thẻ "Cỡ chữ"
+  static const contrast = Icons.contrast; // contrast – "Chữ và nền rõ hơn"
+  static const vibrate = Icons.vibration; // smartphone-vibrate – "Rung khi có lời nhắc"
+  static const bellRing = Icons.notifications_active_outlined; // bell-ring – "Xem thử lời nhắc"
+  static const bookOpen = Icons.menu_book_outlined; // book-open – "Cách dùng đơn giản"
+  static const smartphone = Icons.smartphone; // smartphone – "Dữ liệu trên điện thoại"
+  static const logout = Icons.logout; // log-out – "Đăng xuất"
+
+  // Hồ sơ N06 (Figma `38:187`; F8 bước 03 đề xuất, F0 duyệt).
+  static const smile = Icons.sentiment_satisfied_alt_outlined; // smile – "An Nhiên gọi Bác là"
+  static const sunrise = Icons.wb_twilight; // sunrise – "Bác thức dậy lúc"
 }

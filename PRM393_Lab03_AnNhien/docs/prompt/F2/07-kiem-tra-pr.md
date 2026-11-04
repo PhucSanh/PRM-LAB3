@@ -48,9 +48,21 @@ Chắc chắn F2 đạt mục "Xong khi", không vi phạm luật bị chấm, d
 
 ## Kết quả chạy (agent tự điền khi xong)
 
-- Ngày chạy:
+- Ngày chạy: 02/11/2026
 - File đã tạo / sửa:
-- Lệch Figma (nếu có, lý do):
+  - Tạo: `test/onboarding_flow_test.dart` (cả luồng S01 → … → N18 → `/today` + 3 nhánh: tên trống, từ chối quyền → S13d → N04, chưa nhận → N03; `tutorial_complete` đúng 1 lần), `test/onboarding_overflow_test.dart` (12 state × 360×800 / 412×915 × 1.0 / 1.3 / 2.0 × thường / tương phản cao, mỗi state có kiểm chữ đặc trưng), `lib/screens/onboarding/onboarding_layout.dart` (gộp 4 bản `_Layout` / `_StageLayout` chép lặp ở S02, S13, N01, N04 – chỉ ghép widget F0), `docs/prompt/F2/PR-F2.md`.
+  - Sửa theo kết quả quét / tự chấm: N04 thẻ thói quen cách nhau 20 dp thay 16 (R-TAP-03); nút N02 "Tôi đã nhận được" → "Đã nhận được" (R-LANG-02, ghi vào DT-26) + sửa test.
+  - Docs: `design-traceability.md` 13 dòng F2 → `changed (DT-xx)`, N19 `todo (chờ Khang)`; `architecture.md` mục 7.2 / 8 / 9 đã khớp code (5 route F2 có màn, 3 service, 3 ViewModel xong); `analytics-plan.md` chỉ thêm "Cách lấy bằng chứng event F2" trong mục Bằng chứng.
+  - Quét luật bị chấm trong `lib/screens/onboarding/` + 3 ViewModel: không `FirebaseXxx.instance` / `http`, không `Color(0x…)` / `Colors.*` / `fontSize:` / khoảng cách số cứng; màn tải dữ liệu đủ 4 state. Còn 9 `Icons.*` ngoài `AppIcons` (liệt kê trong PR để báo Sanh).
+- Lệch Figma (nếu có, lý do): DT-23 → DT-27 (tóm tắt trong `PR-F2.md`); bước này thêm vào DT-26 việc đổi nhãn "Đã nhận được".
 - `flutter analyze` / `flutter test`:
+  - `flutter analyze`: 1 warning có sẵn (`pendingNotification`, `app_router.dart:37`, không thuộc F2).
+  - Test F2 (9 file): tất cả qua – `onboarding_flow_test` 4/4, `onboarding_overflow_test` 12/12 (144 lần kiểm).
+  - `flutter test` toàn bộ: +239 −68 (68 lỗi có sẵn trước F2: `router_test` 44, `text_scale_overflow_test` 14, `auth_routing_test` 9, `theme_test` 1).
+  - `dart format` chỉ chạy cho file F2 (lệnh `dart format lib test` định dạng lại file của người khác – đã xảy ra ở bước 03).
 - Việc người dùng cần làm tay:
-- Commit gợi ý:
+  - Chụp ảnh theo danh sách trong `PR-F2.md` (360 dp × 1.3; có S13d, N03, lỗi tên); muốn tới N18 trên máy phải tạm dùng `FakeTaskRepository()`.
+  - Gửi các mục "Việc nhờ người khác" trong `PR-F2.md` cho Hiếu (schema việc, `redirect` theo `onboarded`, gộp `ProfileSetupService`, Firebase `SettingsService`, `Habit.suggestions`), Hiếu / Khang (`ReminderService` thật), Khang (N19), Sanh (`AppIcons`, `InlineHint`, cỡ `IconCircle`).
+  - Sửa Figma theo DT-23 → DT-27 (cột "Đã sửa Figma?" còn ☐).
+  - Commit theo thứ tự 8 bước của đề; mở PR với nội dung `PR-F2.md`.
+- Commit gợi ý: `test(F2): test cả luồng onboarding + tràn chữ mọi state, chốt docs và PR-F2`

@@ -51,9 +51,20 @@ Gửi một lời nhắc thử để Bác thấy nó trông thế nào, hỏi B�
 
 ## Kết quả chạy (agent tự điền khi xong)
 
-- Ngày chạy:
+- Ngày chạy: 02/11/2026
 - File đã tạo / sửa:
-- Lệch Figma (nếu có, lý do):
+  - Tạo: `lib/screens/onboarding/try_reminder_screen.dart` (N01 / N02 / N03 theo `TryReminderState.phase`), `test/try_reminder_screen_test.dart`.
+  - Sửa: `lib/viewmodels/try_reminder_view_model.dart` – `sendTest()` (`sending` → `waitingAnswer`; lỗi → về N01 + `error` + `CrashService.recordError` reason `show_test_reminder`), `answer(bool received)` (chỉ khi đang `waitingAnswer` → `received` / `notReceived`, log `test_reminder` `{received}` đúng 1 lần, analytics lỗi không chặn Bác), `retry()`, `backToStart()` (Quay lại ở N02 / N03 → N01). `lib/services/reminder_service.dart`: cờ `failOnShowTest` bỏ `final` để test bật / tắt lỗi (giống `failOnSave`). Dòng `/setup/try-reminder` + import trong `app_router.dart`. `test/f2_view_models_test.dart`: helper nhận `analytics`, +6 test. `docs/design-traceability.md` (N01–N03 → `doing`, DT-26), `docs/architecture.md` (mục 7.2, 9).
+  - Figma: `get_design_context` + ảnh cho `31:68`, `31:170`, `31:218`. Theo Figma, N02 là bước **hỏi** "Bác đã nhận được chưa?" ngay sau khi gửi (`waitingAnswer`); "Tôi đã nhận được" → `received` → View đi `/setup/first-task`; "Chưa nhận được" → N03.
+- Lệch Figma (nếu có, lý do): DT-26 – tiêu đề N02 "Đã gửi lời nhắc thử" (Figma "Đã nhận lời nhắc" trong khi Bác chưa trả lời); không có thanh tab ở N01 và chữ "An Nhiên" ở N02 / N03; chip "Lời nhắc thử" thành icon + chữ; thẻ mẫu bằng `TaskRow`; ô ghi chú xanh dùng `FieldMessage.hint`; dòng kiểm tra / bước dùng `FieldLabel`; nút cao 72, có icon; lỗi gửi thử: câu lỗi + "Thử lại".
 - `flutter analyze` / `flutter test`:
+  - `flutter analyze`: 1 warning có sẵn (`pendingNotification`, `app_router.dart`).
+  - Test F2 (6 file): 75/75 qua – gồm N01 / N02 / N03 × 360 / 412 dp × `textScaler` 1.3 / 2.0 không tràn, nút đáy luôn thấy; `test_reminder` log đúng 1 lần mỗi câu trả lời; gửi lỗi → "Thử lại"; "Để sau" không gửi, không log.
+  - Bắt được và sửa: chữ "Lời nhắc thử" tràn 18 px ở 412 dp × 1.3 (Row trong `Wrap` thiếu `Flexible`).
+  - `flutter test` toàn bộ: +208 −68 (68 lỗi có sẵn như các bước trước).
+  - Chỉ `dart format` file của F2. Đã render N01–N03 ở 412 dp bằng font thật để so với Figma (ảnh tạm, không commit).
 - Việc người dùng cần làm tay:
-- Commit gợi ý:
+  - Thử trên máy: `/setup/try-reminder` → "Gửi thử" → bản Fake chỉ giả lập, **không có thông báo thật** hiện lên cho tới khi Hiếu / Khang viết bản thật `ReminderService.showTest()` (flutter_local_notifications). Thử nhánh lỗi: tạm đổi `reminderServiceProvider` sang `FakeReminderService(alreadyGranted: true, failOnShowTest: true)` rồi hot restart; nhớ trả về mặc định.
+  - Kiểm tra event `test_reminder` trên Firebase DebugView khi chạy bản thật (`analyticsServiceProvider` đang là Firebase).
+  - Nhờ Sanh (F0): widget chip nhãn (vd. "Lời nhắc thử") và `InlineHint` (ô ghi chú màu) nếu muốn bỏ bớt DT-26 / DT-25.
+- Commit gợi ý: `feat(F2): màn N01–N03 thử lời nhắc, log test_reminder`

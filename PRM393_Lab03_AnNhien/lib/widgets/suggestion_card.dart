@@ -4,13 +4,16 @@ import '../theme/app_icons.dart';
 import '../theme/app_spacing.dart';
 import 'app_button.dart';
 
-/// Thẻ G12 "Mai gửi Bác 2 việc" ở đầu S03 (Figma `71:209`): ô icon thư, tiêu đề, tên các việc gợi ý,
+/// Thẻ G12 "Mai gửi Bác 2 việc" ở đầu S03 (Figma `71:209`): ô icon thư, tiêu đề,
 /// "Chưa thêm vào lịch. Bác tự chọn.", nút viền "Xem gợi ý" (→ G03). Lịch **không** đổi cho tới khi Bác nhận.
-/// [onDismiss] (tuỳ chọn) thêm nút chữ "Bỏ qua gợi ý"; ViewModel phải hiện `showUndoSnackbar` (G09).
+/// [previewTitles] / [onDismiss] (tuỳ chọn, DT-20) **không dùng trên S03** – Figma G12 không có tên việc
+/// và nút "Bỏ qua gợi ý" (F12 bước 05, người dùng chọn 04/11; bỏ qua ở G03 → G09).
 ///
 /// Cách Khang đặt thẻ lên S03 (F3 không phải sửa ViewModel của mình; dữ liệu do F12 – `SuggestionInboxViewModel`):
 /// ```dart
-/// // lib/screens/today/today_screen.dart › _TodayList.build, phần tử đầu tiên của ListView:
+/// // lib/screens/today/today_screen.dart › _TodayList.build, phần tử đầu tiên của ListView
+/// // (trên "Việc tiếp theo"). Import: viewmodels/suggestion_inbox_view_model.dart,
+/// // viewmodels/ui_state.dart, widgets/suggestion_card.dart, theme/app_spacing.dart.
 /// Consumer(builder: (context, ref, _) {
 ///   final inbox = ref.watch(suggestionInboxViewModelProvider); // F12 – Sanh
 ///   return switch (inbox) {
@@ -19,16 +22,14 @@ import 'app_button.dart';
 ///         child: SuggestionCard(
 ///           fromName: data.pendingCard!.fromName,
 ///           itemCount: data.pendingCard!.items.length,
-///           previewTitles: [for (final i in data.pendingCard!.items) i.title],
-///           onOpen: () => context.push('/today/suggestions/${data.pendingCard!.id}'),
-///           onDismiss: () => ref.read(suggestionInboxViewModelProvider.notifier).dismiss(data.pendingCard!.id),
+///           onOpen: () => context.push('/today/suggestions/${data.pendingCard!.id}?from=card'),
 ///         ),
 ///       ),
 ///     _ => const SizedBox.shrink(), // Đang tải / lỗi / không có gợi ý: không chiếm chỗ trên S03.
 ///   };
 /// }),
 /// ```
-/// Tên provider / trường dữ liệu trên là dự kiến của F12; chốt khi F12 merge.
+/// Popup G10 / G11 không cần Khang đặt: `SuggestionPopupListener` bọc nội dung `AppShell` (tab Hôm nay).
 class SuggestionCard extends StatelessWidget {
   const SuggestionCard({
     super.key,

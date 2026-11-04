@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
+import '../screens/suggestion/suggestion_popup_listener.dart';
 import '../theme/app_icons.dart';
 import '../theme/app_spacing.dart';
 
@@ -23,14 +24,14 @@ class AppShell extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
+    // Không có AppBar riêng: "Tài khoản" gộp vào "Cài đặt" của từng tab
+    // (Hôm nay → Cài đặt → Tài khoản). TODO(Sanh, F8): S10 có lối vào /account.
     return Scaffold(
-      appBar: AppBar(automaticallyImplyLeading: false, actions: [
-        TextButton.icon(
-            onPressed: () => context.push('/account'),
-            icon: const Icon(Icons.account_circle_outlined),
-            label: const Text('Tài khoản')),
-      ]),
-      body: navigationShell,
+      // F12: popup G10 / G11 "có gợi ý mới" – chỉ hiện ở tab Hôm nay, một lần (người dùng đồng ý 04/11).
+      body: SuggestionPopupListener(
+        active: navigationShell.currentIndex == 0,
+        child: navigationShell,
+      ),
       bottomNavigationBar: DecoratedBox(
         decoration: BoxDecoration(
           color: scheme.surface,

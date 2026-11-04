@@ -63,3 +63,17 @@ không thay bằng chứng commit `fix(CR-xx)` của đề. Chưa tạo PR/commi
 
 Chưa có adapter/native E2E do không có Android device. Không suy diễn Fake tests
 thành xác nhận FCM/Storage/Crashlytics production đã chạy.
+
+## Tự review của Hiếu — 04/11/2026
+
+Đây là AI tự review diff local, **chưa phải review trên PR**. Không có link PR hoặc
+GitHub Actions run để ghi nhận yêu cầu review trên PR đã đạt.
+
+| Mã | Phát hiện có trigger cụ thể | Sửa và kiểm chứng |
+|---|---|---|
+| CR-H01 | Gửi lại cùng request ID nhưng đổi nội dung: backend từng trả success cho bản cũ, khiến UI báo lịch mới đã gửi dù dữ liệu không khớp | So sánh sender/tasks/message trước khi trả idempotent success; payload khác trả already-exists. Test transaction Emulator có case đổi message |
+| CR-H02 | Client đặt schema v1 rồi thêm startDate/weekday sai có thể đi qua nhánh validate legacy | Nhánh legacy chỉ nhận các field v1, test Emulator chặn v2 fields giả dạng legacy |
+
+Không ghi nhận các kiểm tra local này là bằng chứng chạy AI review trên GitHub.
+
+| CR-H03 | Tách chuỗi “từ lần này” tạo ID mới: completion của ngày đã xong vẫn tồn tại nhưng lịch mới có thể hiện thành Chưa làm | Lưu completionSourceId trỏ chuỗi cha; đọc trạng thái đi qua chuỗi nguồn có chống vòng lặp, ưu tiên status mới (kể cả pending do Hoàn tác). Unit test nhiều lần tách và native integration kiểm tra giữ done sau split |

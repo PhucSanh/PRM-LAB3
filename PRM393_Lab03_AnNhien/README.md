@@ -7,14 +7,14 @@ Thiết kế: [Figma](https://www.figma.com/design/K3JczHkChbUWoDBkXZYMhR/Untitl
 
 | Người | Feature | Thư mục sở hữu |
 | --- | --- | --- |
-| **Sanh** (trưởng nhóm) | F0 Nền tảng · F8 Cài đặt & hồ sơ · F12 Gợi ý lịch · F14 Con cháu lập lịch (Flow 11, 12) · điều phối code review · report | `lib/theme/`, `lib/widgets/`, `lib/router/`, `docs/design-traceability.md`, `docs/architecture.md`, `docs/code-review.md` |
-| **Hiếu** | F1 Tài khoản + chọn vai trò · F10 Firebase · F13 Ghép nối (Flow 10) · slides | `lib/services/`, `lib/models/`, `firebase/`, `android/`, `docs/analytics-plan.md` |
+| **Sanh** (trưởng nhóm) | F0 Nền tảng · F8 Cài đặt & hồ sơ · F12 Gợi ý lịch · điều phối code review · report + slides | `lib/theme/`, `lib/widgets/`, `lib/router/`, `docs/design-traceability.md`, `docs/architecture.md`, `docs/code-review.md` |
+| **Hiếu** | F1 Tài khoản + chọn vai trò · F10 Firebase · F13 Ghép nối (Flow 10) · F14 Con cháu lập lịch (Flow 11, 12) | `lib/services/`, `lib/models/`, `firebase/`, `android/`, `docs/analytics-plan.md` |
 | **Khang** | F3 Hôm nay · F4 Thêm/sửa/xoá việc · F5 Giọng nói · F6 Lời nhắc (Flow 2, 3, 6, 7) · video | màn + ViewModel của feature mình |
 | **Hương** | F2 Onboarding · F7 Lịch tuần + PDF · F9 Thói quen · F11 Gia đình (Flow 1, 4, 5, 8, 9) · điều phối test · video | màn + ViewModel của feature mình, `e2e_test/conftest.py`, `docs/test-plan.md` |
 
 Mỗi người tự làm: ít nhất 1 ViewModel, test ARTEMIS cho flow của mình (≥ 3 lần), analytics event cho màn mình, sửa ≥ 1 phát hiện code review. Thầy có thể hỏi riêng từng người.
 
-Chi tiết từng feature và màn Figma: `docs/design-traceability.md` (và `../An-Nhien_Chia-task_Lab3.pdf`).
+Chi tiết từng feature và màn Figma: `docs/design-traceability.md` (và `../An-Nhien_Chia-task_Lab3.md`).
 
 ## Cài đặt lần đầu (chỉ Sanh làm 1 lần, rồi commit)
 
@@ -27,7 +27,7 @@ flutter test
 # flutter run: cần hoàn thành cấu hình Firebase Android bên dưới trước
 ```
 
-Sau đó đổi tên thư mục `github-templates/` thành `.github/` (chứa CODEOWNERS + mẫu PR) và điền GitHub username thật vào `CODEOWNERS`.
+`.github/` ở gốc repo đã có CODEOWNERS, mẫu PR và CI. Xem hướng dẫn bên dưới để bật AI review.
 
 ## Nối Firebase (Hiếu, ngày 1)
 
@@ -82,3 +82,18 @@ evidence/ report/ slides/
 
 - Demo video: _(điền)_
 - Report: `report/Lab03_<ID>.pdf` · Slides: `slides/Lab03_<ID>_slides.pdf`
+
+
+## Phần Hiếu — cập nhật 04/11/2026
+
+Hướng dẫn đầy đủ: [docs/hieu-implementation-guide.md](docs/hieu-implementation-guide.md).
+
+```bash
+flutter run -t lib/main_dev.dart # demo Fake, mở hub /demo, guard mặc định tắt
+bash scripts/check-hieu.sh      # analyzer + Flutter tests + backend/rules Emulator
+bash scripts/native-emulator-check.sh emulator-5556 # Firebase SDK trên Android local
+```
+
+F13/F14 đã có code và test; backend cloud chưa deploy trong phiên này. Để thử Firebase
+local bằng giao diện hai máy, xem `main_emulator.dart` trong guide. Native integration
+không thay bằng chứng ARTEMIS/Google Sign-In/FCM/Console/Storage production.

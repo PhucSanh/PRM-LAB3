@@ -1,3 +1,9 @@
+> **Cập nhật 04/11/2026:** phần dưới là audit lịch sử 02/11. F13/F14, backend lịch,
+> Settings/ProfileSetup/SuggestionService, CI/CODEOWNERS và local notification đã có
+> implementation mới. Xem [hieu-implementation-guide.md](hieu-implementation-guide.md)
+> cho trạng thái, lệnh chạy và bằng chứng hiện hành. Guard mặc định tắt có chủ đích
+> theo yêu cầu demo; không phải thiếu sót cần bật lại trong phiên này.
+
 # Kiểm tra phần việc của Hiếu – 02/11/2026
 
 Nguồn yêu cầu: `../../An-Nhien_Chia-task_Lab3.md`, bản phân công ngày 02/11/2026. Phạm vi Hiếu: F1, F10, F13, F14 (20 màn theo bảng phân công), toàn bộ Firebase/hạ tầng; không bao gồm F2 của Hương hoặc slides của Sanh.

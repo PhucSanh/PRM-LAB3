@@ -50,9 +50,19 @@ Màn đầu tiên Bác thấy: chọn cỡ chữ Vừa / Lớn / Rất lớn, ch
 
 ## Kết quả chạy (agent tự điền khi xong)
 
-- Ngày chạy:
+- Ngày chạy: 02/11/2026
 - File đã tạo / sửa:
-- Lệch Figma (nếu có, lý do):
+  - Tạo: `lib/screens/onboarding/welcome_screen.dart` (S01), `test/welcome_screen_test.dart`.
+  - Sửa: `lib/viewmodels/onboarding_view_model.dart` (`selectFontScale` đổi `fontScaleProvider` ngay rồi gọi `SettingsService.setFontScale`, lỗi → `CrashService.recordError` reason `save_font_scale`, không ném ra View; `load()` áp cỡ đã lưu cho toàn app nhưng không ghi đè nếu Bác đã chạm chọn), `lib/router/app_router.dart` (chỉ dòng `/welcome` + 1 import), `test/f2_view_models_test.dart` (+4 test S01), `docs/design-traceability.md` (S01 → `doing`, thêm DT-23), `docs/architecture.md` mục 7.2.
+  - Figma: đã lấy `get_design_context` + ảnh node `1:2` qua Figma MCP. Không tải asset SVG: icon theo `AppIcons` / Material (DT-09).
+  - Analytics: S01 không có event riêng; `font_size` gửi trong `tutorial_complete` ở bước 06.
+- Lệch Figma (nếu có, lý do): DT-23 – logo `IconCircle` 112 / 64 (Figma 72 / 40); icon "Cỡ chữ" là Material `text_fields`; icon mũi tên của "Bắt đầu" bên trái chữ (`AppButton`); "Xem thử" là nhãn; câu mẫu xuống 2 dòng do cả app phóng ×1.15; ở 360 × 800 cỡ "Lớn" ô "Rất lớn" bị thanh nút che một phần, cần cuộn. Lý do: chỉ dùng widget trong `lib/widgets/`. Ngoài ra "Đang chọn" + dấu tích đã có ở DT-15.
 - `flutter analyze` / `flutter test`:
+  - `flutter analyze`: 1 warning có sẵn (`pendingNotification` không dùng, `lib/router/app_router.dart:33`), không do bước này.
+  - Test F2 (`f2_services_test`, `f2_view_models_test`, `welcome_screen_test`): 28/28 qua – gồm 360 / 412 dp × `textScaler` 1.3 / 2.0 không tràn và nút "Bắt đầu" luôn trong màn.
+  - `flutter test` toàn bộ: +161 −68. 68 lỗi giống hệt trước bước này (auth_routing, router, text_scale_overflow, theme – xem bước 01).
+  - Đã render thử 3 cỡ chữ ở 360 dp bằng font Be Vietnam Pro thật (ảnh tạm, không commit) và so với ảnh Figma.
 - Việc người dùng cần làm tay:
-- Commit gợi ý:
+  - Chụp ảnh trên máy ảo 360 dp ở 3 mức Vừa / Lớn / Rất lớn (`flutter run`, vào `/welcome` – khối `redirect` đang comment nên vào thẳng được).
+  - Báo Sanh (F0): thêm tham số cỡ cho `IconCircle` (logo 72 / icon 40) và icon `type` vào `AppIcons` để bỏ được một phần DT-23; sửa Figma hoặc nhóm chốt các điểm còn lại của DT-23.
+- Commit gợi ý: `feat(F2): màn S01 Chào mừng – chọn cỡ chữ, đổi chữ toàn app ngay khi chạm`
