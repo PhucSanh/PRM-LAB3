@@ -125,22 +125,59 @@ class _CaregiverFormScreenState extends ConsumerState<CaregiverFormScreen> {
             children: [
               if (s.error != null) FieldMessage.error(s.error!),
               if (widget.step == 1) ...[
-                Text('Chọn nhóm thói quen', style: text.titleLarge),
-                ref.watch(caregiverHabitsProvider).when(
-                      loading: () => const LoadingView(),
-                      error: (e, st) => ErrorView(
-                          message: 'Chưa tải được thói quen.',
-                          onRetry: () =>
-                              ref.invalidate(caregiverHabitsProvider)),
-                      data: (habits) => habits.isEmpty
-                          ? const FieldMessage.hint(
-                              'Chưa có thói quen. Tải dữ liệu mẫu trước.')
-                          : CaregiverHabitChoices(
-                              habits: habits,
-                              value: t.habitKey,
-                              onChanged: (key) =>
-                                  update(t.copyWith(habitKey: key))),
-                    ),
+                Text('Chọn nhanh một việc', style: text.titleSmall),
+                LayoutBuilder(
+                    builder: (context, box) => Wrap(
+                          spacing: AppSpacing.md,
+                          runSpacing: AppSpacing.md,
+                          children: [
+                            for (final preset in const [
+                              (
+                                'Đi bộ buổi sáng',
+                                'move',
+                                Icons.directions_walk_rounded
+                              ),
+                              (
+                                'Uống trà',
+                                'tea',
+                                Icons.emoji_food_beverage_rounded
+                              ),
+                              (
+                                'Thư giãn',
+                                'downshift',
+                                Icons.self_improvement_rounded
+                              ),
+                              (
+                                'Gọi cho gia đình',
+                                'family',
+                                Icons.call_rounded
+                              ),
+                            ])
+                              SizedBox(
+                                  width: MediaQuery.textScalerOf(context)
+                                              .scale(1) >
+                                          1.3
+                                      ? box.maxWidth
+                                      : (box.maxWidth - AppSpacing.md) / 2,
+                                  child: OutlinedButton.icon(
+                                    icon: Icon(preset.$3),
+                                    label: Text(switch (preset.$2) {
+                                      'move' => 'Đi bộ',
+                                      'family' => 'Gọi nhà',
+                                      _ => preset.$1,
+                                    }),
+                                    onPressed: () {
+                                      title.value = TextEditingValue(
+                                          text: preset.$1,
+                                          selection: TextSelection.collapsed(
+                                              offset: preset.$1.length));
+                                      update(t.copyWith(
+                                          title: preset.$1,
+                                          habitKey: preset.$2));
+                                    },
+                                  )),
+                          ],
+                        )),
                 AppTextField(
                     label: 'Tên việc',
                     controller: title,
@@ -152,6 +189,19 @@ class _CaregiverFormScreenState extends ConsumerState<CaregiverFormScreen> {
                     value: TimeOfDay(hour: t.hour, minute: t.minute),
                     onChanged: (v) =>
                         update(t.copyWith(hour: v.hour, minute: v.minute))),
+                Wrap(
+                  spacing: AppSpacing.md,
+                  runSpacing: AppSpacing.md,
+                  children: [
+                    for (final hour in const [7, 9, 15, 19])
+                      OutlinedButton(
+                        onPressed: () =>
+                            update(t.copyWith(hour: hour, minute: 0)),
+                        child: Text(
+                            '${t.hour == hour && t.minute == 0 ? '✓ ' : ''}${hour.toString().padLeft(2, '0')}:00'),
+                      ),
+                  ],
+                ),
                 Text('Thời lượng thực hiện', style: text.titleLarge),
                 ChoiceGroup<int>(
                     options: const [
@@ -161,6 +211,35 @@ class _CaregiverFormScreenState extends ConsumerState<CaregiverFormScreen> {
                     ],
                     value: t.durationMinutes,
                     onChanged: (v) => update(t.copyWith(durationMinutes: v))),
+                ExpansionTile(
+                  tilePadding: EdgeInsets.zero,
+                  title: Text('Đổi nhóm thói quen', style: text.titleSmall),
+                  subtitle: Text(ref
+                          .watch(caregiverHabitsProvider)
+                          .asData
+                          ?.value
+                          .where((habit) => habit.key == t.habitKey)
+                          .firstOrNull
+                          ?.name ??
+                      'Chọn nhóm phù hợp'),
+                  children: [
+                    ref.watch(caregiverHabitsProvider).when(
+                          loading: () => const LoadingView(),
+                          error: (e, st) => ErrorView(
+                              message: 'Chưa tải được thói quen.',
+                              onRetry: () =>
+                                  ref.invalidate(caregiverHabitsProvider)),
+                          data: (habits) => habits.isEmpty
+                              ? const FieldMessage.hint(
+                                  'Chưa có thói quen. Tải dữ liệu mẫu trước.')
+                              : CaregiverHabitChoices(
+                                  habits: habits,
+                                  value: t.habitKey,
+                                  onChanged: (key) =>
+                                      update(t.copyWith(habitKey: key))),
+                        ),
+                  ],
+                ),
               ] else if (widget.step == 2) ...[
                 ChoiceGroup<RepeatRule>(
                     options: const [

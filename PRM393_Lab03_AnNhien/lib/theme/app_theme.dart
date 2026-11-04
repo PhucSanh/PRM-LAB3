@@ -102,6 +102,7 @@ abstract final class AppTheme {
         backgroundColor: background,
         foregroundColor: scheme.onSurface,
         elevation: 0,
+        scrolledUnderElevation: 0,
         toolbarHeight: AppSizes.appBar,
         titleTextStyle: text.titleLarge,
       ),

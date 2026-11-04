@@ -3,14 +3,16 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../models/task_item.dart';
-import '../../theme/app_colors.dart';
 import '../../theme/app_spacing.dart';
+import '../../theme/app_icons.dart';
+import '../../widgets/habit_widgets.dart';
 import '../../viewmodels/today_view_model.dart';
 import '../../viewmodels/ui_state.dart';
 import '../../widgets/app_button.dart';
+import '../../widgets/section_card.dart';
 import '../../widgets/state_views.dart';
+import '../../widgets/undo_snackbar.dart';
 
-/// S03 Hôm nay – chủ: Khang (F3). Màn MẪU: chỉ vẽ state, mọi xử lý gọi ViewModel.
 class TodayScreen extends ConsumerWidget {
   const TodayScreen({super.key});
 
@@ -22,11 +24,16 @@ class TodayScreen extends ConsumerWidget {
       body: SafeArea(
         child: switch (state) {
           UiLoading() => const LoadingView(message: 'Đang tải việc hôm nay…'),
-          UiError(:final message) => ErrorView(message: message, onRetry: vm.load),
+          UiError(:final message) =>
+            ErrorView(message: message, onRetry: vm.load),
           UiEmpty() => EmptyView(
-              icon: Icons.event_available_outlined,
+              icon: Icons.event_available_rounded,
               title: 'Hôm nay chưa có việc',
-              action: AppButton(label: 'Thêm việc', icon: Icons.add, onPressed: () => context.push('/today/add')),
+              message: 'Bắt đầu nhẹ nhàng với một hoạt động Bác thích.',
+              action: AppButton(
+                  label: 'Thêm việc',
+                  icon: Icons.add,
+                  onPressed: () => context.push('/today/add')),
             ),
           UiData(:final data) => _TodayList(data: data),
         },
@@ -41,69 +48,203 @@ class _TodayList extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final t = Theme.of(context).textTheme;
-    return ListView(
-      padding: const EdgeInsets.all(AppSpacing.screen),
-      children: [
-        Row(children: [
-          Expanded(child: Text('Chào Bác', style: t.headlineMedium)),
-          TextButton.icon(onPressed: () => context.push('/settings'), icon: const Icon(Icons.settings_outlined), label: const Text('Cài đặt')),
-        ]),
-        Text('Đã xong ${data.doneCount}/${data.total} việc', style: t.bodyLarge),
-        const SizedBox(height: AppSpacing.lg),
-        for (final task in data.tasks) ...[
-          _TaskTile(task: task),
-          const SizedBox(height: AppSpacing.betweenTargets),
+    final theme = Theme.of(context);
+    final t = theme.textTheme;
+    final scheme = theme.colorScheme;
+    final next = data.next;
+    return RefreshIndicator(
+      onRefresh: ref.read(todayViewModelProvider.notifier).load,
+      child: ListView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: const EdgeInsets.all(AppSpacing.screen),
+        children: [
+          Wrap(
+            alignment: WrapAlignment.spaceBetween,
+            crossAxisAlignment: WrapCrossAlignment.center,
+            spacing: AppSpacing.base,
+            children: [
+              Text('Chào Bác', style: t.headlineMedium),
+              TextButton.icon(
+                  onPressed: () => context.push('/settings'),
+                  icon: const Icon(AppIcons.settings),
+                  label: const Text('Cài đặt')),
+            ],
+          ),
+          Text('Hôm nay, mình chăm sóc bản thân nhé.',
+              style: t.bodyMedium?.copyWith(color: scheme.onSurfaceVariant)),
+          const SizedBox(height: AppSpacing.lg),
+          SectionCard(
+            child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Text('Đã xong ${data.doneCount}/${data.total} việc',
+                      style: t.titleSmall),
+                  const SizedBox(height: AppSpacing.md),
+                  ClipRRect(
+                    borderRadius: AppRadius.smAll,
+                    child: LinearProgressIndicator(
+                      value: data.total == 0 ? 0 : data.doneCount / data.total,
+                      minHeight: 10,
+                      backgroundColor: scheme.primaryContainer,
+                      semanticsLabel:
+                          'Tiến độ hôm nay: ${data.doneCount} trên ${data.total} việc',
+                    ),
+                  ),
+                ]),
+          ),
+          const SizedBox(height: AppSpacing.xl),
+          if (next != null) ...[
+            Semantics(
+                header: true,
+                child: Text('Việc tiếp theo', style: t.titleLarge)),
+            const SizedBox(height: AppSpacing.md),
+            _TaskTile(task: next, featured: true),
+            const SizedBox(height: AppSpacing.xl),
+          ],
+          AppButton(
+              label: 'Thêm việc',
+              icon: Icons.add,
+              kind: AppButtonKind.tonal,
+              onPressed: () => context.push('/today/add')),
+          if (data.tasks
+              .any((task) => task.id != next?.id && !task.isDone)) ...[
+            const SizedBox(height: AppSpacing.xl),
+            Semantics(
+                header: true,
+                child: Text('Các việc còn lại', style: t.titleLarge)),
+            const SizedBox(height: AppSpacing.md),
+            for (final task in data.tasks
+                .where((task) => task.id != next?.id && !task.isDone)) ...[
+              _TaskTile(task: task),
+              const SizedBox(height: AppSpacing.betweenTargets),
+            ],
+          ],
+          if (data.doneCount > 0) ...[
+            const SizedBox(height: AppSpacing.lg),
+            ExpansionTile(
+              tilePadding: EdgeInsets.zero,
+              title: Text('Đã hoàn thành (${data.doneCount})',
+                  style: t.titleSmall),
+              children: [
+                for (final task in data.tasks.where((task) => task.isDone)) ...[
+                  _TaskTile(task: task),
+                  const SizedBox(height: AppSpacing.base),
+                ],
+              ],
+            ),
+          ],
+          const SizedBox(height: AppSpacing.lg),
         ],
-        AppButton(label: 'Thêm việc', icon: Icons.add, kind: AppButtonKind.secondary, onPressed: () => context.push('/today/add')),
-      ],
+      ),
     );
   }
 }
 
-/// TODO(A – Sanh, F0): chuyển thành widget dùng chung `TaskCard` trong lib/widgets/.
-class _TaskTile extends StatelessWidget {
-  const _TaskTile({required this.task});
+class _TaskTile extends ConsumerStatefulWidget {
+  const _TaskTile({required this.task, this.featured = false});
   final TaskItem task;
+  final bool featured;
+
+  @override
+  ConsumerState<_TaskTile> createState() => _TaskTileState();
+}
+
+class _TaskTileState extends ConsumerState<_TaskTile> {
+  bool _busy = false;
+
+  Future<void> _complete() async {
+    if (_busy) return;
+    setState(() => _busy = true);
+    final vm = ref.read(todayViewModelProvider.notifier);
+    final task = widget.task;
+    final messenger = ScaffoldMessenger.of(context);
+    final pageContext =
+        context.findAncestorStateOfType<ScaffoldState>()!.context;
+    try {
+      await vm.markDone(task.id);
+      if (!pageContext.mounted) return;
+      showUndoSnackbar(pageContext, title: 'Đã hoàn thành: ${task.title}',
+          onUndo: () async {
+        try {
+          await vm.undo(task.id, previousStatus: task.status);
+        } catch (_) {
+          messenger.showSnackBar(const SnackBar(
+              content: Text('Chưa hoàn tác được. Bác thử lại nhé.')));
+        }
+      });
+    } catch (_) {
+      if (pageContext.mounted) {
+        messenger.showSnackBar(
+            const SnackBar(content: Text('Chưa lưu được. Bác thử lại nhé.')));
+      }
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
-    final colors = HabitPalette.of(task.habitKey);
+    final task = widget.task;
+    final scheme = Theme.of(context).colorScheme;
     final t = Theme.of(context).textTheme;
-    final time = '${task.hour}:${task.minute.toString().padLeft(2, '0')}';
-    return Semantics(
-      button: true,
-      label: '$time, ${task.title}, ${task.isDone ? 'đã xong' : 'chưa làm'}',
-      child: Card(
-        clipBehavior: Clip.antiAlias,
-        child: InkWell(
-          onTap: () => context.push('/today/task/${task.id}'),
-          child: Container(
-            constraints: const BoxConstraints(minHeight: AppSizes.minTarget),
-            decoration: BoxDecoration(border: Border(left: BorderSide(color: colors.accent, width: AppSizes.accentBar))),
-            padding: const EdgeInsets.all(AppSpacing.base),
-            child: Row(children: [
-              Container(
-                width: AppSizes.habitIcon,
-                height: AppSizes.habitIcon,
-                decoration: BoxDecoration(color: colors.accent, borderRadius: AppRadius.mdAll),
-                child: const Icon(Icons.spa, color: HabitPalette.onAccent, size: AppSizes.icon),
-              ),
-              const SizedBox(width: AppSpacing.md),
-              Expanded(
-                child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  Text(time, style: t.bodyMedium),
-                  Text(task.title, style: t.titleMedium),
-                  Row(children: [
-                    Icon(task.isDone ? Icons.check_circle : Icons.radio_button_unchecked, size: AppSizes.iconInChip),
-                    const SizedBox(width: AppSpacing.xs),
-                    Text(task.isDone ? 'Đã xong' : 'Chưa làm', style: t.labelMedium),
-                  ]),
+    final time =
+        '${task.hour.toString().padLeft(2, '0')}:${task.minute.toString().padLeft(2, '0')}';
+    final status = switch (task.status) {
+      TaskStatus.done => 'Đã xong',
+      TaskStatus.pending => 'Chưa làm',
+      TaskStatus.postponed => 'Đã dời giờ',
+      TaskStatus.skipped => 'Đã bỏ qua',
+    };
+    return Card(
+      color: widget.featured ? scheme.secondaryContainer : scheme.surface,
+      clipBehavior: Clip.antiAlias,
+      child: Padding(
+        padding: const EdgeInsets.all(AppSpacing.screen),
+        child:
+            Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+          Wrap(
+              spacing: AppSpacing.md,
+              runSpacing: AppSpacing.sm,
+              crossAxisAlignment: WrapCrossAlignment.center,
+              children: [
+                Text(time,
+                    style: t.headlineMedium?.copyWith(color: scheme.primary)),
+                Row(mainAxisSize: MainAxisSize.min, children: [
+                  Icon(switch (task.status) {
+                        TaskStatus.done => AppIcons.checkCircle,
+                        TaskStatus.pending => AppIcons.clock,
+                        TaskStatus.postponed => AppIcons.later,
+                        TaskStatus.skipped => AppIcons.statusSkipped,
+                      },
+                      color: scheme.primary, size: AppSizes.iconInChip),
+                  const SizedBox(width: AppSpacing.sm),
+                  Flexible(child: Text(status, style: t.bodyMedium)),
                 ]),
-              ),
-            ]),
+              ]),
+          const SizedBox(height: AppSpacing.sm),
+          Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            ExcludeSemantics(child: HabitBadge(habitKey: task.habitKey)),
+            const SizedBox(width: AppSpacing.md),
+            Expanded(child: Text(task.title, style: t.titleLarge)),
+          ]),
+          const SizedBox(height: AppSpacing.base),
+          if (task.status == TaskStatus.pending ||
+              task.status == TaskStatus.postponed)
+            AppButton(
+                label: 'Đã làm xong',
+                icon: Icons.check,
+                busy: _busy,
+                wrapLabel: true,
+                kind: widget.featured
+                    ? AppButtonKind.primary
+                    : AppButtonKind.tonal,
+                onPressed: _complete),
+          TextButton.icon(
+            onPressed: () => context.push('/today/task/${task.id}'),
+            icon: const Icon(Icons.arrow_forward, size: AppSizes.iconInChip),
+            label: const Text('Xem chi tiết'),
           ),
-        ),
+        ]),
       ),
     );
   }

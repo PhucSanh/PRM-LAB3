@@ -1,7 +1,5 @@
 import '../models/habit.dart';
-import '../theme/app_colors.dart';
 import 'habit_widgets.dart';
-import 'caregiver_design_icon.dart';
 import 'package:flutter/material.dart';
 import '../models/task_item.dart';
 import '../theme/app_spacing.dart';
@@ -117,18 +115,13 @@ class CaregiverHabitChoices extends StatelessWidget {
         final compact = MediaQuery.textScalerOf(context).scale(1) <= 1.3;
         final width =
             compact ? (box.maxWidth - AppSpacing.md) / 2 : box.maxWidth;
-        const assets = {
-          'move': '2-5e368.svg',
-          'downshift': '2-3969d.svg',
-          'eighty': '2-95732.svg',
-          'family': '2-78770.svg'
-        };
+        const commonKeys = {'move', 'downshift', 'eighty', 'family'};
         return Wrap(
             spacing: AppSpacing.md,
             runSpacing: AppSpacing.md,
             children: [
               for (final habit in habits
-                  .where((h) => assets.containsKey(h.key) || h.key == value))
+                  .where((h) => commonKeys.contains(h.key) || h.key == value))
                 SizedBox(
                     width: width,
                     child: Semantics(
@@ -144,26 +137,21 @@ class CaregiverHabitChoices extends StatelessWidget {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Row(
-                                  mainAxisAlignment:
-                                      MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    Container(
-                                        padding:
-                                            const EdgeInsets.all(AppSpacing.sm),
-                                        decoration: BoxDecoration(
-                                            color: HabitPalette.of(habit.key)
-                                                .accent,
-                                            borderRadius: AppRadius.mdAll),
-                                        child: assets[habit.key] == null
-                                            ? HabitBadge(habitKey: habit.key)
-                                            : CaregiverDesignIcon(
-                                                assets[habit.key]!)),
-                                    Icon(
-                                        habit.key == value
-                                            ? Icons.radio_button_checked
-                                            : Icons.radio_button_off,
-                                        size: AppSizes.icon),
-                                  ]),
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
+                                children: [
+                                  HabitBadge(habitKey: habit.key),
+                                  Icon(
+                                      habit.key == value
+                                          ? Icons.check_circle_rounded
+                                          : Icons
+                                              .radio_button_unchecked_rounded,
+                                      size: AppSizes.icon,
+                                      color: Theme.of(context)
+                                          .colorScheme
+                                          .primary),
+                                ],
+                              ),
                               const SizedBox(height: AppSpacing.sm),
                               Text(habit.name,
                                   style:

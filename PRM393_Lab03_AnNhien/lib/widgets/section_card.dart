@@ -22,7 +22,7 @@ class SectionCard extends StatelessWidget {
         border: Border.all(color: scheme.outlineVariant),
       ),
       child: Padding(
-        padding: const EdgeInsets.all(AppSpacing.base),
+        padding: const EdgeInsets.all(AppSpacing.screen),
         child:
             Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
           if (title != null) ...[

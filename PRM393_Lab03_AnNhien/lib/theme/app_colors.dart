@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 /// Màn hình KHÔNG dùng trực tiếp lớp này: đọc qua `Theme.of(context).colorScheme`
 /// hoặc `HabitPalette`.
 abstract final class AppColors {
-  static const background = Color(0xFFF6F7F2);
+  static const background = Color(0xFFF8F6F0);
   static const surface = Color(0xFFFFFFFF);
   static const onSurface = Color(0xFF202B25);
   static const onSurfaceVariant = Color(0xFF526057);
@@ -23,7 +23,7 @@ abstract final class AppColors {
   static const onWarningContainer = Color(0xFF8A5100);
   static const warningStrong = Color(0xFFB26A00); // DESIGN.md warning-strong: icon "○ Chưa làm", bell-off
   static const outline = Color(0xFF7B887F);
-  static const borderSubtle = Color(0xFFDFE5DF);
+  static const borderSubtle = Color(0xFFE3E7DF);
   static const borderStrong = Color(0xFFA0ACA3);
   static const disabledBg = Color(0xFFE6EAE5);
   static const disabledFg = Color(0xFF5C6A61);

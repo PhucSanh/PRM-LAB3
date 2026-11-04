@@ -48,6 +48,34 @@ void main() {
           ..addFont(rootBundle.load('fonts/MaterialIcons-Regular.otf')))
         .load();
   });
+  testWidgets('quick activity and time fill form without typing',
+      (tester) async {
+    final c = demoContainer();
+    await mount(tester, c);
+    c.read(routerProvider).go('/caregiver/task/new');
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Uống trà'));
+    await tester.pumpAndSettle();
+    var task = c.read(caregiverFormViewModelProvider).task;
+    expect(task.title, 'Uống trà');
+    expect(task.habitKey, 'tea');
+    await tester.scrollUntilVisible(find.textContaining('15:00'), 200,
+        scrollable: find
+            .descendant(
+                of: find.byType(ListView).first,
+                matching: find.byType(Scrollable))
+            .first);
+    await tester.tap(find.textContaining('15:00'));
+    await tester.pumpAndSettle();
+    task = c.read(caregiverFormViewModelProvider).task;
+    expect(task.hour, 15);
+    expect(task.minute, 0);
+    await tester.tap(find.text('Tiếp tục'));
+    await tester.pumpAndSettle();
+    expect(c.read(routerProvider).routeInformationProvider.value.uri.path,
+        '/caregiver/task/new/repeat');
+    await unmount(tester, c);
+  });
   testWidgets(
       '3-step consent flow sends once, mother receives once and schedule updates',
       (tester) async {

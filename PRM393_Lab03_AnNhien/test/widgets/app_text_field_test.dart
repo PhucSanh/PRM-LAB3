@@ -1,4 +1,5 @@
 import 'package:an_nhien/theme/app_spacing.dart';
+import 'package:an_nhien/theme/app_icons.dart';
 import 'package:an_nhien/widgets/app_text_field.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -64,7 +65,7 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('Bác chưa nhập tên việc.'), findsOneWidget);
-      expect(find.byIcon(Icons.error_outline), findsOneWidget);
+      expect(find.byIcon(AppIcons.alert), findsOneWidget);
       expect(find.text('Ví dụ: Đi bộ buổi sáng'), findsOneWidget);
       // TalkBack gộp nhãn + lỗi + gợi ý vào node của ô; node đó là liveRegion nên lỗi được đọc ngay.
       final node = tester.getSemantics(find.text('Bác chưa nhập tên việc.'));

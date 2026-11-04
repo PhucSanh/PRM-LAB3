@@ -52,7 +52,7 @@ class AppShell extends StatelessWidget {
                       label: label,
                       semanticLabel: spoken,
                       selected: i == navigationShell.currentIndex,
-                      onTap: () => navigationShell.goBranch(i, initialLocation: i == navigationShell.currentIndex),
+                      onTap: () => navigationShell.goBranch(i),
                     ),
                   ),
                 ],
