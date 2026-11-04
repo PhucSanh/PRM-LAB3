@@ -26,15 +26,7 @@ class TodayScreen extends ConsumerWidget {
           UiLoading() => const LoadingView(message: 'Đang tải việc hôm nay…'),
           UiError(:final message) =>
             ErrorView(message: message, onRetry: vm.load),
-          UiEmpty() => EmptyView(
-              icon: Icons.event_available_rounded,
-              title: 'Hôm nay chưa có việc',
-              message: 'Bắt đầu nhẹ nhàng với một hoạt động Bác thích.',
-              action: AppButton(
-                  label: 'Thêm việc',
-                  icon: Icons.add,
-                  onPressed: () => context.push('/today/add')),
-            ),
+          UiEmpty() => const _TodayList(data: TodayData(tasks: [])),
           UiData(:final data) => _TodayList(data: data),
         },
       ),
@@ -52,51 +44,84 @@ class _TodayList extends ConsumerWidget {
     final t = theme.textTheme;
     final scheme = theme.colorScheme;
     final next = data.next;
+    final now = DateTime.now();
+    final weekday = const [
+      'Thứ Hai',
+      'Thứ Ba',
+      'Thứ Tư',
+      'Thứ Năm',
+      'Thứ Sáu',
+      'Thứ Bảy',
+      'Chủ nhật'
+    ][now.weekday - 1];
+    final quickActionStyle = TextButton.styleFrom(
+      textStyle: t.labelMedium,
+      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm),
+    );
     return RefreshIndicator(
       onRefresh: ref.read(todayViewModelProvider.notifier).load,
       child: ListView(
         physics: const AlwaysScrollableScrollPhysics(),
         padding: const EdgeInsets.all(AppSpacing.screen),
         children: [
-          Wrap(
-            alignment: WrapAlignment.spaceBetween,
-            crossAxisAlignment: WrapCrossAlignment.center,
-            spacing: AppSpacing.base,
-            children: [
-              Text('Chào Bác', style: t.headlineMedium),
-              TextButton.icon(
-                  onPressed: () => context.push('/settings'),
-                  icon: const Icon(AppIcons.settings),
-                  label: const Text('Cài đặt')),
-            ],
-          ),
-          Text('Hôm nay, mình chăm sóc bản thân nhé.',
+          Text('Chào Bác', style: t.headlineMedium),
+          const SizedBox(height: AppSpacing.xs),
+          Text('$weekday, ${now.day}/${now.month}',
               style: t.bodyMedium?.copyWith(color: scheme.onSurfaceVariant)),
-          TextButton.icon(
-            onPressed: () => context.push('/inbox'),
-            icon: const Icon(Icons.notifications_rounded),
-            label: const Text('Hộp thông báo'),
-          ),
-          const SizedBox(height: AppSpacing.lg),
-          SectionCard(
-            child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
+          LayoutBuilder(builder: (context, box) {
+            final width = MediaQuery.textScalerOf(context).scale(1) > 1.3
+                ? box.maxWidth
+                : (box.maxWidth - AppSpacing.betweenTargets) / 2;
+            return Wrap(
+                spacing: AppSpacing.betweenTargets,
+                runSpacing: AppSpacing.xs,
                 children: [
-                  Text('Đã xong ${data.doneCount}/${data.total} việc',
-                      style: t.titleSmall),
-                  const SizedBox(height: AppSpacing.md),
-                  ClipRRect(
-                    borderRadius: AppRadius.smAll,
-                    child: LinearProgressIndicator(
-                      value: data.total == 0 ? 0 : data.doneCount / data.total,
-                      minHeight: 10,
-                      backgroundColor: scheme.primaryContainer,
-                      semanticsLabel:
-                          'Tiến độ hôm nay: ${data.doneCount} trên ${data.total} việc',
+                  SizedBox(
+                      width: width,
+                      child: TextButton.icon(
+                          style: quickActionStyle,
+                          onPressed: () => context.push('/settings'),
+                          icon: const Icon(AppIcons.settings,
+                              size: AppSizes.iconInChip),
+                          label: const Text('Cài đặt'))),
+                  SizedBox(
+                      width: width,
+                      child: TextButton.icon(
+                          style: quickActionStyle,
+                          onPressed: () => context.push('/inbox'),
+                          icon: const Icon(Icons.notifications_rounded,
+                              size: AppSizes.iconInChip),
+                          label: const Text('Thông báo'))),
+                ]);
+          }),
+          const SizedBox(height: AppSpacing.lg),
+          if (data.total == 0)
+            const EmptyView(
+              icon: Icons.event_available_rounded,
+              title: 'Hôm nay chưa có việc',
+              message: 'Bắt đầu nhẹ nhàng với một hoạt động Bác thích.',
+            ),
+          if (data.total > 0)
+            SectionCard(
+              child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Text('Đã xong ${data.doneCount}/${data.total} việc',
+                        style: t.titleSmall),
+                    const SizedBox(height: AppSpacing.md),
+                    ClipRRect(
+                      borderRadius: AppRadius.smAll,
+                      child: LinearProgressIndicator(
+                        value:
+                            data.total == 0 ? 0 : data.doneCount / data.total,
+                        minHeight: 10,
+                        backgroundColor: scheme.primaryContainer,
+                        semanticsLabel:
+                            'Tiến độ hôm nay: ${data.doneCount} trên ${data.total} việc',
+                      ),
                     ),
-                  ),
-                ]),
-          ),
+                  ]),
+            ),
           const SizedBox(height: AppSpacing.xl),
           if (next != null) ...[
             Semantics(
@@ -109,7 +134,8 @@ class _TodayList extends ConsumerWidget {
           AppButton(
               label: 'Thêm việc',
               icon: Icons.add,
-              kind: AppButtonKind.tonal,
+              kind:
+                  data.total == 0 ? AppButtonKind.primary : AppButtonKind.tonal,
               onPressed: () => context.push('/today/add')),
           if (data.tasks
               .any((task) => task.id != next?.id && !task.isDone)) ...[

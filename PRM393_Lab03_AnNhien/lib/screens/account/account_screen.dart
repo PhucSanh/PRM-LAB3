@@ -7,6 +7,8 @@ import '../../viewmodels/account_view_model.dart';
 import '../../widgets/app_button.dart';
 import '../../widgets/app_back_bar.dart';
 import '../../widgets/state_views.dart';
+import '../../widgets/section_card.dart';
+import '../../theme/app_icons.dart';
 
 class AccountScreen extends ConsumerWidget {
   const AccountScreen({super.key});
@@ -28,26 +30,31 @@ class AccountScreen extends ConsumerWidget {
       body: SafeArea(
           child: SingleChildScrollView(
         padding: const EdgeInsets.all(AppSpacing.screen),
-        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          profile.when(
-            loading: () => const LoadingView(),
-            error: (_, __) => ErrorView(
-                message: 'Chưa tải được thông tin.',
-                onRetry: () => ref.invalidate(profileProvider)),
-            data: (value) =>
-                Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Text(value?.displayName ?? 'Tài khoản Google',
-                  style: text.headlineMedium),
-              const SizedBox(height: AppSpacing.base),
-              Text(
-                  switch (value?.role) {
-                    UserRole.elder => 'Vai trò: Bác',
-                    UserRole.caregiver => 'Vai trò: Con cháu',
-                    null => 'Chưa chọn vai trò',
-                  },
-                  style: text.bodyLarge),
-            ]),
-          ),
+        child:
+            Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+          SectionCard(
+              icon: AppIcons.user,
+              title: 'Tài khoản',
+              child: profile.when(
+                loading: () => const LoadingView(),
+                error: (_, __) => ErrorView(
+                    message: 'Chưa tải được thông tin.',
+                    onRetry: () => ref.invalidate(profileProvider)),
+                data: (value) => Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(value?.displayName ?? 'Tài khoản Google',
+                          style: text.headlineMedium),
+                      const SizedBox(height: AppSpacing.base),
+                      Text(
+                          switch (value?.role) {
+                            UserRole.elder => 'Vai trò: Bác',
+                            UserRole.caregiver => 'Vai trò: Con cháu',
+                            null => 'Chưa chọn vai trò',
+                          },
+                          style: text.bodyLarge),
+                    ]),
+              )),
           if (action.message != null) ...[
             const SizedBox(height: AppSpacing.base),
             Semantics(
@@ -56,12 +63,18 @@ class AccountScreen extends ConsumerWidget {
           ],
           const SizedBox(height: AppSpacing.base),
           AppButton(
-              label: 'Nhận lịch gợi ý (khu thử)',
-              icon: Icons.inbox,
-              kind: AppButtonKind.secondary,
+              label: profile.value?.role == UserRole.caregiver
+                  ? 'Xem lịch của mẹ'
+                  : 'Về Hôm nay',
               wrapLabel: true,
-              onPressed: () =>
-                  context.push('/settings/firebase-demo/suggestions')),
+              icon: Icons.arrow_forward,
+              onPressed: action.busy
+                  ? null
+                  : () => context.go(profile.value?.role == null
+                      ? '/session'
+                      : profile.value?.role == UserRole.caregiver
+                          ? '/caregiver/schedule'
+                          : '/today')),
           const SizedBox(height: AppSpacing.betweenTargets),
           AppButton(
               label: 'Mã ghép nối của Bác',
@@ -77,31 +90,35 @@ class AccountScreen extends ConsumerWidget {
               wrapLabel: true,
               onPressed: () => context.push('/caregiver/schedule')),
           const SizedBox(height: AppSpacing.xl),
-          AppButton(
-              label: profile.value?.role == UserRole.caregiver
-                  ? 'Xem lịch của mẹ'
-                  : 'Về Hôm nay',
-              icon: Icons.arrow_forward,
-              onPressed: action.busy
-                  ? null
-                  : () => context.go(profile.value?.role == null
-                      ? '/session'
-                      : profile.value?.role == UserRole.caregiver
-                          ? '/caregiver/schedule'
-                          : '/today')),
-          const SizedBox(height: AppSpacing.betweenTargets),
-          AppButton(
-              label: 'Khu thử tính năng',
-              icon: Icons.science_outlined,
-              kind: AppButtonKind.secondary,
-              onPressed: action.busy
-                  ? null
-                  : () => context.push('/settings/firebase-demo')),
+          ExpansionTile(
+            tilePadding: EdgeInsets.zero,
+            title: Text('Công cụ thử nghiệm', style: text.titleSmall),
+            leading: const Icon(Icons.science_rounded),
+            children: [
+              AppButton(
+                  label: 'Nhận lịch gợi ý (khu thử)',
+                  icon: Icons.inbox,
+                  kind: AppButtonKind.secondary,
+                  wrapLabel: true,
+                  onPressed: () =>
+                      context.push('/settings/firebase-demo/suggestions')),
+              const SizedBox(height: AppSpacing.betweenTargets),
+              AppButton(
+                  label: 'Khu thử tính năng',
+                  wrapLabel: true,
+                  icon: Icons.science_outlined,
+                  kind: AppButtonKind.secondary,
+                  onPressed: action.busy
+                      ? null
+                      : () => context.push('/settings/firebase-demo')),
+              const SizedBox(height: AppSpacing.betweenTargets),
+            ],
+          ),
           const SizedBox(height: AppSpacing.betweenTargets),
           AppButton(
               label: 'Đăng xuất',
               icon: Icons.logout,
-              kind: AppButtonKind.danger,
+              kind: AppButtonKind.dangerOutline,
               busy: action.busy,
               onPressed: () async {
                 final confirmed = await showDialog<bool>(

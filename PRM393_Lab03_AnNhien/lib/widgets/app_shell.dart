@@ -7,7 +7,7 @@ import '../theme/app_spacing.dart';
 
 /// Bottom nav 4 tab: Hôm nay · Lịch tuần · Thói quen · Gia đình (rule.md R-NAV-01; Figma S03 › Nav `1:451`).
 /// Nền trắng, viền trên; 4 ô rộng đều cách nhau 20; mỗi ô icon 32 + nhãn 20 đậm **2 dòng** ("Hôm / nay") để
-/// 4 nhãn luôn cùng kiểu; ô đang chọn có nền `primaryContainer` bo 12 bọc cả icon lẫn nhãn, chữ `primary`.
+/// 4 nhãn luôn cùng kiểu; tab đang chọn có pill nền nhạt quanh icon, chữ `primary`.
 /// Chữ phóng to quá thì nhãn thu nhỏ vừa ô (không cắt "…", không vỡ chữ giữa từ).
 class AppShell extends StatelessWidget {
   const AppShell({super.key, required this.navigationShell});
@@ -42,7 +42,8 @@ class AppShell extends StatelessWidget {
           child: ConstrainedBox(
             constraints: const BoxConstraints(minHeight: AppSizes.navBar),
             child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xs, vertical: AppSpacing.xs),
+              padding: const EdgeInsets.symmetric(
+                  horizontal: AppSpacing.xs, vertical: AppSpacing.xs),
               child: Row(children: [
                 for (final (i, (icon, label, spoken)) in _tabs.indexed) ...[
                   if (i > 0) const SizedBox(width: AppSpacing.betweenTargets),
@@ -92,7 +93,7 @@ class _NavTab extends StatelessWidget {
       excludeSemantics: true,
       onTap: onTap,
       child: Material(
-        color: selected ? scheme.primaryContainer : scheme.surface,
+        color: scheme.surface,
         borderRadius: AppRadius.mdAll,
         clipBehavior: Clip.antiAlias,
         child: InkWell(
@@ -102,14 +103,25 @@ class _NavTab extends StatelessWidget {
             child: Padding(
               padding: const EdgeInsets.symmetric(vertical: AppSpacing.xs),
               child: Column(mainAxisSize: MainAxisSize.min, children: [
-                Icon(icon, size: AppSizes.icon, color: color),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: AppSpacing.md, vertical: AppSpacing.xs),
+                  decoration: BoxDecoration(
+                    color: selected ? scheme.primaryContainer : scheme.surface,
+                    borderRadius: AppRadius.buttonAll,
+                  ),
+                  child: Icon(icon, size: AppSizes.icon, color: color),
+                ),
                 const SizedBox(height: AppSpacing.xs),
                 FittedBox(
                   fit: BoxFit.scaleDown,
                   child: Text(
                     label,
                     textAlign: TextAlign.center,
-                    style: theme.textTheme.labelMedium?.copyWith(color: color, fontWeight: FontWeight.w700),
+                    style: theme.textTheme.labelMedium?.copyWith(
+                        color: color,
+                        fontWeight:
+                            selected ? FontWeight.w700 : FontWeight.w600),
                   ),
                 ),
               ]),

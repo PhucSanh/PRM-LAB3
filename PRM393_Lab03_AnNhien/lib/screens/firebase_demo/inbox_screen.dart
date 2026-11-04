@@ -70,9 +70,23 @@ class _InboxScreenState extends ConsumerState<InboxScreen> {
               FilterChip(
                   label: Text(entry.value),
                   selected: _filter == entry.key,
+                  side: BorderSide(
+                      color: _filter == entry.key
+                          ? theme.colorScheme.primary
+                          : theme.colorScheme.outlineVariant),
                   onSelected: (_) => setState(() => _filter = entry.key)),
           ]),
           const SizedBox(height: AppSpacing.base),
+          switch (state) {
+            UiLoading() => const LoadingView(),
+            UiEmpty() => const EmptyView(
+                icon: Icons.notifications_none_rounded,
+                title: 'Chưa có thông báo'),
+            UiError(:final message) =>
+              ErrorView(message: message, onRetry: vm.retry),
+            UiData(:final data) => _list(data),
+          },
+          const SizedBox(height: AppSpacing.lg),
           AppButton(
               label: 'Bật thông báo',
               icon: Icons.notifications_active_rounded,
@@ -86,15 +100,6 @@ class _InboxScreenState extends ConsumerState<InboxScreen> {
                 }
               }),
           const SizedBox(height: AppSpacing.lg),
-          switch (state) {
-            UiLoading() => const LoadingView(),
-            UiEmpty() => const EmptyView(
-                icon: Icons.notifications_none_rounded,
-                title: 'Chưa có thông báo'),
-            UiError(:final message) =>
-              ErrorView(message: message, onRetry: vm.retry),
-            UiData(:final data) => _list(data),
-          },
         ],
       )),
     );

@@ -58,7 +58,7 @@ Chưa có: đổi ngày bằng vuốt ngang, hành động nhắc sau từ thôn
 - Test riêng Hôm nay: hoàn thành/hoàn tác, lỗi ghi, lỗi analytics, 360px ×1.0/1.3/2.0, hai chế độ tương phản, tên dài và cuộn nhóm đã xong.
 - `flutter analyze`: chỉ còn 2 info có sẵn tại `lib/main_emulator.dart:29,52` (`curly_braces_in_flow_control_structures`); không có error/warning ở phần thay đổi.
 - `git diff --check`: qua.
-- Đã xem ảnh widget render với font thật: Hôm nay và form người thân. Đây là render trong test, chưa phải bằng chứng chạy tay trên Android. Ảnh Hôm nay chụp widget riêng nên không bao gồm thanh điều hướng shell.
+- Đã xem ảnh widget render với font thật: Hôm nay và form người thân. Đây là render trong test, chưa phải bằng chứng chạy tay trên Android. Ảnh Hôm nay đã cập nhật ở đợt polish cuối, có thanh điều hướng shell.
 
 ## Ảnh tham khảo để review
 
@@ -87,3 +87,24 @@ Analyzer chỉ còn 2 info style có sẵn trong main_emulator.dart; diff không
 Luồng lập lịch đã cập nhật từ ba màn bắt buộc thành hai màn chính, lịch lặp là
 nhánh tùy chọn. Xem [báo cáo luồng và kiểm thử](interaction-flow-review.md) để
 đối chiếu hành vi hiện tại; mục mô tả ba bước trước đó là trạng thái lịch sử.
+
+## Đợt polish nhẹ — giữ nền tảng thân thiện
+
+- Giữ nền kem/xanh lá, chữ lớn và vùng chạm 72dp; không thêm hiệu ứng chuyển động.
+- Tab đang chọn dùng pill quanh icon, nhãn rõ; bớt khối nền xanh lớn.
+- Logo lá đồng bộ ở Đăng nhập/Chào mừng, trong tile bo mềm nền dịu.
+- Chip chọn nhóm có kích thước và trạng thái chọn nhất quán; cursor/selection ô nhập theo màu app.
+- Thanh hành động form người thân có nền riêng và đường phân cách nhẹ.
+- Hôm nay: ngày hiện tại thay câu dẫn dài; hai lối Cài đặt/Thông báo xếp gọn khi đủ chỗ, chữ lớn chuyển một cột.
+- Sửa điểm cụt: Hôm nay chưa có việc vẫn vào được Cài đặt và Thông báo, không hiện tiến độ 0/0.
+- Inbox ưu tiên nội dung trước nút xin quyền, để nhìn thấy thông báo sớm hơn.
+- Tài khoản: thông tin trong thẻ, hành động chính lên trước, công cụ thử nghiệm mở khi cần; đăng xuất dùng nút viền để bớt áp lực thị giác.
+- Nút Google và hành động chính Tài khoản cho xuống dòng, tránh mất chữ.
+
+Ảnh widget render với font thật, chưa thay kiểm tra tay Android:
+
+![Đăng nhập](uiux-preview/sign-in.png)
+
+![Hộp thông báo](uiux-preview/inbox.png)
+
+Kiểm tra mới: các màn chính ở 360px ×1.0/2.0, mở/đóng công cụ thử nghiệm, vùng chạm hành động chính, và điều hướng khi Hôm nay rỗng. Kết quả cuối: **622/622 Flutter test qua**, 3 test UI/UX mới qua; analyzer chỉ còn 2 info có sẵn tại main_emulator.dart. `git diff --check` qua. Đã xem ảnh render của Hôm nay, Inbox, Đăng nhập, Chào mừng và form người thân.

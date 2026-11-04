@@ -25,7 +25,8 @@ import 'package:an_nhien/viewmodels/caregiver_schedule_view_model.dart';
 ProviderContainer demoContainer(
         {FakeCaregiverScheduleService? schedules,
         FakeSuggestionService? suggestions,
-        MessagingService? messages}) =>
+        MessagingService? messages,
+        TaskRepository? tasks}) =>
     ProviderContainer(overrides: [
       suggestionServiceProvider.overrideWithValue(
           incoming.FakeSuggestionService(delay: Duration.zero)),
@@ -45,7 +46,7 @@ ProviderContainer demoContainer(
       caregiverSuggestionServiceProvider
           .overrideWithValue(suggestions ?? FakeSuggestionService()),
       pairingServiceProvider.overrideWithValue(FakePairingService()),
-      taskRepositoryProvider.overrideWithValue(FakeTaskRepository([])),
+      taskRepositoryProvider.overrideWithValue(tasks ?? FakeTaskRepository([])),
       familyRepositoryProvider.overrideWithValue(FakeFamilyRepository()),
       habitRepositoryProvider.overrideWithValue(FakeHabitRepository()),
       settingsServiceProvider.overrideWithValue(FakeSettingsService()),

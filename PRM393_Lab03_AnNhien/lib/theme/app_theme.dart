@@ -57,26 +57,43 @@ abstract final class AppTheme {
   /// Thang chữ (DESIGN.md › typography): nhỏ nhất 20, nội dung 24, tiêu đề 30, nút 22.
   /// Điền đủ 15 kiểu để widget Material (chip, tooltip, picker…) không rơi về cỡ mặc định < 20.
   static const textTheme = TextTheme(
-    displayLarge: TextStyle(fontSize: 34, fontWeight: FontWeight.w700, height: 1.25), // display
-    displayMedium: TextStyle(fontSize: 34, fontWeight: FontWeight.w700, height: 1.25), // display
-    displaySmall: TextStyle(fontSize: 34, fontWeight: FontWeight.w700, height: 1.25), // display
-    headlineLarge: TextStyle(fontSize: 30, fontWeight: FontWeight.w700, height: 1.35), // headline
-    headlineMedium: TextStyle(fontSize: 30, fontWeight: FontWeight.w700, height: 1.35), // headline
-    headlineSmall: TextStyle(fontSize: 26, fontWeight: FontWeight.w700, height: 1.4), // title-md
-    titleLarge: TextStyle(fontSize: 26, fontWeight: FontWeight.w700, height: 1.4), // title-md
-    titleMedium: TextStyle(fontSize: 24, fontWeight: FontWeight.w700, height: 1.4), // title-lg
-    titleSmall: TextStyle(fontSize: 22, fontWeight: FontWeight.w700, height: 1.4), // label-btn
-    bodyLarge: TextStyle(fontSize: 24, fontWeight: FontWeight.w400, height: 1.5), // body-lg
-    bodyMedium: TextStyle(fontSize: 20, fontWeight: FontWeight.w400, height: 1.5), // body-md
-    bodySmall: TextStyle(fontSize: 20, fontWeight: FontWeight.w400, height: 1.5), // caption
-    labelLarge: TextStyle(fontSize: 22, fontWeight: FontWeight.w700, height: 1.4), // label-btn
-    labelMedium: TextStyle(fontSize: 20, fontWeight: FontWeight.w600, height: 1.4), // label-nav
-    labelSmall: TextStyle(fontSize: 20, fontWeight: FontWeight.w600, height: 1.4), // label-nav
+    displayLarge: TextStyle(
+        fontSize: 34, fontWeight: FontWeight.w700, height: 1.25), // display
+    displayMedium: TextStyle(
+        fontSize: 34, fontWeight: FontWeight.w700, height: 1.25), // display
+    displaySmall: TextStyle(
+        fontSize: 34, fontWeight: FontWeight.w700, height: 1.25), // display
+    headlineLarge: TextStyle(
+        fontSize: 30, fontWeight: FontWeight.w700, height: 1.35), // headline
+    headlineMedium: TextStyle(
+        fontSize: 30, fontWeight: FontWeight.w700, height: 1.35), // headline
+    headlineSmall: TextStyle(
+        fontSize: 26, fontWeight: FontWeight.w700, height: 1.4), // title-md
+    titleLarge: TextStyle(
+        fontSize: 26, fontWeight: FontWeight.w700, height: 1.4), // title-md
+    titleMedium: TextStyle(
+        fontSize: 24, fontWeight: FontWeight.w700, height: 1.4), // title-lg
+    titleSmall: TextStyle(
+        fontSize: 22, fontWeight: FontWeight.w700, height: 1.4), // label-btn
+    bodyLarge: TextStyle(
+        fontSize: 24, fontWeight: FontWeight.w400, height: 1.5), // body-lg
+    bodyMedium: TextStyle(
+        fontSize: 20, fontWeight: FontWeight.w400, height: 1.5), // body-md
+    bodySmall: TextStyle(
+        fontSize: 20, fontWeight: FontWeight.w400, height: 1.5), // caption
+    labelLarge: TextStyle(
+        fontSize: 22, fontWeight: FontWeight.w700, height: 1.4), // label-btn
+    labelMedium: TextStyle(
+        fontSize: 20, fontWeight: FontWeight.w600, height: 1.4), // label-nav
+    labelSmall: TextStyle(
+        fontSize: 20, fontWeight: FontWeight.w600, height: 1.4), // label-nav
   );
 
-  static ThemeData light() => _build(colorScheme, background: AppColors.background);
+  static ThemeData light() =>
+      _build(colorScheme, background: AppColors.background);
 
-  static ThemeData highContrast() => _build(highContrastScheme, background: AppColorsHighContrast.background);
+  static ThemeData highContrast() =>
+      _build(highContrastScheme, background: AppColorsHighContrast.background);
 
   static ThemeData _build(ColorScheme scheme, {required Color background}) {
     final text = textTheme.apply(
@@ -84,7 +101,8 @@ abstract final class AppTheme {
       bodyColor: scheme.onSurface,
       displayColor: scheme.onSurface,
     );
-    const buttonShape = RoundedRectangleBorder(borderRadius: AppRadius.buttonAll);
+    const buttonShape =
+        RoundedRectangleBorder(borderRadius: AppRadius.buttonAll);
     const buttonSize = Size(AppSizes.minTarget, AppSizes.minTarget);
     final inputBorder = OutlineInputBorder(
       borderRadius: AppRadius.mdAll,
@@ -134,6 +152,21 @@ abstract final class AppTheme {
           foregroundColor: scheme.primary,
         ),
       ),
+      chipTheme: ChipThemeData(
+        backgroundColor: scheme.surface,
+        selectedColor: scheme.primaryContainer,
+        checkmarkColor: scheme.onPrimaryContainer,
+        labelStyle: text.labelMedium,
+        padding:
+            const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: 18),
+        side: BorderSide(color: scheme.outlineVariant),
+        shape: const RoundedRectangleBorder(borderRadius: AppRadius.buttonAll),
+      ),
+      textSelectionTheme: TextSelectionThemeData(
+        cursorColor: scheme.primary,
+        selectionColor: scheme.primaryContainer,
+        selectionHandleColor: scheme.primary,
+      ),
       cardTheme: CardThemeData(
         color: scheme.surface,
         elevation: 0,
@@ -147,7 +180,8 @@ abstract final class AppTheme {
         filled: true,
         fillColor: scheme.surface,
         // 22 trên + 22 dưới + 1 dòng body-lg (24 × 1.5) ≈ 80 ≥ minTarget.
-        contentPadding: const EdgeInsets.symmetric(horizontal: AppSpacing.base, vertical: 22),
+        contentPadding: const EdgeInsets.symmetric(
+            horizontal: AppSpacing.base, vertical: 22),
         border: inputBorder,
         enabledBorder: inputBorder,
         errorStyle: text.bodyMedium?.copyWith(color: scheme.error),
@@ -165,7 +199,8 @@ abstract final class AppTheme {
         indicatorColor: scheme.primaryContainer,
         labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
         labelTextStyle: WidgetStatePropertyAll(text.labelMedium),
-        iconTheme: const WidgetStatePropertyAll(IconThemeData(size: AppSizes.icon)),
+        iconTheme:
+            const WidgetStatePropertyAll(IconThemeData(size: AppSizes.icon)),
       ),
       snackBarTheme: SnackBarThemeData(
         behavior: SnackBarBehavior.floating,
@@ -181,10 +216,16 @@ abstract final class AppTheme {
 /// Không có màu: lấy màu từ `DefaultTextStyle` / `copyWith(color: scheme.…)`.
 abstract final class AppText {
   /// `body-lg-strong` 24 / 1.5 / 600 – câu nhấn trong nội dung.
-  static const bodyLgStrong =
-      TextStyle(fontFamily: AppTheme.fontFamily, fontSize: 24, fontWeight: FontWeight.w600, height: 1.5);
+  static const bodyLgStrong = TextStyle(
+      fontFamily: AppTheme.fontFamily,
+      fontSize: 24,
+      fontWeight: FontWeight.w600,
+      height: 1.5);
 
   /// `numeric-lg` 30 / 1.25 / 700 – số giờ, mã ghép nối.
-  static const numericLg =
-      TextStyle(fontFamily: AppTheme.fontFamily, fontSize: 30, fontWeight: FontWeight.w700, height: 1.25);
+  static const numericLg = TextStyle(
+      fontFamily: AppTheme.fontFamily,
+      fontSize: 30,
+      fontWeight: FontWeight.w700,
+      height: 1.25);
 }

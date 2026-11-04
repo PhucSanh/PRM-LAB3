@@ -41,11 +41,23 @@ class CaregiverPage extends StatelessWidget {
             ])),
         bottomNavigationBar: footer == null
             ? null
-            : SafeArea(
-                top: false,
-                child: Padding(
-                    padding: const EdgeInsets.all(AppSpacing.screen),
-                    child: footer)),
+            : DecoratedBox(
+                decoration: BoxDecoration(
+                  color: Theme.of(context).colorScheme.surface,
+                  border: Border(
+                      top: BorderSide(
+                          color: Theme.of(context).colorScheme.outlineVariant)),
+                ),
+                child: SafeArea(
+                    top: false,
+                    child: Padding(
+                        padding: const EdgeInsets.fromLTRB(
+                            AppSpacing.screen,
+                            AppSpacing.md,
+                            AppSpacing.screen,
+                            AppSpacing.screen),
+                        child: footer)),
+              ),
       );
 }
 
