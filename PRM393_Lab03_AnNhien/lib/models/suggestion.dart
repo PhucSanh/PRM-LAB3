@@ -100,8 +100,8 @@ class SuggestionItem {
         hour: hour,
         minute: minute,
         repeat: RepeatRule.once,
-        startDate: date,
-        durationMin: durationMin,
+        startDate: dateKey(date),
+        durationMinutes: durationMin ?? 15,
       );
 
   Map<String, Object?> toMap() => {

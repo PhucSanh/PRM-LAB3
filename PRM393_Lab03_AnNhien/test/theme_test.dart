@@ -1,10 +1,5 @@
+import 'support/demo_container.dart';
 import 'package:an_nhien/app.dart';
-import 'package:an_nhien/models/app_user.dart';
-import 'package:an_nhien/services/analytics_service.dart';
-import 'package:an_nhien/services/auth_service.dart';
-import 'package:an_nhien/services/crash_service.dart';
-import 'package:an_nhien/services/providers.dart';
-import 'package:an_nhien/services/task_repository.dart';
 import 'package:an_nhien/theme/app_colors.dart';
 import 'package:an_nhien/theme/app_theme.dart';
 import 'package:an_nhien/theme/display_settings.dart';
@@ -51,10 +46,13 @@ void main() {
     expect(_contrast(s.onSurface, s.surface), greaterThanOrEqualTo(7));
     expect(_contrast(s.onSurfaceVariant, s.surface), greaterThanOrEqualTo(7));
     expect(_contrast(s.onPrimary, s.primary), greaterThanOrEqualTo(7));
-    expect(_contrast(s.onPrimaryContainer, s.primaryContainer), greaterThanOrEqualTo(7));
+    expect(_contrast(s.onPrimaryContainer, s.primaryContainer),
+        greaterThanOrEqualTo(7));
     expect(_contrast(s.onError, s.error), greaterThanOrEqualTo(7));
-    expect(_contrast(s.onErrorContainer, s.errorContainer), greaterThanOrEqualTo(7));
-    expect(AppTheme.highContrast().scaffoldBackgroundColor, AppColorsHighContrast.background);
+    expect(_contrast(s.onErrorContainer, s.errorContainer),
+        greaterThanOrEqualTo(7));
+    expect(AppTheme.highContrast().scaffoldBackgroundColor,
+        AppColorsHighContrast.background);
   });
 
   test('mặc định cỡ chữ Lớn, tương phản cao tắt', () {
@@ -65,14 +63,10 @@ void main() {
   });
 
   testWidgets('đổi cỡ chữ / tương phản cao áp dụng toàn app', (tester) async {
-    final container = ProviderContainer(overrides: [
-      authServiceProvider.overrideWithValue(FakeAuthService(signedIn: const AppUser(uid: 'test-uid'))),
-      taskRepositoryProvider.overrideWithValue(FakeTaskRepository([])),
-      analyticsServiceProvider.overrideWithValue(FakeAnalyticsService()),
-      crashServiceProvider.overrideWithValue(FakeCrashService()),
-    ]);
+    final container = demoContainer();
     addTearDown(container.dispose);
-    await tester.pumpWidget(UncontrolledProviderScope(container: container, child: const AnNhienApp()));
+    await tester.pumpWidget(UncontrolledProviderScope(
+        container: container, child: const AnNhienApp()));
     await tester.pumpAndSettle();
 
     BuildContext ctx() => tester.element(find.byType(Scaffold).first);
@@ -89,7 +83,8 @@ void main() {
     expect(Theme.of(ctx()).colorScheme.onSurface, AppColors.onSurface);
     container.read(highContrastProvider.notifier).set(true);
     await tester.pumpAndSettle();
-    expect(Theme.of(ctx()).colorScheme.onSurface, AppColorsHighContrast.onSurface);
+    expect(
+        Theme.of(ctx()).colorScheme.onSurface, AppColorsHighContrast.onSurface);
 
     await tester.pumpWidget(const SizedBox.shrink());
     await tester.pump(const Duration(milliseconds: 400));

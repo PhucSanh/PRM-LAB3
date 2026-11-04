@@ -153,10 +153,10 @@ void main() {
           ['Đi bộ nhẹ nhàng', 'Thư giãn nhẹ nhàng']);
       expect([for (final t in tasks) (t.hour, t.minute)], [(8, 0), (9, 0)]);
       expect(
-          tasks.every(
-              (t) => t.startDate == tomorrow && t.repeat == RepeatRule.once),
+          tasks.every((t) =>
+              t.startDate == dateKey(tomorrow) && t.repeat == RepeatRule.once),
           isTrue);
-      expect([for (final t in tasks) t.durationMin], [20, 15]);
+      expect([for (final t in tasks) t.durationMinutes], [20, 15]);
       expect((await h.stored()).status, SuggestionStatus.accepted);
       expect(h.reminders.scheduled.keys, unorderedEquals(h.tasks.saved.keys));
       expect(h.suggestions.senderNotified, 0);

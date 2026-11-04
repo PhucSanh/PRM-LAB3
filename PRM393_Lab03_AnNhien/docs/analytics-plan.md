@@ -113,3 +113,12 @@ hay nội dung thông báo. Business events ★ ở trên vẫn cần bằng ch�
 | test_crash | Xác nhận thử đóng ứng dụng | source=firebase_demo |
 
 Chưa có ảnh DebugView F10; các test Fake không phải bằng chứng Console.
+
+## Instrumentation Hiếu — 04/11/2026
+
+`PairingViewModel`: pair_device sau redeem thành công, không ghi mã/UID.
+`CaregiverFormViewModel`: create_recurring_task với repeat, requires_consent,
+duration_sec, is_edit; không ghi tên việc/lời nhắn. `SuggestionDemoViewModel`:
+accept_suggestion/dismiss_suggestion + task_count. Telemetry lỗi không đảo ngược
+kết quả nghiệp vụ. Các event login/logout/select_role và F10 giữ nguyên.
+Chưa có ảnh Console/DebugView cho các event mới, không đánh dấu evidence hoàn tất.

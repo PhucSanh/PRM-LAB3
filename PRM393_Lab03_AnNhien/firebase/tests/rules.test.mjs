@@ -26,34 +26,31 @@ test('task validates every field, enums, types and unknown fields', async () => 
   for (const patch of [{title:''},{title:'x'.repeat(81)},{hour:24},{minute:-1},{minute:60},{minute:1.5},{remind:'yes'},{status:'invalid'},{repeat:'weekly'},{habitKey:'invalid'},{admin:true}]) {
     await assertFails(setDoc(doc(db('mom'), 'users/mom/tasks/a'), {...task,...patch}));
   }
+  await assertFails(setDoc(doc(db('mom'), 'users/mom/tasks/legacy-injection'), {...task,startDate:'bad',weekdays:[9]}));
   const { minute, ...missing } = task;
   await assertFails(setDoc(doc(db('mom'), 'users/mom/tasks/a'), missing));
 });
 test('contacts do not grant cross-account access or allow grant forgery', async () => {
   await assertSucceeds(setDoc(doc(db('mom'), 'users/mom/family/child'), {name:'Child',relation:'Con',phone:'123'}));
-  await assertSucceeds(setDoc(doc(db('child'), 'users/child'), {role:'admin',momUid:'mom'}));
+  await assertFails(setDoc(doc(db('child'), 'users/child'), {role:'admin',pairedMomUid:'mom'}));
   await assertFails(getDoc(doc(db('child'), 'users/mom/tasks/a')));
   await assertFails(setDoc(doc(db('mom'), 'users/mom/caregivers/child'), {}));
   await assertFails(setDoc(doc(db('child'), 'users/mom/caregivers/child'), {}));
 });
-test('trusted caregiver can read tasks and suggest; owner only accepts/rejects', async () => {
+test('trusted caregiver can manage v2 tasks; grants are server-only; suggestions private', async () => {
   await env.withSecurityRulesDisabled(async ctx => {
     await setDoc(doc(ctx.firestore(),'users/mom/caregivers/child'), {});
     await setDoc(doc(ctx.firestore(),'users/mom/tasks/a'), task);
+    await setDoc(doc(ctx.firestore(),'users/mom/suggestions/a'), {senderUid:'child',status:'dismissed'});
   });
   await assertSucceeds(getDoc(doc(db('child'), 'users/mom/tasks/a')));
-  await assertFails(updateDoc(doc(db('child'), 'users/mom/tasks/a'), {title:'Changed'}));
-  const suggestion = {senderUid:'child',status:'pending',title:'Đi bộ',createdAt:serverTimestamp()};
-  await assertSucceeds(setDoc(doc(db('child'), 'users/mom/suggestions/a'), suggestion));
-  await assertFails(setDoc(doc(db('stranger'), 'users/mom/suggestions/b'), {...suggestion,senderUid:'stranger'}));
-  await assertFails(setDoc(doc(db('child'), 'users/mom/suggestions/b'), {...suggestion,senderUid:'mom'}));
-  await assertFails(updateDoc(doc(db('child'), 'users/mom/suggestions/a'), {status:'accepted'}));
-  await assertFails(updateDoc(doc(db('mom'), 'users/mom/suggestions/a'), {title:'Overwrite'}));
-  await assertSucceeds(updateDoc(doc(db('mom'), 'users/mom/suggestions/a'), {status:'accepted'}));
-  await assertFails(updateDoc(doc(db('mom'), 'users/mom/suggestions/a'), {status:'rejected'}));
+  await assertSucceeds(updateDoc(doc(db('child'), 'users/mom/tasks/a'), {title:'Changed',revision:1}));
+  await assertFails(getDoc(doc(db('child'), 'users/mom/suggestions/a')));
+  await assertFails(setDoc(doc(db('child'), 'users/mom/suggestions/b'), {senderUid:'child',status:'pending'}));
+  await assertFails(updateDoc(doc(db('mom'), 'users/mom/suggestions/a'), {status:'accepted'}));
   await env.withSecurityRulesDisabled(ctx => deleteDoc(doc(ctx.firestore(),'users/mom/caregivers/child')));
   await assertFails(getDoc(doc(db('child'), 'users/mom/tasks/a')));
-  await assertFails(getDoc(doc(db('child'), 'users/mom/suggestions/a')));
+  await assertFails(updateDoc(doc(db('child'), 'users/mom/tasks/a'), {title:'Again',revision:2}));
 });
 test('catalog read-only, notifications server-written, default deny', async () => {
   await assertSucceeds(getDoc(doc(db('mom'), 'habits/move')));
@@ -107,4 +104,36 @@ test('F10: device registration owner-only and validates token/time/payload', asy
     await assertFails(setDoc(own, {...registration,...patch}));
   }
   await assertSucceeds(deleteDoc(own));
+});
+
+const v2 = {...task,schemaVersion:2,revision:0,startDate:'2026-11-04',endDate:null,weekdays:[1,3,5],monthDays:[],
+  lastDayOfMonth:false,excludedDates:[],durationMinutes:15,timezone:'Asia/Ho_Chi_Minh',repeat:'weekly'};
+test('v2 schedule validates recurrence and rejects stale revisions, schema injection', async () => {
+  const own=doc(db('mom'),'users/mom/tasks/v2');
+  await assertSucceeds(setDoc(own,v2));
+  for(const patch of [{weekdays:[]},{weekdays:[0,8]},{weekdays:[1,1]}, {monthDays:[32]}, {timezone:'UTC'},
+      {revision:-1},{durationMinutes:0},{startDate:'bad'},{admin:true},{status:'done'}]) {
+    await assertFails(setDoc(doc(db('mom'),'users/mom/tasks/bad'),{...v2,...patch}));
+  }
+  await assertFails(updateDoc(own,{title:'Stale',revision:0}));
+  await assertSucceeds(updateDoc(own,{title:'New',revision:1}));
+});
+test('completion status is per day; owner only; deterministic identity and server time',async()=>{
+  await assertSucceeds(setDoc(doc(db('mom'),'users/mom/tasks/t'),v2));
+  const completion={taskId:'t',date:'2026-11-04',status:'done',updatedAt:serverTimestamp()};
+  await assertSucceeds(setDoc(doc(db('mom'),'users/mom/completions/t_2026-11-04'),completion));
+  await assertFails(setDoc(doc(db('child'),'users/mom/completions/t_2026-11-04'),completion));
+  await assertFails(setDoc(doc(db('mom'),'users/mom/completions/wrong'),completion));
+  await assertFails(setDoc(doc(db('mom'),'users/mom/completions/missing_2026-11-04'),{...completion,taskId:'missing'}));
+});
+test('profile cannot forge pairing or change established role; settings merge is valid',async()=>{
+  const own=doc(db('mom'),'users/mom');
+  await assertFails(setDoc(own,{role:'elder',pairedMomUid:'victim'}));
+  await assertSucceeds(setDoc(own,{role:null,onboarded:false}));
+  await assertSucceeds(updateDoc(own,{role:'elder',fontScale:1.3,honorific:'ba',wakeTime:'06:30'}));
+  await assertFails(updateDoc(own,{pairedMomUid:'victim'}));
+  await assertFails(updateDoc(own,{role:'caregiver'}));
+  await assertFails(updateDoc(own,{fontScale:10}));
+  await assertFails(getDoc(doc(db('mom'),'pairings/123456')));
+  await assertFails(setDoc(doc(db('mom'),'pairingOwners/mom'),{code:'123456'}));
 });

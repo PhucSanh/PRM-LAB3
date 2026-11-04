@@ -112,8 +112,8 @@ void main() {
     expect([
       for (final t in tasks) (t.title, t.hour, t.minute, t.startDate)
     ], [
-      ('Đi bộ nhẹ nhàng', 8, 0, DateTime(2026, 11, 5)),
-      ('Thư giãn nhẹ nhàng', 9, 0, DateTime(2026, 11, 5)),
+      ('Đi bộ nhẹ nhàng', 8, 0, '2026-11-05'),
+      ('Thư giãn nhẹ nhàng', 9, 0, '2026-11-05'),
     ]);
     final p = mom.analytics.paramsOf('accept_suggestion').single!;
     expect(p['taps'] as int, lessThanOrEqualTo(2));

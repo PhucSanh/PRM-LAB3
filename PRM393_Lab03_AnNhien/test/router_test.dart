@@ -1,23 +1,12 @@
+import 'support/demo_container.dart';
 import 'package:an_nhien/app.dart';
-import 'package:an_nhien/models/app_user.dart';
 import 'package:an_nhien/router/app_router.dart';
-import 'package:an_nhien/services/analytics_service.dart';
-import 'package:an_nhien/services/auth_service.dart';
-import 'package:an_nhien/services/crash_service.dart';
-import 'package:an_nhien/services/providers.dart';
-import 'package:an_nhien/services/task_repository.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 /// Mọi route placeholder trong architecture.md mục 7.2: path mẫu → mã màn hiện trên `FeaturePlaceholder`.
 const _placeholders = {
-  '/role': 'C01 · F1',
-  '/welcome': 'S01 · F2',
-  '/setup': 'S02 · F2',
-  '/setup/notifications': 'S13 · F2',
-  '/setup/try-reminder': 'N01 · F2',
-  '/setup/first-task': 'N04 · F2',
   '/today/task/t1': 'S04 · F3',
   '/today/task/t1/edit': 'S15 · F4',
   '/today/add': 'S05 · F4',
@@ -28,7 +17,6 @@ const _placeholders = {
   '/task/scope': 'N13 · F4',
   '/today/voice': 'V01 · F5',
   '/today/all': 'S11 · F7',
-  '/today/suggestions/g1': 'G03 · F12',
   '/reminder/t1': 'S14 · F6',
   '/week': 'S07 · F7',
   '/week/2026-11-02': 'S11 · F7',
@@ -43,33 +31,15 @@ const _placeholders = {
   // '/settings/profile' (N06) đã là màn thật – xem test/profile_screen_test.dart.
   '/settings/reminders': 'N07 · F6',
   // '/settings/help' (N08), '/settings/data' (N20) đã là màn thật – xem test/settings_static_screens_test.dart.
-  '/inbox': 'F10',
-  '/caregiver/pair': 'C02 · F13',
-  '/caregiver/schedule': 'C03 · F14',
-  '/caregiver/schedule?view=day': 'C03 · F14',
-  '/caregiver/schedule?view=week': 'C04 · F14',
-  '/caregiver/schedule?view=month': 'C05 · F14',
-  '/caregiver/task/new': 'C06 · F14',
-  '/caregiver/task/new/repeat': 'C07 · F14',
-  '/caregiver/task/new/review': 'C08 · F14',
-  '/caregiver/task/sent': 'C09 · F14',
-  '/caregiver/task/t1': 'C10 · F14',
-  '/caregiver/suggest': 'G01 · F12',
 };
 
 void main() {
   for (final MapEntry(key: path, value: code) in _placeholders.entries) {
     testWidgets('$path → $code', (tester) async {
-      final container = ProviderContainer(overrides: [
-        authServiceProvider.overrideWithValue(
-          FakeAuthService(signedIn: const AppUser(uid: 'test-uid', displayName: 'Bác Lan')),
-        ),
-        taskRepositoryProvider.overrideWithValue(FakeTaskRepository([])),
-        analyticsServiceProvider.overrideWithValue(FakeAnalyticsService()),
-        crashServiceProvider.overrideWithValue(FakeCrashService()),
-      ]);
+      final container = demoContainer();
       addTearDown(container.dispose);
-      await tester.pumpWidget(UncontrolledProviderScope(container: container, child: const AnNhienApp()));
+      await tester.pumpWidget(UncontrolledProviderScope(
+          container: container, child: const AnNhienApp()));
       await tester.pumpAndSettle();
 
       container.read(routerProvider).go(path);

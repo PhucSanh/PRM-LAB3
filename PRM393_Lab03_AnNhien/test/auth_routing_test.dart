@@ -1,3 +1,7 @@
+import 'package:an_nhien/services/settings_service.dart';
+import 'package:an_nhien/services/suggestion_service.dart';
+import 'package:an_nhien/services/reminder_service.dart';
+import 'package:an_nhien/services/caregiver_schedule_service.dart';
 import 'dart:async';
 import 'package:an_nhien/models/app_notification.dart';
 import 'package:an_nhien/services/messaging_service.dart';
@@ -152,12 +156,14 @@ void main() {
           role);
       router.go('/account');
       await tester.pumpAndSettle();
+      await tester.ensureVisible(find.text('Đăng xuất'));
       await tester.tap(find.text('Đăng xuất'));
       await tester.pumpAndSettle();
       expect(cache.clearCount, 0);
       await tester.tap(find.text('Ở lại'));
       await tester.pumpAndSettle();
       expect(auth.currentUser, isNotNull);
+      await tester.ensureVisible(find.text('Đăng xuất'));
       await tester.tap(find.text('Đăng xuất'));
       await tester.pumpAndSettle();
       await tester.tap(find.widgetWithText(TextButton, 'Đăng xuất'));
@@ -175,6 +181,13 @@ void main() {
 ProviderContainer makeContainer(FakeAuthService auth, ProfileService profiles,
         {FakeSessionDataService? cache, MessagingService? messages}) =>
     ProviderContainer(overrides: [
+      settingsServiceProvider.overrideWithValue(FakeSettingsService()),
+      suggestionServiceProvider
+          .overrideWithValue(FakeSuggestionService(delay: Duration.zero)),
+      reminderServiceProvider.overrideWithValue(FakeReminderService()),
+      authGuardEnabledProvider.overrideWithValue(true),
+      caregiverScheduleServiceProvider
+          .overrideWithValue(FakeCaregiverScheduleService()),
       authServiceProvider.overrideWithValue(auth),
       profileServiceProvider.overrideWithValue(profiles),
       messagingServiceProvider

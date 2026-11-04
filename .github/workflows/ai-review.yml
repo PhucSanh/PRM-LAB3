@@ -1,0 +1,48 @@
+name: AI review (opt-in)
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+permissions:
+  contents: read
+jobs:
+  review:
+    if: vars.AI_REVIEW_ENABLED == 'true' && github.event.pull_request.head.repo.full_name == github.repository && !github.event.pull_request.draft
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    outputs:
+      review: ${{ steps.codex.outputs.final-message }}
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.pull_request.base.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Fetch review commits (leave trusted base worktree checked out)
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          git fetch --no-tags origin "$HEAD_SHA"
+          git diff "$BASE_SHA...$HEAD_SHA" -- > /tmp/pr-review.diff
+      - name: Read-only AI review
+        id: codex
+        uses: openai/codex-action@v1
+        with:
+          openai-api-key: ${{ secrets.OPENAI_API_KEY }}
+          sandbox: read-only
+          safety-strategy: drop-sudo
+          prompt: |
+            Read .github/codex/review.md, then review /tmp/pr-review.diff.
+            The checked-out files are the trusted base. Use git show on diff
+            commit objects to inspect changed code if necessary. Do not run
+            repository scripts. Do not edit files, push, or post messages.
+  report:
+    needs: review
+    if: needs.review.outputs.review != ''
+    runs-on: ubuntu-latest
+    permissions: {}
+    steps:
+      - name: Attach review to the PR check summary
+        env:
+          REVIEW: ${{ needs.review.outputs.review }}
+        run: printf '%s\n' "$REVIEW" >> "$GITHUB_STEP_SUMMARY"

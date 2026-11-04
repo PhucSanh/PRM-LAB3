@@ -162,12 +162,10 @@ Quy tắc điều hướng từ handoff: tab dùng `StatefulShellRoute`; Back h�
 | `ProfileService` | `ensureProfile(user)`, `watch(uid)`, `setRole(uid, role)`, `markOnboarded(uid)` | Firestore `users/{uid}` (`FirebaseProfileService`, đã có). **Thiếu** hàm lưu hồ sơ S02 (`displayName`, `honorific`, `wakeTime`) – F2 đề xuất, chờ Hiếu |
 | `SettingsService` (F2 thêm, **chỉ có Fake**) | `watch()` → `AppSettings`, `setFontScale`, `setHighContrast`, `setReadAloud`, `setVibrate`; `FakeSettingsService(failOnSave:)` | TODO(Hiếu): Firestore `users/{uid}` + cache máy. Model `lib/models/app_settings.dart` (F2 đề xuất) |
 | `ReminderService` (F2 thêm, **chỉ có Fake**) | `hasPermission()`, `requestPermission()`, `schedule(task)`, `cancel(id)`, `snooze(id, minutes)`, `showTest()`; `FakeReminderService(permissionGranted:, alreadyGranted:, failOnShowTest:)` | TODO(Hiếu / Khang): flutter_local_notifications (đề xuất package trong PR) |
-<<<<<<< HEAD
 | `ProfileSetupService` (F2 thêm, **tạm**, chỉ có Fake) | `saveSetup(uid, ProfileSetup)` – `displayName`, `honorific` (`ong` / `ba`), `wakeTime` ("HH:mm"); F8 thêm `watchSetup(uid)` → `Stream<ProfileSetup?>` (N06 đọc cách gọi + giờ thức dậy, `null` = chưa lưu); `FakeProfileSetupService(failOnSave:, seed:)` | TODO(Hiếu): gộp vào `ProfileService` + bản Firebase ghi / đọc `users/{uid}` (cả `watchSetup`), thêm `honorific` / `wakeTime` vào `UserProfile`, rồi xoá service tạm |
-=======
-| `ProfileSetupService` (F2 thêm, **tạm**, chỉ có Fake) | `saveSetup(uid, ProfileSetup)` – `displayName`, `honorific` (`ong` / `ba`), `wakeTime` ("HH:mm"); `FakeProfileSetupService(failOnSave:)` | TODO(Hiếu): gộp vào `ProfileService` + bản Firebase ghi `users/{uid}`, thêm `honorific` / `wakeTime` vào `UserProfile`, rồi xoá service tạm |
-| `SuggestionService` (F12 thêm, **chỉ có Fake**; F12, F14 C08 dùng) | `send(momUid, s)`, `watchPending(momUid)` → `Stream<List<Suggestion>>` (chỉ `pending`, mới nhất trước), `byId(momUid, id)`, `markPopupShown(momUid, id)`, `accept(momUid, id, items)` (chỉ đổi `status`: hết → `accepted`, còn việc → `partial`; gọi lại được để nhận tiếp), `dismiss(momUid, id)`, `undoDismiss(momUid, id)` – không báo người gửi (FR08); **không** tạo việc (ViewModel gọi `TaskRepository.save`). `FakeSuggestionService(withSample:, delay:, failOnSend:, failOnLoad:, failOnAccept:)`, `momNotified`, `senderNotified` (= 0), `figmaSample()`. Model `lib/models/suggestion.dart` | TODO(Hiếu): Firestore `users/{momUid}/suggestions` + FCM "có gợi ý mới" mở `/today/suggestions/:id`; rules con cháu đã ghép nối **tạo**, mẹ cập nhật `status` / `popupShown` / `items[].accepted` |
->>>>>>> feat/F12-suggest-schedule
+| `SuggestionService` (F12 thêm, **chỉ có Fake**; provider `suggestionServiceProvider`) | `send(momUid, s)`, `watchPending(momUid)` → `Stream<List<Suggestion>>` (chỉ `pending`, mới nhất trước), `byId(momUid, id)`, `markPopupShown(momUid, id)`, `accept(momUid, id, items)` (chỉ đổi `status`: hết → `accepted`, còn việc → `partial`; gọi lại được để nhận tiếp), `dismiss(momUid, id)`, `undoDismiss(momUid, id)` – không báo người gửi (FR08); **không** tạo việc (ViewModel gọi `TaskRepository.save`). `FakeSuggestionService(withSample:, delay:, failOnSend:, failOnLoad:, failOnAccept:)`, `momNotified`, `senderNotified` (= 0), `figmaSample()`. Model `lib/models/suggestion.dart` | TODO(Hiếu): Firestore `users/{momUid}/suggestions` + FCM "có gợi ý mới" mở `/today/suggestions/:id`; rules con cháu đã ghép nối **tạo**, mẹ cập nhật `status` / `popupShown` / `items[].accepted` |
+
+F14 C08 và demo Firebase giữ contract `ScheduleSuggestion` trong `caregiver_suggestion_service.dart`, qua `caregiverSuggestionServiceProvider`. `TaskItem` giữ schema lịch v2 (`startDate` dạng `yyyy-MM-dd`, `durationMinutes`); `SuggestionItem.toTask` chuyển dữ liệu F12 sang schema này. `TaskItem.fromMap` cũng đọc được `durationMin` của incoming. `FirebaseProfileSetupService` đã hỗ trợ cả `saveSetup` và `watchSetup`.
 
 ### 8.2 Cần thêm (người làm feature thêm interface + Fake, Hiếu viết bản Firebase)
 
@@ -344,3 +342,25 @@ PDF tiếng Việt có DejaVu Sans và license. Không đổi reportServiceProvi
 Cập nhật sau phê duyệt: rules F10 đã deploy và RC version 1 đã có ba defaults;
 bucket Storage vẫn chưa có. Giới hạn
 và quy trình nghiệm thu: [f10-verification.md](f10-verification.md).
+
+## Bổ sung Hiếu 04/11/2026 — F13/F14 và contract v2
+
+Nguồn chi tiết và cách chạy: [hieu-implementation-guide.md](hieu-implementation-guide.md).
+
+- `PairingService`: Fake và Firebase callable; `PairingViewModel` quản lý mã/busy/error. Grants, pointer mã và pairedMomUid chỉ backend ghi. Thu hồi grant không xoá tasks/completions.
+- `CaregiverScheduleService`: templates + stream occurrence, create/change/undo; Fake/Firebase dùng cùng plan scope. `CaregiverScheduleViewModel` quản lý ngày/tuần/tháng, generation chống callback listener cũ. `CaregiverFormViewModel` giữ ba bước, xung đột giờ, idempotency và telemetry.
+- `SuggestionService`: Fake/Firebase, send idempotent; receiver chỉ theo UID hiện tại. Backend resolve trong transaction. Màn demo F10 để test service, không thay màn G của Sanh.
+- Task v2: startDate/endDate `YYYY-MM-DD`, weekly (weekdays 1–7), monthly (monthDays 1–31 và lastDayOfMonth), excludedDates, durationMinutes, revision, timezone UTC+7. Status thực theo ngày ở completions; status trên template luôn pending. `setStatus(id,status)` cũ chỉ tác động hôm nay UTC+7.
+- V1 đọc tương thích có giới hạn được ghi trong guide; chưa migration cloud tự động. Settings/ProfileSetup đã có adapter Firebase, merge trên users/{uid}, không đổi chữ ký F2.
+- Điểm vào: `/pairing/code` (Bác), `/caregiver/pair`, `/caregiver/schedule?view=day|week|month`, wizard `/caregiver/task/new[/repeat|/review]`, `/caregiver/task/sent`, `/caregiver/task/:id?date=YYYY-MM-DD`.
+- Guard mặc định **tắt** theo yêu cầu demo; kiểm thử opt-in qua AUTH_GUARD. Rules không đổi thành public.
+
+### Nhắc việc native — 04/11
+
+ReminderService production đã chuyển sang LocalReminderService; ReminderRuntime
+đồng bộ occurrence/completion theo UID khi start/resume và snapshot thay đổi.
+Timezone UTC+7, cửa sổ 30 ngày/128 pending, inexact alarm; xem giới hạn và kiểm chứng
+trong guide. Đăng xuất huỷ pending/active và chặn tap UID cũ. Fake giữ cho main_dev.
+Template sau split có completionSourceId trỏ cha; đọc status theo ancestry có
+chống vòng lặp, ưu tiên status trực tiếp của ID mới. Completions vẫn ở collection
+cũ, không copy lịch sử và không mất trạng thái đã xong chỉ vì ID chuỗi đổi.

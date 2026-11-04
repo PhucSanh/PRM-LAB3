@@ -206,36 +206,41 @@ void main() {
     test('SuggestionItem.toTask → việc một lần đúng ngày, giờ, thời lượng', () {
       final task = draft().items.first.copyWith(hour: 9).toTask('t1');
       expect(task.repeat, RepeatRule.once);
-      expect(task.startDate, DateTime(2026, 11, 5));
+      expect(task.startDate, '2026-11-05');
       expect(task.hour, 9);
-      expect(task.durationMin, 20);
+      expect(task.durationMinutes, 20);
     });
 
     test('TaskItem: startDate / durationMin lưu được, dữ liệu cũ vẫn đọc được',
         () {
-      final t = TaskItem(
+      const t = TaskItem(
           id: 't',
           title: 'Đi bộ',
           habitKey: 'move',
           hour: 8,
           minute: 0,
-          startDate: DateTime(2026, 11, 5, 23, 59),
-          durationMin: 20);
+          startDate: '2026-11-05',
+          durationMinutes: 20);
       final back = TaskItem.fromMap('t', t.toMap());
       expect(t.toMap()['startDate'], '2026-11-05');
-      expect(back.startDate, DateTime(2026, 11, 5));
-      expect(back.durationMin, 20);
+      expect(back.startDate, '2026-11-05');
+      expect(back.durationMinutes, 20);
 
       final legacy =
           TaskItem.fromMap('t', {'title': 'Cũ', 'hour': 7, 'minute': 0});
       expect(legacy.startDate, isNull);
-      expect(legacy.durationMin, isNull);
+      expect(legacy.durationMinutes, 15);
+      final incoming = TaskItem.fromMap('incoming', {
+        'startDate': DateTime(2026, 11, 5, 23, 59),
+        'durationMin': 20,
+      });
+      expect(incoming.startDate, '2026-11-05');
+      expect(incoming.durationMinutes, 20);
       expect(
           const TaskItem(
                   id: 'x', title: 'a', habitKey: 'move', hour: 1, minute: 0)
-              .toMap()
-              .containsKey('startDate'),
-          isFalse);
+              .toMap()['startDate'],
+          isNull);
     });
   });
 }
