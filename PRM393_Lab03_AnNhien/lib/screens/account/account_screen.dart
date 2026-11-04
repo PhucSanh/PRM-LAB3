@@ -5,6 +5,7 @@ import '../../models/user_profile.dart';
 import '../../theme/app_spacing.dart';
 import '../../viewmodels/account_view_model.dart';
 import '../../widgets/app_button.dart';
+import '../../widgets/app_back_bar.dart';
 import '../../widgets/state_views.dart';
 
 class AccountScreen extends ConsumerWidget {
@@ -15,8 +16,15 @@ class AccountScreen extends ConsumerWidget {
     final action = ref.watch(signOutViewModelProvider);
     final text = Theme.of(context).textTheme;
     return Scaffold(
-      appBar: AppBar(
-          title: const Text('Tài khoản'), automaticallyImplyLeading: false),
+      appBar: AppBackBar(onBack: () {
+        if (context.canPop()) {
+          context.pop();
+        } else {
+          context.go(profile.value?.role == UserRole.caregiver
+              ? '/caregiver/schedule'
+              : '/today');
+        }
+      }),
       body: SafeArea(
           child: SingleChildScrollView(
         padding: const EdgeInsets.all(AppSpacing.screen),
@@ -70,9 +78,17 @@ class AccountScreen extends ConsumerWidget {
               onPressed: () => context.push('/caregiver/schedule')),
           const SizedBox(height: AppSpacing.xl),
           AppButton(
-              label: 'Tiếp tục',
+              label: profile.value?.role == UserRole.caregiver
+                  ? 'Xem lịch của mẹ'
+                  : 'Về Hôm nay',
               icon: Icons.arrow_forward,
-              onPressed: action.busy ? null : () => context.go('/session')),
+              onPressed: action.busy
+                  ? null
+                  : () => context.go(profile.value?.role == null
+                      ? '/session'
+                      : profile.value?.role == UserRole.caregiver
+                          ? '/caregiver/schedule'
+                          : '/today')),
           const SizedBox(height: AppSpacing.betweenTargets),
           AppButton(
               label: 'Khu thử tính năng',
@@ -105,6 +121,10 @@ class AccountScreen extends ConsumerWidget {
                         ));
                 if (confirmed == true && context.mounted) {
                   await ref.read(signOutViewModelProvider.notifier).signOut();
+                  if (context.mounted &&
+                      ref.read(signOutViewModelProvider).message == null) {
+                    context.go('/sign-in');
+                  }
                 }
               }),
         ]),

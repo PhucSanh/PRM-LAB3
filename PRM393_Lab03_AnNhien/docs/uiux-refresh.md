@@ -81,3 +81,9 @@ Chưa có: đổi ngày bằng vuốt ngang, hành động nhắc sau từ thôn
 Kiểm chứng đợt icon: 30 test liên quan qua; toàn bộ suite 606/606 qua.
 Analyzer chỉ còn 2 info style có sẵn trong main_emulator.dart; diff không lỗi khoảng trắng.
 Ảnh tham khảo bên trên đã cập nhật với bộ icon mới.
+
+## Tối ưu luồng sau đợt UI/icon
+
+Luồng lập lịch đã cập nhật từ ba màn bắt buộc thành hai màn chính, lịch lặp là
+nhánh tùy chọn. Xem [báo cáo luồng và kiểm thử](interaction-flow-review.md) để
+đối chiếu hành vi hiện tại; mục mô tả ba bước trước đó là trạng thái lịch sử.

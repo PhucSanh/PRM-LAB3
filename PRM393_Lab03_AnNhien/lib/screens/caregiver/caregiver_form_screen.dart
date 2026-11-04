@@ -26,6 +26,7 @@ class CaregiverFormScreen extends ConsumerStatefulWidget {
 
 class _CaregiverFormScreenState extends ConsumerState<CaregiverFormScreen> {
   late final TextEditingController title, message;
+  final _scroll = ScrollController(keepScrollOffset: false);
   @override
   void initState() {
     super.initState();
@@ -35,7 +36,20 @@ class _CaregiverFormScreenState extends ConsumerState<CaregiverFormScreen> {
   }
 
   @override
+  void didUpdateWidget(CaregiverFormScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.step != widget.step) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted && _scroll.hasClients) {
+          _scroll.jumpTo(0);
+        }
+      });
+    }
+  }
+
+  @override
   void dispose() {
+    _scroll.dispose();
     title.dispose();
     message.dispose();
     super.dispose();
@@ -44,9 +58,11 @@ class _CaregiverFormScreenState extends ConsumerState<CaregiverFormScreen> {
   Future<void> back() async {
     if (ref.read(caregiverFormViewModelProvider).busy) return;
     if (widget.step > 1) {
-      context.go(widget.step == 3
-          ? '/caregiver/task/new/repeat'
-          : '/caregiver/task/new');
+      context.go('/caregiver/task/new');
+      return;
+    }
+    if (!ref.read(caregiverFormViewModelProvider).dirty) {
+      context.go('/caregiver/schedule');
       return;
     }
     final discard = await showConfirmDialog<bool>(context,
@@ -61,7 +77,10 @@ class _CaregiverFormScreenState extends ConsumerState<CaregiverFormScreen> {
               value: true,
               kind: AppButtonKind.dangerOutline)
         ]);
-    if (discard == true && mounted) context.go('/caregiver/schedule');
+    if (discard == true && mounted) {
+      ref.read(caregiverFormViewModelProvider.notifier).start();
+      context.go('/caregiver/schedule');
+    }
   }
 
   Future<void> submit() async {
@@ -79,7 +98,12 @@ class _CaregiverFormScreenState extends ConsumerState<CaregiverFormScreen> {
                 label: 'Đổi giờ khác', icon: Icons.edit, value: false),
             ConfirmOption(label: 'Vẫn gửi', icon: Icons.send, value: true)
           ]);
-      if (send == true) ok = await vm.submit(allowConflict: true);
+      if (!mounted) return;
+      if (send == true) {
+        ok = await vm.submit(allowConflict: true);
+      } else if (send == false) {
+        context.go('/caregiver/task/new');
+      }
     }
     if (ok && mounted) context.go('/caregiver/task/sent');
   }
@@ -102,24 +126,35 @@ class _CaregiverFormScreenState extends ConsumerState<CaregiverFormScreen> {
               2 => 'Lặp lại',
               _ => 'Xem lại và gửi'
             },
-            step: 'Bước ${widget.step}/3',
+            step: widget.step == 2
+                ? 'Lịch lặp'
+                : 'Bước ${widget.step == 1 ? 1 : 2}/2',
+            scrollController: _scroll,
             onBack: back,
             footer: AppButton(
                 label: widget.step == 3
                     ? (s.original != null ? 'Lưu thay đổi' : 'Gửi lịch cho mẹ')
                     : widget.step == 2
-                        ? 'Xem lại'
-                        : 'Tiếp tục',
+                        ? 'Dùng lịch này'
+                        : 'Xem lại',
                 icon: widget.step == 3 ? Icons.send : Icons.arrow_forward,
                 busy: s.busy,
                 wrapLabel: true,
                 onPressed: () {
                   if (widget.step == 3) {
                     submit();
+                  } else if (widget.step == 2) {
+                    context.go('/caregiver/task/new');
                   } else if (vm.validate()) {
-                    context.go(widget.step == 1
-                        ? '/caregiver/task/new/repeat'
-                        : '/caregiver/task/new/review');
+                    FocusManager.instance.primaryFocus?.unfocus();
+                    if (_scroll.hasClients) {
+                      _scroll.jumpTo(0);
+                    }
+                    context.go('/caregiver/task/new/review');
+                  } else if (_scroll.hasClients) {
+                    _scroll.animateTo(0,
+                        duration: const Duration(milliseconds: 250),
+                        curve: Curves.easeOut);
                   }
                 }),
             children: [
@@ -211,6 +246,22 @@ class _CaregiverFormScreenState extends ConsumerState<CaregiverFormScreen> {
                     ],
                     value: t.durationMinutes,
                     onChanged: (v) => update(t.copyWith(durationMinutes: v))),
+                Text('Lịch nhắc: ${repeatLabel(t)}', style: text.titleSmall),
+                Text(
+                    'Bắt đầu: ${DateTime.parse(t.startDate!).day}/${DateTime.parse(t.startDate!).month}/${DateTime.parse(t.startDate!).year}',
+                    style: text.bodyMedium),
+                AppButton(
+                  label: 'Đổi ngày hoặc lịch lặp',
+                  icon: Icons.event_repeat_rounded,
+                  kind: AppButtonKind.secondary,
+                  wrapLabel: true,
+                  onPressed: () {
+                    if (_scroll.hasClients) {
+                      _scroll.jumpTo(0);
+                    }
+                    context.go('/caregiver/task/new/repeat');
+                  },
+                ),
                 ExpansionTile(
                   tilePadding: EdgeInsets.zero,
                   title: Text('Đổi nhóm thói quen', style: text.titleSmall),
@@ -254,6 +305,7 @@ class _CaregiverFormScreenState extends ConsumerState<CaregiverFormScreen> {
                         : t.repeat,
                     onChanged: (v) => update(t.copyWith(
                         repeat: v,
+                        clearEndDate: v == RepeatRule.once,
                         weekdays: t.weekdays.isEmpty
                             ? [DateTime.parse(t.startDate!).weekday]
                             : t.weekdays,
@@ -312,19 +364,35 @@ class _CaregiverFormScreenState extends ConsumerState<CaregiverFormScreen> {
                     value: DateTime.parse(t.startDate!),
                     onChanged: (d) =>
                         update(t.copyWith(startDate: dateKey(d)))),
-                CalendarDateField(
-                    label: 'Kết thúc',
-                    value: DateTime.parse(t.endDate ?? t.startDate!),
-                    firstDate: DateTime.parse(t.startDate!),
-                    onChanged: (d) => update(t.copyWith(endDate: dateKey(d)))),
-                AppButton(
-                    label: t.endDate == null
-                        ? 'Kết thúc: Không giới hạn'
-                        : 'Bỏ ngày kết thúc',
-                    icon: Icons.all_inclusive,
-                    kind: AppButtonKind.text,
-                    wrapLabel: true,
-                    onPressed: () => update(t.copyWith(clearEndDate: true))),
+                if (t.repeat != RepeatRule.once && t.endDate != null)
+                  CalendarDateField(
+                      label: 'Kết thúc',
+                      value: DateTime.parse(t.endDate ?? t.startDate!),
+                      firstDate: DateTime.parse(t.startDate!),
+                      onChanged: (d) =>
+                          update(t.copyWith(endDate: dateKey(d)))),
+                if (t.repeat != RepeatRule.once)
+                  AppButton(
+                      label: t.endDate == null
+                          ? 'Thêm ngày kết thúc (hiện không giới hạn)'
+                          : 'Bỏ ngày kết thúc',
+                      icon: Icons.all_inclusive,
+                      kind: AppButtonKind.text,
+                      wrapLabel: true,
+                      onPressed: () async {
+                        if (t.endDate != null) {
+                          update(t.copyWith(clearEndDate: true));
+                          return;
+                        }
+                        final date = await showDatePicker(
+                            context: context,
+                            initialDate: DateTime.parse(t.startDate!),
+                            firstDate: DateTime.parse(t.startDate!),
+                            lastDate: DateTime(2100));
+                        if (date != null && mounted) {
+                          update(t.copyWith(endDate: dateKey(date)));
+                        }
+                      }),
                 Text(repeatLabel(t), style: text.bodyLarge),
               ] else ...[
                 TaskRow(
@@ -335,6 +403,14 @@ class _CaregiverFormScreenState extends ConsumerState<CaregiverFormScreen> {
                 Text(
                     'Từ ${t.startDate}${t.endDate == null ? ' · Không giới hạn' : ' đến ${t.endDate}'}',
                     style: text.bodyLarge),
+                AppButton(
+                  label: 'Sửa thông tin lịch',
+                  icon: Icons.edit_rounded,
+                  kind: AppButtonKind.secondary,
+                  wrapLabel: true,
+                  onPressed:
+                      s.busy ? null : () => context.go('/caregiver/task/new'),
+                ),
                 if (s.original == null) ...[
                   AppTextField(
                       label: 'Lời nhắn cho mẹ (không bắt buộc)',

@@ -14,17 +14,22 @@ class CaregiverPage extends StatelessWidget {
       required this.children,
       this.step,
       this.footer,
-      this.onBack});
+      this.onBack,
+      this.scrollController});
   final String title;
   final List<Widget> children;
   final String? step;
   final Widget? footer;
   final VoidCallback? onBack;
+  final ScrollController? scrollController;
   @override
   Widget build(BuildContext context) => Scaffold(
         appBar: AppBackBar(step: step, onBack: onBack),
         body: SafeArea(
             child: ListView(
+                controller: scrollController,
+                keyboardDismissBehavior:
+                    ScrollViewKeyboardDismissBehavior.onDrag,
                 padding: const EdgeInsets.all(AppSpacing.screen),
                 children: [
               Text(title, style: Theme.of(context).textTheme.headlineMedium),

@@ -13,6 +13,7 @@ import 'package:an_nhien/services/caregiver_suggestion_service.dart';
 import 'package:an_nhien/viewmodels/caregiver_form_view_model.dart';
 import 'package:an_nhien/viewmodels/caregiver_schedule_view_model.dart';
 import 'package:an_nhien/widgets/app_text_field.dart';
+import 'package:an_nhien/widgets/app_button.dart';
 import 'support/demo_container.dart';
 
 TaskItem seed() => TaskItem(
@@ -48,6 +49,125 @@ void main() {
           ..addFont(rootBundle.load('fonts/MaterialIcons-Regular.otf')))
         .load();
   });
+  testWidgets('untouched form exits without discard dialog', (tester) async {
+    final c = demoContainer();
+    await mount(tester, c);
+    final router = c.read(routerProvider);
+    router.go('/caregiver/task/new');
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Quay lại'));
+    await tester.pumpAndSettle();
+    expect(find.text('Rời màn khi chưa lưu?'), findsNothing);
+    expect(
+        router.routeInformationProvider.value.uri.path, '/caregiver/schedule');
+    await unmount(tester, c);
+  });
+
+  testWidgets('discarding changed form clears draft only after confirmation',
+      (tester) async {
+    final c = demoContainer();
+    await mount(tester, c);
+    final router = c.read(routerProvider);
+    router.go('/caregiver/task/new');
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Uống trà'));
+    await tester.tap(find.text('Quay lại'));
+    await tester.pumpAndSettle();
+    expect(c.read(caregiverFormViewModelProvider).task.title, 'Uống trà');
+    await tester.tap(find.text('Bỏ thay đổi'));
+    await tester.pumpAndSettle();
+    expect(
+        router.routeInformationProvider.value.uri.path, '/caregiver/schedule');
+    expect(c.read(caregiverFormViewModelProvider).task.title, isEmpty);
+    expect(c.read(caregiverFormViewModelProvider).dirty, isFalse);
+    await unmount(tester, c);
+  });
+
+  testWidgets('repeat is optional, edits survive review and return',
+      (tester) async {
+    final c = demoContainer();
+    await mount(tester, c);
+    final router = c.read(routerProvider);
+    router.go('/caregiver/task/new');
+    await tester.pumpAndSettle();
+    final scroll = find
+        .descendant(
+            of: find.byType(ListView).first, matching: find.byType(Scrollable))
+        .first;
+    await tester.scrollUntilVisible(find.text('Đổi ngày hoặc lịch lặp'), 250,
+        scrollable: scroll);
+    await tester.tap(find.text('Đổi ngày hoặc lịch lặp'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Mỗi ngày'));
+    await tester.tap(find.text('Dùng lịch này'));
+    await tester.pumpAndSettle();
+    expect(
+        router.routeInformationProvider.value.uri.path, '/caregiver/task/new');
+    await tester.ensureVisible(find.text('Uống trà'));
+    await tester.tap(find.text('Uống trà'));
+    await tester.tap(find.text('Xem lại'));
+    await tester.pumpAndSettle();
+    expect(router.routeInformationProvider.value.uri.path,
+        '/caregiver/task/new/review');
+    final edit = find.text('Sửa thông tin lịch');
+    await tester.ensureVisible(edit);
+    await tester.tap(edit);
+    await tester.pumpAndSettle();
+    expect(c.read(caregiverFormViewModelProvider).task.title, 'Uống trà');
+    expect(
+        c.read(caregiverFormViewModelProvider).task.repeat, RepeatRule.daily);
+    expect(
+        router.routeInformationProvider.value.uri.path, '/caregiver/task/new');
+    await unmount(tester, c);
+  });
+
+  testWidgets('calendar preserves date and view, Today returns in one tap',
+      (tester) async {
+    final c = demoContainer();
+    await mount(tester, c);
+    final router = c.read(routerProvider);
+    router.go('/caregiver/schedule?view=week');
+    await tester.pumpAndSettle();
+    final vm = c.read(caregiverScheduleViewModelProvider.notifier);
+    final tomorrow = vietnamToday().add(const Duration(days: 1));
+    vm.selectDate(tomorrow);
+    await tester.pumpAndSettle();
+    router.go('/account');
+    await tester.pumpAndSettle();
+    router.go('/caregiver/schedule');
+    await tester.pumpAndSettle();
+    expect(c.read(caregiverScheduleViewModelProvider).view, CalendarView.week);
+    expect(c.read(caregiverScheduleViewModelProvider).date, tomorrow);
+    final today = find.text('Về hôm nay');
+    await tester.scrollUntilVisible(today, 200,
+        scrollable: find
+            .descendant(
+                of: find.byType(ListView).first,
+                matching: find.byType(Scrollable))
+            .first);
+    await tester.tap(today);
+    await tester.pumpAndSettle();
+    expect(c.read(caregiverScheduleViewModelProvider).date, vietnamToday());
+    await unmount(tester, c);
+  });
+
+  testWidgets('pairing filters pasted code, enables action at six digits',
+      (tester) async {
+    final c = demoContainer();
+    await mount(tester, c);
+    c.read(routerProvider).go('/caregiver/pair');
+    await tester.pumpAndSettle();
+    AppButton action() => tester.widget<AppButton>(
+        find.byWidgetPredicate((w) => w is AppButton && w.label == 'Ghép nối'));
+    expect(action().onPressed, isNull);
+    final field = find.byType(TextField);
+    await tester.enterText(field, '12a 3456');
+    await tester.pumpAndSettle();
+    expect(tester.widget<TextField>(field).controller!.text, '123456');
+    expect(action().onPressed, isNotNull);
+    await unmount(tester, c);
+  });
+
   testWidgets('quick activity and time fill form without typing',
       (tester) async {
     final c = demoContainer();
@@ -70,14 +190,14 @@ void main() {
     task = c.read(caregiverFormViewModelProvider).task;
     expect(task.hour, 15);
     expect(task.minute, 0);
-    await tester.tap(find.text('Tiếp tục'));
+    await tester.tap(find.text('Xem lại'));
     await tester.pumpAndSettle();
     expect(c.read(routerProvider).routeInformationProvider.value.uri.path,
-        '/caregiver/task/new/repeat');
+        '/caregiver/task/new/review');
     await unmount(tester, c);
   });
   testWidgets(
-      '3-step consent flow sends once, mother receives once and schedule updates',
+      '2-step consent flow sends once, mother receives once and schedule updates',
       (tester) async {
     final schedules = FakeCaregiverScheduleService();
     final suggestions = FakeSuggestionService(onAccept: schedules.acceptTasks);
@@ -89,7 +209,7 @@ void main() {
     await tester.tap(find.text('Tạo lịch cho mẹ'));
     await tester.pumpAndSettle();
     // Blank form cannot advance and provides a concrete example.
-    await tester.tap(find.text('Tiếp tục'));
+    await tester.tap(find.text('Xem lại'));
     await tester.pumpAndSettle();
     expect(find.textContaining('Ví dụ: Đi bộ buổi sáng.'), findsWidgets);
     final field = find.descendant(
@@ -99,10 +219,6 @@ void main() {
         scrollable: find.byType(Scrollable).last);
     await tester.ensureVisible(field);
     await tester.enterText(field, 'Uống trà chiều');
-    await tester.tap(find.text('Tiếp tục'));
-    await tester.pumpAndSettle();
-    expect(router.routeInformationProvider.value.uri.path,
-        '/caregiver/task/new/repeat');
     await tester.tap(find.text('Xem lại'));
     await tester.pumpAndSettle();
     expect(router.routeInformationProvider.value.uri.path,

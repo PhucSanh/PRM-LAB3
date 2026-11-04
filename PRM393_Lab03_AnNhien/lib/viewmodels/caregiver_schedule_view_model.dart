@@ -96,11 +96,13 @@ class CaregiverScheduleViewModel extends Notifier<CaregiverCalendarState> {
   }
 
   void selectDate(DateTime date) {
+    if (calendarDate(date) == state.date) return;
     state = state.copyWith(date: calendarDate(date));
     load();
   }
 
   void selectView(CalendarView view) {
+    if (view == state.view) return;
     state = state.copyWith(view: view);
     load();
   }

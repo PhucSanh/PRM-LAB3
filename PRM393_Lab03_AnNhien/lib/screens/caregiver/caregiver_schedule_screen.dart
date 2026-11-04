@@ -14,8 +14,8 @@ import '../../widgets/state_views.dart';
 import '../../widgets/task_widgets.dart';
 
 class CaregiverScheduleScreen extends ConsumerStatefulWidget {
-  const CaregiverScheduleScreen({super.key, this.view = CalendarView.day});
-  final CalendarView view;
+  const CaregiverScheduleScreen({super.key, this.view});
+  final CalendarView? view;
   @override
   ConsumerState<CaregiverScheduleScreen> createState() =>
       _CaregiverScheduleScreenState();
@@ -27,10 +27,10 @@ class _CaregiverScheduleScreenState
   void initState() {
     super.initState();
     Future.microtask(() {
-      if (mounted) {
+      if (mounted && widget.view != null) {
         ref
             .read(caregiverScheduleViewModelProvider.notifier)
-            .selectView(widget.view);
+            .selectView(widget.view!);
       }
     });
   }
@@ -40,10 +40,10 @@ class _CaregiverScheduleScreenState
     super.didUpdateWidget(old);
     if (old.view != widget.view) {
       Future.microtask(() {
-        if (mounted) {
+        if (mounted && widget.view != null) {
           ref
               .read(caregiverScheduleViewModelProvider.notifier)
-              .selectView(widget.view);
+              .selectView(widget.view!);
         }
       });
     }
@@ -95,17 +95,31 @@ class _CaregiverScheduleScreenState
             CalendarView.week => 'Tuần',
             CalendarView.month => 'Tháng'
           }}'),
-          CalendarDateField(
-              label: 'Chọn ngày', value: s.date, onChanged: vm.selectDate),
+          GestureDetector(
+            onHorizontalDragEnd: (details) {
+              final speed = details.primaryVelocity ?? 0;
+              if (speed.abs() > 250) vm.move(speed < 0 ? 1 : -1);
+            },
+            child: CalendarDateField(
+                label: 'Chọn ngày', value: s.date, onChanged: vm.selectDate),
+          ),
+          const Text('Vuốt ngang trên ngày để chuyển nhanh.'),
           Wrap(
               spacing: AppSpacing.betweenTargets,
               runSpacing: AppSpacing.sm,
               children: [
                 OutlinedButton(
-                    onPressed: () => vm.move(-1), child: const Text('Trước')),
+                    onPressed: () => vm.move(-1), child: const Text('← Trước')),
                 OutlinedButton(
-                    onPressed: () => vm.move(1), child: const Text('Sau')),
+                    onPressed: () => vm.move(1), child: const Text('Sau →')),
               ]),
+          if (dateKey(s.date) != dateKey(vietnamToday()))
+            AppButton(
+              label: 'Về hôm nay',
+              icon: Icons.today_rounded,
+              kind: AppButtonKind.tonal,
+              onPressed: () => vm.selectDate(vietnamToday()),
+            ),
           if (s.message != null) FieldMessage.hint(s.message!),
           switch (s.items) {
             UiLoading() => const LoadingView(),
@@ -128,7 +142,7 @@ class _CaregiverScheduleScreenState
                     for (final day in _days(s)) ...[
                       AppButton(
                           label:
-                              '${dateKey(day)} · ${data.where((o) => dateKey(o.date) == dateKey(day)).length} việc',
+                              '${day.day}/${day.month}/${day.year} · ${data.where((o) => dateKey(o.date) == dateKey(day)).length} việc',
                           icon: Icons.calendar_today,
                           kind: AppButtonKind.secondary,
                           wrapLabel: true,
