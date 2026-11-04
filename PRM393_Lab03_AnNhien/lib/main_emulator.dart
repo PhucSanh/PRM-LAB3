@@ -25,8 +25,9 @@ Future<void> main() async {
     const host =
         String.fromEnvironment('EMULATOR_HOST', defaultValue: '10.0.2.2');
     const roleName = String.fromEnvironment('DEMO_ROLE', defaultValue: 'elder');
-    if (!['elder', 'caregiver'].contains(roleName))
+    if (!['elder', 'caregiver'].contains(roleName)) {
       throw const FormatException('DEMO_ROLE phải là elder hoặc caregiver.');
+    }
     final app = await Firebase.initializeApp(
         name: 'local-emulator',
         options: const FirebaseOptions(
@@ -48,9 +49,10 @@ Future<void> main() async {
         displayName: roleName == 'elder' ? 'Bác thử' : 'Con thử'));
     final existing = await profile.watch(user.uid).first;
     final role = UserRole.values.byName(roleName);
-    if (existing.role != null && existing.role != role)
+    if (existing.role != null && existing.role != role) {
       throw StateError(
           'Máy này đang có vai trò khác. Xoá dữ liệu app local hoặc dùng máy thứ hai.');
+    }
     await profile.setRole(user.uid, role);
     if (role == UserRole.elder) await profile.markOnboarded(user.uid);
     runApp(ProviderScope(overrides: [

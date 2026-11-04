@@ -77,6 +77,10 @@ Loại: `Chính` (happy path) · `Lỗi` (nhánh lỗi + phục hồi) · `Nativ
 | ID | Lần 1 | Lần 2 | Lần 3 | Pass rate | Thời gian TB | Ghi chú (flaky vì sao) |
 | --- | --- | --- | --- | --- | --- | --- |
 | TC-01 | | | | | | |
+| TC-03 | Chưa chạy | Chưa chạy | Chưa chạy | — | — | F4: tạo việc; chạy bằng `e2e_test/run_artemis.py` |
+| TC-04 | Chưa chạy | Chưa chạy | Chưa chạy | — | — | F4: lỗi tên → gợi ý → lưu |
+| TC-12 | Chưa chạy | Chưa chạy | Chưa chạy | — | — | F4: cần Android + điều kiện mất mạng thật |
+| TC-19 | Chưa chạy | Chưa chạy | Chưa chạy | — | — | F4: sửa/xóa task lặp, kiểm tra scope |
 
 ## F10 bổ sung 02/11/2026
 

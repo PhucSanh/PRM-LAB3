@@ -7,5 +7,5 @@ async def test_tc01_google_sign_in_shows_today(artemis):
         "Verify the 'Hôm nay' screen and 4 bottom tabs are shown. "
         "Report the exact text of the progress line that starts with 'Đã xong'."
     )
-    assert result.status == "SUCCESS", result.error
+    assert result.succeeded, result.error
     # TODO: assert trên giá trị agent báo lại, vd. regex r"Đã xong \d+/\d+ việc"
