@@ -17,7 +17,6 @@ const _placeholders = {
   '/task/scope': 'N13 · F4',
   '/today/voice': 'V01 · F5',
   '/today/all': 'S11 · F7',
-  '/today/suggestions/g1': 'G03 · F12',
   '/reminder/t1': 'S14 · F6',
   '/week': 'S07 · F7',
   '/week/2026-11-02': 'S11 · F7',
@@ -28,11 +27,10 @@ const _placeholders = {
   '/family/add': 'S12 · F11',
   '/family/p1/edit': 'N09 · F11',
   '/family/p1/share': 'S17 · F11',
-  '/settings': 'S10 · F8',
+  // '/settings' (S10) đã là màn thật – xem test/settings_screen_test.dart.
+  // '/settings/profile' (N06) đã là màn thật – xem test/profile_screen_test.dart.
   '/settings/reminders': 'N07 · F6',
-  '/settings/help': 'N08 · F8',
-  '/settings/data': 'N20 · F8',
-  '/caregiver/suggest': 'G01 · F12',
+  // '/settings/help' (N08), '/settings/data' (N20) đã là màn thật – xem test/settings_static_screens_test.dart.
 };
 
 void main() {

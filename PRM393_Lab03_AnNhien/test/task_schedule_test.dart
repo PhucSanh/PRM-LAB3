@@ -2,7 +2,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:an_nhien/models/task_item.dart';
 import 'package:an_nhien/services/caregiver_schedule_service.dart';
 import 'package:an_nhien/services/pairing_service.dart';
-import 'package:an_nhien/services/suggestion_service.dart';
+import 'package:an_nhien/services/caregiver_suggestion_service.dart';
 
 TaskItem task(
         {RepeatRule repeat = RepeatRule.weekly,

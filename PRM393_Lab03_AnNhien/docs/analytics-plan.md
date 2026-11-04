@@ -84,6 +84,17 @@ Cách lấy bằng chứng event F2 (Hương): bật DebugView như trên, xoá 
 - `tutorial_complete`: N18 bấm "Xem lịch" (hoặc "Để sau" ở N04 → `has_first_task: false`) → `font_size`, `notifications_on`, `has_first_task`.
 - Kiểm tra trên DebugView: không có tên Bác / tên việc trong tham số. Lưu ý: `add_task` chỉ có khi `TaskRepository` lưu được (bản Firebase đang chờ chốt schema – xem `docs/prompt/F2/06-n04-viec-dau-tien.md`).
 
+Cách lấy bằng chứng event F8 (Sanh): bật DebugView như trên, đăng nhập tài khoản Bác đã `onboarded`, từ Hôm nay bấm "Cài đặt" → `/settings` (S10):
+- `change_font_size`: chạm "Rất lớn" khi đang "Lớn" → `from: lon`, `to: rat_lon` (cả app đổi cỡ chữ ngay). Bấm "Hoàn tác" ghi thêm một event chiều ngược lại (`from: rat_lon`, `to: lon`). Chạm lại đúng cỡ đang chọn thì **không** ghi.
+- `logout`: cuối S10 bấm "Đăng xuất" → hộp hỏi lại → "Đăng xuất". Event do `SignOutViewModel` (F1) ghi đúng 1 lần, không có tham số. Bấm "Ở lại" thì không ghi.
+- User property `font_size`, `high_contrast` **chưa đặt được**: `AnalyticsService` chưa có `setUserProperty` (chờ Hiếu – `TODO(Hiếu)` trong `settings_view_model.dart`).
+- N06, N08, N20 không có event (bảng Event không có dòng cho các màn này).
+Cách lấy bằng chứng event F12 (Sanh) – **cần 2 máy** (máy B con cháu đã ghép nối, máy A của Bác), bật DebugView trên máy đang thao tác:
+- `send_suggestion` (máy B): `/caregiver/suggest` → "Gửi gợi ý cho mẹ" → "Gửi gợi ý" → `items: 2`, `source: suggest`.
+- `accept_suggestion` ★ (máy A): mở Hôm nay → popup G10 / G11 "Xem gợi ý" → G03 "Thêm vào lịch" → `count: 2`, `changed_time: false`, `partial: false`, `taps: 2` (M6). Đổi giờ (G04) → `changed_time: true`; "Chọn từng việc" bỏ 1 việc → `partial: true`.
+- `dismiss_suggestion` (máy A): G03 "Bỏ qua gợi ý" → `items: 2`; `undo_action` khi bấm "Hoàn tác" ở G09 → `action: dismiss_suggestion`.
+- Kiểm tra trên DebugView: không có tên người gửi, lời nhắn, tên việc trong tham số. Máy B **không** nhận gì khi máy A bỏ qua (FR08). Lưu ý: hiện `SuggestionService` mới có bản Fake (cùng máy) – chụp DebugView 2 máy khi Hiếu xong bản Firebase; trước đó dùng 1 máy với dữ liệu mẫu (popup tự hiện ở Hôm nay).
+
 ## Event F10 bổ sung (02/11/2026)
 
 Ghi trong ViewModel/provider, không ghi token, UID người nhận, route ID, URL tệp

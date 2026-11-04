@@ -7,7 +7,6 @@ import '../screens/caregiver/caregiver_form_screen.dart';
 import '../screens/caregiver/caregiver_detail_screen.dart';
 import '../screens/caregiver/demo_hub_screen.dart';
 import '../models/user_profile.dart';
-import '../screens/firebase_demo/profile_demo_entry_screen.dart';
 import '../screens/firebase_demo/inbox_screen.dart';
 import '../screens/firebase_demo/firebase_demo_screen.dart';
 import '../models/app_notification.dart';
@@ -24,10 +23,17 @@ import '../screens/onboarding/notifications_screen.dart';
 import '../screens/onboarding/setup_profile_screen.dart';
 import '../screens/onboarding/try_reminder_screen.dart';
 import '../screens/onboarding/welcome_screen.dart';
+import '../screens/settings/data_screen.dart';
+import '../screens/settings/help_screen.dart';
+import '../screens/settings/profile_screen.dart';
+import '../screens/settings/settings_screen.dart';
 import '../viewmodels/account_view_model.dart';
 import '../viewmodels/today_view_model.dart';
 import '../services/providers.dart';
 import '../screens/sign_in/sign_in_screen.dart';
+import '../screens/suggestion/suggestion_compose_screen.dart';
+import '../screens/suggestion/suggestion_review_screen.dart';
+import '../viewmodels/suggestion_review_view_model.dart' show SuggestionEntry;
 import '../screens/today/today_screen.dart';
 import '../viewmodels/session_view_model.dart';
 import '../widgets/app_shell.dart';
@@ -180,22 +186,14 @@ final routerProvider = Provider<GoRouter>((ref) {
           path: '/settings/reminders',
           builder: (_, __) => ph('N07 · F6', 'Cài đặt nhắc việc', 'Khang')),
       // F8 Cài đặt & hồ sơ – Sanh (khu demo Firebase F10 – Hiếu)
+      GoRoute(path: '/settings', builder: (_, __) => const SettingsScreen()),
       GoRoute(
-          path: '/settings',
-          builder: (_, __) => ph('S10 · F8', 'Cài đặt hiển thị', 'Sanh')),
-      GoRoute(
-          path: '/settings/profile',
-          builder: (_, __) => const ProfileDemoEntryScreen()),
+          path: '/settings/profile', builder: (_, __) => const ProfileScreen()),
       GoRoute(
           path: '/settings/firebase-demo',
           builder: (_, __) => const FirebaseDemoScreen()),
-      GoRoute(
-          path: '/settings/help',
-          builder: (_, __) => ph('N08 · F8', 'Cách dùng đơn giản', 'Sanh')),
-      GoRoute(
-          path: '/settings/data',
-          builder: (_, __) =>
-              ph('N20 · F8', 'Dữ liệu trên điện thoại', 'Sanh')),
+      GoRoute(path: '/settings/help', builder: (_, __) => const HelpScreen()),
+      GoRoute(path: '/settings/data', builder: (_, __) => const DataScreen()),
       // F10 Firebase – Hiếu
       GoRoute(path: '/inbox', builder: (_, __) => const InboxScreen()),
       // Chế độ Con cháu: mọi route /caregiver/* nằm ngoài shell của Bác.
@@ -240,8 +238,7 @@ final routerProvider = Provider<GoRouter>((ref) {
       // F12 Gợi ý lịch (phía Con cháu) – Sanh
       GoRoute(
           path: '/caregiver/suggest',
-          builder: (_, __) =>
-              ph('G01 · F12', 'Con cháu soạn lịch gợi ý', 'Sanh')),
+          builder: (_, __) => const SuggestionComposeScreen()),
       // F0 Trang xem thử widget – chỉ có ở bản debug (cần đăng nhập như mọi route khác).
       if (kDebugMode)
         GoRoute(
@@ -289,8 +286,10 @@ final routerProvider = Provider<GoRouter>((ref) {
                   // F12 Gợi ý lịch (phía Bác) – Sanh
                   GoRoute(
                       path: 'suggestions/:id',
-                      builder: (_, __) =>
-                          ph('G03 · F12', 'Lịch Mai gợi ý', 'Sanh')),
+                      builder: (_, state) => SuggestionReviewScreen(
+                          id: state.pathParameters['id']!,
+                          entry: SuggestionEntry.fromQuery(
+                              state.uri.queryParameters['from']))),
                 ]),
           ]),
           StatefulShellBranch(routes: [

@@ -1,6 +1,6 @@
 import 'today_view_model.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../services/suggestion_service.dart';
+import '../services/caregiver_suggestion_service.dart';
 import '../services/providers.dart';
 import '../utils/app_error.dart';
 import 'session_view_model.dart';
@@ -8,7 +8,7 @@ import 'session_view_model.dart';
 final pendingSuggestionsProvider =
     StreamProvider<List<ScheduleSuggestion>>((ref) {
   ref.watch(sessionProvider);
-  return ref.watch(suggestionServiceProvider).watchPending();
+  return ref.watch(caregiverSuggestionServiceProvider).watchPending();
 });
 
 class SuggestionDemoState {
@@ -30,7 +30,7 @@ class SuggestionDemoViewModel extends Notifier<SuggestionDemoState> {
           {Map<int, ({int hour, int minute})> times = const {}}) =>
       _run(() async {
         await ref
-            .read(suggestionServiceProvider)
+            .read(caregiverSuggestionServiceProvider)
             .resolve(id, selected, times: times);
         if (ref.mounted && selected.isNotEmpty) {
           ref.invalidate(todayViewModelProvider);
@@ -42,7 +42,7 @@ class SuggestionDemoViewModel extends Notifier<SuggestionDemoState> {
         } catch (_) {}
       });
   Future<bool> undo(String id) =>
-      _run(() => ref.read(suggestionServiceProvider).undoDismiss(id));
+      _run(() => ref.read(caregiverSuggestionServiceProvider).undoDismiss(id));
   Future<bool> _run(Future<void> Function() action) async {
     if (state.busy) return false;
     final generation = _generation;

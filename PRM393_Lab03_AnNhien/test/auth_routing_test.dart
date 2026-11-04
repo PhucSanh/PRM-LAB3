@@ -1,3 +1,5 @@
+import 'package:an_nhien/services/settings_service.dart';
+import 'package:an_nhien/services/suggestion_service.dart';
 import 'package:an_nhien/services/reminder_service.dart';
 import 'package:an_nhien/services/caregiver_schedule_service.dart';
 import 'dart:async';
@@ -179,6 +181,9 @@ void main() {
 ProviderContainer makeContainer(FakeAuthService auth, ProfileService profiles,
         {FakeSessionDataService? cache, MessagingService? messages}) =>
     ProviderContainer(overrides: [
+      settingsServiceProvider.overrideWithValue(FakeSettingsService()),
+      suggestionServiceProvider
+          .overrideWithValue(FakeSuggestionService(delay: Duration.zero)),
       reminderServiceProvider.overrideWithValue(FakeReminderService()),
       authGuardEnabledProvider.overrideWithValue(true),
       caregiverScheduleServiceProvider

@@ -2,7 +2,7 @@ import '../models/task_item.dart';
 import '../utils/app_error.dart';
 import 'firebase_pairing_service.dart';
 import 'firebase_repositories.dart';
-import 'suggestion_service.dart';
+import 'caregiver_suggestion_service.dart';
 
 class FirebaseSuggestionService implements SuggestionService {
   FirebaseSuggestionService(this.data, this.client);

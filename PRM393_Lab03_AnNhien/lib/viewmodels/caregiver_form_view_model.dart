@@ -134,7 +134,7 @@ class CaregiverFormViewModel extends Notifier<CaregiverFormState> {
     final input = state;
     final generation = _generation;
     final schedules = ref.read(caregiverScheduleServiceProvider);
-    final suggestions = ref.read(suggestionServiceProvider);
+    final suggestions = ref.read(caregiverSuggestionServiceProvider);
     final analytics = ref.read(analyticsServiceProvider);
     final crash = ref.read(crashServiceProvider);
     state = input.copyWith(busy: true);

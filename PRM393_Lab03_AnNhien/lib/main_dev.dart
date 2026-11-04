@@ -7,7 +7,7 @@ import 'services/settings_service.dart';
 import 'services/reminder_service.dart';
 import 'services/session_data_service.dart';
 import 'services/caregiver_schedule_service.dart';
-import 'services/suggestion_service.dart';
+import 'services/caregiver_suggestion_service.dart';
 import 'router/app_router.dart';
 import 'viewmodels/caregiver_schedule_view_model.dart';
 // Bản chạy DEV: bỏ qua Google Sign-In và Firebase, mọi service dùng bản Fake.
@@ -71,7 +71,7 @@ void main() {
       pairedMomUidProvider.overrideWithValue('demo-mom'),
       pairingServiceProvider.overrideWithValue(FakePairingService()),
       caregiverScheduleServiceProvider.overrideWithValue(schedules),
-      suggestionServiceProvider.overrideWithValue(
+      caregiverSuggestionServiceProvider.overrideWithValue(
           FakeSuggestionService(onAccept: schedules.acceptTasks)),
       demoReportServiceProvider.overrideWithValue(FakeReportService()),
       // Đã đăng nhập sẵn → router không chặn ở /sign-in.

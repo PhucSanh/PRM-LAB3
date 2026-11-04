@@ -1,3 +1,4 @@
+import 'caregiver_suggestion_service.dart' as caregiver;
 import 'local_reminder_service.dart';
 import 'reminder_runtime.dart';
 import 'package:cloud_functions/cloud_functions.dart';
@@ -5,7 +6,6 @@ import 'caregiver_schedule_service.dart';
 import 'firebase_caregiver_schedule_service.dart';
 import 'firebase_pairing_service.dart';
 import 'pairing_service.dart';
-import 'suggestion_service.dart';
 import 'firebase_suggestion_service.dart';
 import 'firebase_settings_service.dart';
 import 'demo_pdf.dart';
@@ -37,6 +37,7 @@ import 'remote_config_service.dart';
 import 'reminder_service.dart';
 import 'report_service.dart';
 import 'settings_service.dart';
+import 'suggestion_service.dart';
 import 'task_repository.dart';
 
 final nativeReminderEventsEnabledProvider = Provider<bool>((ref) => false);
@@ -105,6 +106,13 @@ final reminderServiceProvider = Provider<ReminderService>((ref) {
 final profileSetupServiceProvider = Provider<ProfileSetupService>(
     (ref) => FirebaseProfileSetupService(ref.watch(_userDataProvider)));
 
+// F12 (Sanh) thêm, đang trỏ bản Fake có dữ liệu mẫu Figma (Mai · Con gái, 2 việc ngày mai),
+// không độ trễ (để test dựng cả app không còn Timer treo).
+// TODO(Hiếu): bản Firebase – Firestore users/{momUid}/suggestions + FCM "có gợi ý mới"
+// mở /today/suggestions/:id; rules cho con cháu đã ghép nối tạo, mẹ cập nhật status / popupShown.
+final suggestionServiceProvider = Provider<SuggestionService>(
+    (ref) => FakeSuggestionService(withSample: true, delay: Duration.zero));
+
 /// F10 uses a labelled test PDF; F7 retains its own renderer contract.
 final demoReportServiceProvider = Provider<ReportService>((ref) =>
     FirebaseReportService(FirebaseAuth.instance, FirebaseStorage.instance,
@@ -117,8 +125,8 @@ final pairingServiceProvider = Provider<PairingService>((ref) =>
         ref.watch(callableClientProvider), ref.watch(_userDataProvider)));
 final caregiverScheduleServiceProvider = Provider<CaregiverScheduleService>(
     (ref) => FirebaseCaregiverScheduleService(ref.watch(_userDataProvider)));
-final suggestionServiceProvider = Provider<SuggestionService>((ref) =>
-    FirebaseSuggestionService(
+final caregiverSuggestionServiceProvider =
+    Provider<caregiver.SuggestionService>((ref) => FirebaseSuggestionService(
         ref.watch(_userDataProvider), ref.watch(callableClientProvider)));
 
 final reminderRuntimeProvider = Provider<ReminderRuntime>((ref) {

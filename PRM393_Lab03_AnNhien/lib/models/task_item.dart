@@ -176,13 +176,16 @@ class TaskItem {
       repeat: RepeatRule.values.asNameMap()[m['repeat']] ?? RepeatRule.daily,
       status: TaskStatus.values.asNameMap()[m['status']] ?? TaskStatus.pending,
       remind: m['remind'] as bool? ?? true,
-      startDate: m['startDate'] as String?,
+      startDate: parseDateKey(m['startDate']) == null
+          ? null
+          : dateKey(parseDateKey(m['startDate'])!),
       endDate: m['endDate'] as String?,
       weekdays: (m['weekdays'] as List?)?.cast<int>() ?? const [],
       monthDays: (m['monthDays'] as List?)?.cast<int>() ?? const [],
       lastDayOfMonth: m['lastDayOfMonth'] as bool? ?? false,
       excludedDates: (m['excludedDates'] as List?)?.cast<String>() ?? const [],
-      durationMinutes: (m['durationMinutes'] as num?)?.toInt() ?? 15,
+      durationMinutes:
+          ((m['durationMinutes'] ?? m['durationMin']) as num?)?.toInt() ?? 15,
       revision: (m['revision'] as num?)?.toInt() ?? 0,
       completionSourceId: m['completionSourceId'] as String?);
 }
@@ -233,4 +236,22 @@ TaskStatus resolveOccurrenceStatus(TaskItem task,
     id = (id == task.id ? task : templates[id])?.completionSourceId;
   }
   return TaskStatus.pending;
+}
+
+/// Đọc ngày đã lưu: chuỗi `yyyy-MM-dd`, `DateTime`, hoặc Timestamp Firestore (có `toDate()`).
+/// Sai định dạng → `null` (không phá dữ liệu cũ).
+DateTime? parseDateKey(Object? v) {
+  DateTime? d;
+  if (v is DateTime) {
+    d = v;
+  } else if (v is String) {
+    d = DateTime.tryParse(v);
+  } else if (v != null) {
+    try {
+      d = (v as dynamic).toDate() as DateTime;
+    } catch (_) {
+      d = null;
+    }
+  }
+  return d == null ? null : DateTime(d.year, d.month, d.day);
 }

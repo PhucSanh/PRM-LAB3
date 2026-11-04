@@ -1,104 +1,249 @@
 import 'dart:async';
-import '../models/task_item.dart';
+
+import '../models/suggestion.dart';
 import '../utils/app_error.dart';
 
-class ScheduleSuggestion {
-  const ScheduleSuggestion(
-      {required this.id,
-      required this.senderUid,
-      required this.tasks,
-      this.status = 'pending',
-      this.message = ''});
-  final String id, senderUid, status, message;
-  final List<TaskItem> tasks;
-  ScheduleSuggestion withStatus(String status) => ScheduleSuggestion(
-      id: id,
-      senderUid: senderUid,
-      tasks: tasks,
-      status: status,
-      message: message);
-}
-
-/// F12 (Sanh) có thể dùng contract này. Không gửi phản hồi bỏ qua cho Con cháu.
+/// Gợi ý lịch giữa 2 máy (F12; F14 C08 cũng gửi qua đây).
+/// Máy con cháu `send`; máy Bác `watchPending` / `byId` / `markPopupShown` /
+/// `accept` / `dismiss` / `undoDismiss`.
+///
+/// Luật (đề + Lab 2): service **không** tạo việc trong lịch – ViewModel gọi
+/// `TaskRepository.save` sau khi Bác bấm nhận. `dismiss` / `undoDismiss` **không**
+/// báo gì cho người gửi (FR08): chỉ đổi `status`, rules quyết định ai đọc được.
+///
+/// TODO(Hiếu): bản Firebase – Firestore `users/{momUid}/suggestions` + FCM
+/// "có gợi ý mới" cho máy Bác, payload `route: /today/suggestions/{id}`.
 abstract interface class SuggestionService {
-  Stream<List<ScheduleSuggestion>> watchPending();
-  Future<String> send(String momUid, String requestId, List<TaskItem> tasks,
-      {String message = ''});
-  Future<void> resolve(String id, List<int> selected,
-      {Map<int, ({int hour, int minute})> times = const {}});
-  Future<void> undoDismiss(String id);
+  /// Máy con cháu gửi. `s.id` rỗng → service tự tạo id. Gợi ý lưu ở trạng thái
+  /// `pending`, `popupShown: false`.
+  Future<void> send(String momUid, Suggestion s);
+
+  /// Máy Bác: các gợi ý `pending`, mới nhất trước.
+  Stream<List<Suggestion>> watchPending(String momUid);
+
+  /// Đọc một gợi ý ở mọi trạng thái (G09: đã bỏ qua vẫn xem lại được). `null` = không có.
+  Future<Suggestion?> byId(String momUid, String id);
+
+  /// Popup G10 / G11 đã hiện – không hiện lại.
+  Future<void> markPopupShown(String momUid, String id);
+
+  /// Đánh dấu [items] đã nhận. Nhận hết → `accepted`, còn việc chưa nhận → `partial`.
+  /// Gọi lại được trên gợi ý `partial` để nhận tiếp việc còn lại (G07).
+  /// [items] khớp theo tên + thói quen + ngày (giờ có thể đã đổi).
+  Future<void> accept(String momUid, String id, List<SuggestionItem> items);
+
+  /// Bỏ qua (G09). Không báo cho người gửi.
+  Future<void> dismiss(String momUid, String id);
+
+  /// Hoàn tác bỏ qua: về `partial` nếu đã nhận việc nào, ngược lại `pending`.
+  Future<void> undoDismiss(String momUid, String id);
 }
 
+/// Bản giả trong bộ nhớ, theo `momUid`. Một instance dùng chung được cho
+/// "máy con cháu gửi" và "máy Bác nhận" trong cùng một test.
 class FakeSuggestionService implements SuggestionService {
-  FakeSuggestionService({this.onAccept});
-  final Future<void> Function(List<TaskItem>)? onAccept;
-  final suggestions = <String, ScheduleSuggestion>{};
-  final acceptedTasks = <TaskItem>[];
-  final _changes = StreamController<void>.broadcast(sync: true);
+  FakeSuggestionService({
+    Map<String, List<Suggestion>> seed = const {},
+    this.withSample = false,
+    this.delay = const Duration(milliseconds: 300),
+    this.failOnSend = false,
+    this.failOnLoad = false,
+    this.failOnAccept = false,
+  }) {
+    seed.forEach((momUid, list) {
+      final box = _box(momUid);
+      for (final s in list) {
+        box[s.id] = s;
+      }
+    });
+  }
+
+  /// `true` → lần đầu đọc / ghi của một `momUid` sẽ có sẵn [figmaSample]
+  /// (để chạy app bằng Fake vẫn thấy popup G10 / thẻ G12).
+  final bool withSample;
+  final Duration delay;
+  bool failOnSend;
+  bool failOnLoad;
+  bool failOnAccept;
+
+  /// Số lần "báo cho Bác có gợi ý mới" (FCM ở bản thật) – tăng mỗi lần `send`.
+  int momNotified = 0;
+
+  /// Số lần báo cho người gửi. Không hàm nào của service được báo (FR08:
+  /// nhận / bỏ qua / hoàn tác đều im lặng) – test kiểm luôn = 0. Bản Firebase
+  /// cũng không được gửi FCM / ghi tài liệu nào cho người gửi.
+  int get senderNotified => 0;
+
+  static const sendError =
+      AppException('Chưa gửi được gợi ý. Kiểm tra mạng rồi bấm "Thử lại" nhé.');
+  static const loadError =
+      AppException('Chưa tải được gợi ý. Bác bấm "Thử lại" nhé.');
+  static const acceptError =
+      AppException('Chưa thêm được vào lịch. Bác bấm "Thử lại" nhé.');
+  static const notFound = AppException('Gợi ý này không còn nữa.');
+  static const noItem = AppException('Bác chọn ít nhất một việc nhé.');
+
+  /// Dữ liệu mẫu đúng Figma (đối chiếu 04/11/2026): Mai · Con gái gửi 2 việc
+  /// cho ngày mai. Lời nhắn theo G03 cho cả popup G10 / G11 (DT trong docs).
+  static Suggestion figmaSample({String id = 'sample-mai', DateTime? now}) {
+    final n = now ?? DateTime.now();
+    final tomorrow = DateTime(n.year, n.month, n.day + 1);
+    const options = [SuggestionTime(8, 0), SuggestionTime(9, 0)];
+    return Suggestion(
+      id: id,
+      fromUid: 'sample-mai-uid',
+      fromName: 'Mai',
+      fromRelation: 'Con gái',
+      message: '“Mẹ ơi, mai mình đi bộ với cô Tám nhé?”',
+      items: [
+        SuggestionItem(
+          title: 'Đi bộ nhẹ nhàng',
+          habitKey: 'move',
+          date: tomorrow,
+          hour: 8,
+          minute: 0,
+          durationMin: 20,
+          timeOptions: options,
+        ),
+        SuggestionItem(
+          title: 'Thư giãn nhẹ nhàng',
+          habitKey: 'downshift',
+          date: tomorrow,
+          hour: 9,
+          minute: 0,
+          durationMin: 15,
+          timeOptions: options,
+        ),
+      ],
+      // Figma G10: "Mai vừa gửi lúc 4:20 chiều" (hôm nay).
+      createdAt: DateTime(n.year, n.month, n.day, 16, 20),
+    );
+  }
+
+  final _store = <String, Map<String, Suggestion>>{};
+  final _sampled = <String>{};
+  final _changes = StreamController<String>.broadcast(sync: true);
+  int _seq = 0;
+
+  Map<String, Suggestion> _box(String momUid) {
+    final box = _store.putIfAbsent(momUid, () => <String, Suggestion>{});
+    if (withSample && _sampled.add(momUid)) {
+      final s = figmaSample();
+      box.putIfAbsent(s.id, () => s);
+    }
+    return box;
+  }
+
+  Future<void> _wait() async {
+    if (delay > Duration.zero) await Future<void>.delayed(delay);
+  }
+
+  List<Suggestion> _pending(String momUid) => [
+        for (final s in _box(momUid).values)
+          if (s.status == SuggestionStatus.pending) s
+      ]..sort((a, b) => b.createdAt.compareTo(a.createdAt));
+
+  Suggestion _require(String momUid, String id) =>
+      _box(momUid)[id] ?? (throw notFound);
+
+  void _put(String momUid, Suggestion s) {
+    _box(momUid)[s.id] = s;
+    _changes.add(momUid);
+  }
+
   @override
-  Stream<List<ScheduleSuggestion>> watchPending() => Stream.multi((sink) {
-        void emit() => sink.add(
-            suggestions.values.where((s) => s.status == 'pending').toList());
-        final sub = _changes.stream.listen((_) => emit());
-        emit();
-        sink.onCancel = sub.cancel;
+  Future<void> send(String momUid, Suggestion s) async {
+    await _wait();
+    if (failOnSend) throw sendError;
+    final id = s.id.isEmpty ? 'sg-${++_seq}' : s.id;
+    _put(
+        momUid,
+        s.copyWith(
+          id: id,
+          status: SuggestionStatus.pending,
+          popupShown: false,
+          items: [for (final i in s.items) i.copyWith(accepted: false)],
+        ));
+    momNotified++;
+  }
+
+  @override
+  Stream<List<Suggestion>> watchPending(String momUid) =>
+      Stream<List<Suggestion>>.multi((sink) {
+        var ready = false;
+        var closed = false;
+        final sub = _changes.stream.where((u) => u == momUid).listen((_) {
+          if (ready && !closed) sink.add(_pending(momUid));
+        });
+        _wait().then((_) {
+          if (closed) return;
+          if (failOnLoad) {
+            sink.addError(loadError);
+            return;
+          }
+          ready = true;
+          sink.add(_pending(momUid));
+        });
+        sink.onCancel = () {
+          closed = true;
+          return sub.cancel();
+        };
       });
+
   @override
-  Future<String> send(String momUid, String requestId, List<TaskItem> tasks,
-      {String message = ''}) async {
-    for (final t in tasks) {
-      t.validate();
-    }
-    suggestions.putIfAbsent(
-        requestId,
-        () => ScheduleSuggestion(
-            id: requestId,
-            senderUid: 'demo-child',
-            tasks: tasks,
-            message: message));
-    _changes.add(null);
-    return requestId;
+  Future<Suggestion?> byId(String momUid, String id) async {
+    await _wait();
+    if (failOnLoad) throw loadError;
+    return _box(momUid)[id];
   }
 
   @override
-  Future<void> resolve(String id, List<int> selected,
-      {Map<int, ({int hour, int minute})> times = const {}}) async {
-    final s = suggestions[id];
-    if (s == null || s.status != 'pending') {
-      throw const AppException('Gợi ý đã được xử lý.');
-    }
-    if (selected.toSet().length != selected.length ||
-        selected.any((i) => i < 0 || i >= s.tasks.length) ||
-        times.keys.any((i) => !selected.contains(i))) {
-      throw const AppException('Lựa chọn chưa hợp lệ.');
-    }
-    final tasks = selected
-        .map((i) => s.tasks[i].copyWith(
-            id: 'suggestion-$id-$i',
-            hour: times[i]?.hour,
-            minute: times[i]?.minute))
-        .toList();
-    for (final t in tasks) {
-      t.validate();
-    }
-    await onAccept?.call(tasks);
-    acceptedTasks.addAll(tasks);
-    suggestions[id] = s.withStatus(selected.isEmpty
-        ? 'dismissed'
-        : selected.length == s.tasks.length
-            ? 'accepted'
-            : 'partial');
-    _changes.add(null);
+  Future<void> markPopupShown(String momUid, String id) async {
+    await _wait();
+    _put(momUid, _require(momUid, id).copyWith(popupShown: true));
   }
 
   @override
-  Future<void> undoDismiss(String id) async {
-    final s = suggestions[id];
-    if (s == null || s.status != 'dismissed') {
-      throw const AppException('Không thể hoàn tác.');
+  Future<void> accept(
+      String momUid, String id, List<SuggestionItem> items) async {
+    await _wait();
+    if (failOnAccept) throw acceptError;
+    if (items.isEmpty) throw noItem;
+    final s = _require(momUid, id);
+    final next = [...s.items];
+    for (final picked in items) {
+      final i = next.indexWhere((x) => !x.accepted && x.sameTaskAs(picked));
+      if (i >= 0) next[i] = next[i].copyWith(accepted: true);
     }
-    suggestions[id] = s.withStatus('pending');
-    _changes.add(null);
+    final all = next.every((x) => x.accepted);
+    _put(
+        momUid,
+        s.copyWith(
+          items: next,
+          popupShown: true,
+          status: all ? SuggestionStatus.accepted : SuggestionStatus.partial,
+        ));
+  }
+
+  @override
+  Future<void> dismiss(String momUid, String id) async {
+    await _wait();
+    final s = _require(momUid, id);
+    _put(momUid,
+        s.copyWith(status: SuggestionStatus.dismissed, popupShown: true));
+  }
+
+  @override
+  Future<void> undoDismiss(String momUid, String id) async {
+    await _wait();
+    final s = _require(momUid, id);
+    if (s.status != SuggestionStatus.dismissed) return;
+    _put(
+        momUid,
+        s.copyWith(
+            status: s.acceptedCount > 0
+                ? SuggestionStatus.partial
+                : SuggestionStatus.pending));
   }
 
   Future<void> dispose() => _changes.close();
