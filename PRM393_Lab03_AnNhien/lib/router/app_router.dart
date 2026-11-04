@@ -22,6 +22,9 @@ import '../viewmodels/account_view_model.dart';
 import '../viewmodels/today_view_model.dart';
 import '../services/providers.dart';
 import '../screens/sign_in/sign_in_screen.dart';
+import '../screens/suggestion/suggestion_compose_screen.dart';
+import '../screens/suggestion/suggestion_review_screen.dart';
+import '../viewmodels/suggestion_review_view_model.dart' show SuggestionEntry;
 import '../screens/today/today_screen.dart';
 import '../viewmodels/session_view_model.dart';
 import '../widgets/app_shell.dart';
@@ -133,7 +136,7 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(path: '/caregiver/task/sent', builder: (_, __) => ph('C09 · F14', 'Đã gửi cho mẹ', 'Hiếu')),
       GoRoute(path: '/caregiver/task/:id', builder: (_, __) => ph('C10 · F14', 'Chi tiết việc lặp lại', 'Hiếu')),
       // F12 Gợi ý lịch (phía Con cháu) – Sanh
-      GoRoute(path: '/caregiver/suggest', builder: (_, __) => ph('G01 · F12', 'Con cháu soạn lịch gợi ý', 'Sanh')),
+      GoRoute(path: '/caregiver/suggest', builder: (_, __) => const SuggestionComposeScreen()),
       // F0 Trang xem thử widget – chỉ có ở bản debug (cần đăng nhập như mọi route khác).
       if (kDebugMode) GoRoute(path: '/dev/widgets', builder: (_, __) => const WidgetGallery(animate: false)),
       StatefulShellRoute.indexedStack(
@@ -153,7 +156,11 @@ final routerProvider = Provider<GoRouter>((ref) {
               // F7 Lịch tuần – Hương
               GoRoute(path: 'all', builder: (_, __) => ph('S11 · F7', 'Chi tiết ngày – hôm nay', 'Hương')),
               // F12 Gợi ý lịch (phía Bác) – Sanh
-              GoRoute(path: 'suggestions/:id', builder: (_, __) => ph('G03 · F12', 'Lịch Mai gợi ý', 'Sanh')),
+              GoRoute(
+                  path: 'suggestions/:id',
+                  builder: (_, state) => SuggestionReviewScreen(
+                      id: state.pathParameters['id']!,
+                      entry: SuggestionEntry.fromQuery(state.uri.queryParameters['from']))),
             ]),
           ]),
           StatefulShellBranch(routes: [

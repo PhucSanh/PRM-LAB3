@@ -27,6 +27,7 @@ import 'remote_config_service.dart';
 import 'reminder_service.dart';
 import 'report_service.dart';
 import 'settings_service.dart';
+import 'suggestion_service.dart';
 import 'task_repository.dart';
 
 /// Nơi DUY NHẤT chọn bản giả hay bản Firebase. Chủ file: B – Hiếu.
@@ -79,6 +80,13 @@ final reminderServiceProvider =
 // TODO(Hiếu): tạm cho S02; gộp `saveSetup` vào ProfileService (bản Firebase) rồi bỏ.
 final profileSetupServiceProvider =
     Provider<ProfileSetupService>((ref) => FakeProfileSetupService());
+
+// F12 (Sanh) thêm, đang trỏ bản Fake có dữ liệu mẫu Figma (Mai · Con gái, 2 việc ngày mai),
+// không độ trễ (để test dựng cả app không còn Timer treo).
+// TODO(Hiếu): bản Firebase – Firestore users/{momUid}/suggestions + FCM "có gợi ý mới"
+// mở /today/suggestions/:id; rules cho con cháu đã ghép nối tạo, mẹ cập nhật status / popupShown.
+final suggestionServiceProvider = Provider<SuggestionService>(
+    (ref) => FakeSuggestionService(withSample: true, delay: Duration.zero));
 
 /// F10 uses a labelled test PDF; F7 retains its own renderer contract.
 final demoReportServiceProvider = Provider<ReportService>((ref) =>
