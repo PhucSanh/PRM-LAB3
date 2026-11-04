@@ -225,7 +225,9 @@ final routerProvider = Provider<GoRouter>((ref) {
               view: switch (state.uri.queryParameters['view']) {
                 'week' => CalendarView.week,
                 'month' => CalendarView.month,
-                _ => null
+                _ => state.uri.queryParameters.containsKey('date')
+                    ? CalendarView.day
+                    : null
               })),
       GoRoute(
           path: '/caregiver/task/new',

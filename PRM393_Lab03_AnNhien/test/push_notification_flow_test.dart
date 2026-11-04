@@ -203,10 +203,15 @@ void main() {
     messages.received.add(notification);
     await tester.pumpAndSettle();
     expect(find.text('Có thông báo mới từ gia đình.'), findsNothing);
+    c
+        .read(caregiverScheduleViewModelProvider.notifier)
+        .selectView(CalendarView.month);
+    await tester.pumpAndSettle();
     c.read(routerProvider).go('/caregiver/schedule?date=2026-11-03');
     await tester.pumpAndSettle();
     expect(
         c.read(caregiverScheduleViewModelProvider).date, DateTime(2026, 11, 3));
+    expect(c.read(caregiverScheduleViewModelProvider).view, CalendarView.day);
     await tester.pumpWidget(const SizedBox.shrink());
     c.dispose();
     await messages.dispose();

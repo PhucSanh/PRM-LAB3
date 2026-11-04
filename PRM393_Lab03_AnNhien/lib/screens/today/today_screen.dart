@@ -11,6 +11,7 @@ import '../../viewmodels/ui_state.dart';
 import '../../widgets/app_button.dart';
 import '../../widgets/section_card.dart';
 import '../../widgets/state_views.dart';
+import '../../widgets/form_parts.dart';
 import '../../widgets/undo_snackbar.dart';
 
 class TodayScreen extends ConsumerWidget {
@@ -95,6 +96,10 @@ class _TodayList extends ConsumerWidget {
                 ]);
           }),
           const SizedBox(height: AppSpacing.lg),
+          if (data.refreshError != null) ...[
+            FieldMessage.hint(data.refreshError!),
+            const SizedBox(height: AppSpacing.base),
+          ],
           if (data.total == 0)
             const EmptyView(
               icon: Icons.event_available_rounded,
@@ -128,7 +133,7 @@ class _TodayList extends ConsumerWidget {
                 header: true,
                 child: Text('Việc tiếp theo', style: t.titleLarge)),
             const SizedBox(height: AppSpacing.md),
-            _TaskTile(task: next, featured: true),
+            _TaskTile(key: ValueKey(next.id), task: next, featured: true),
             const SizedBox(height: AppSpacing.xl),
           ],
           AppButton(
@@ -137,16 +142,15 @@ class _TodayList extends ConsumerWidget {
               kind:
                   data.total == 0 ? AppButtonKind.primary : AppButtonKind.tonal,
               onPressed: () => context.push('/today/add')),
-          if (data.tasks
-              .any((task) => task.id != next?.id && !task.isDone)) ...[
+          if (data.remaining.any((task) => task.id != next?.id)) ...[
             const SizedBox(height: AppSpacing.xl),
             Semantics(
                 header: true,
                 child: Text('Các việc còn lại', style: t.titleLarge)),
             const SizedBox(height: AppSpacing.md),
-            for (final task in data.tasks
-                .where((task) => task.id != next?.id && !task.isDone)) ...[
-              _TaskTile(task: task),
+            for (final task
+                in data.remaining.where((task) => task.id != next?.id)) ...[
+              _TaskTile(key: ValueKey(task.id), task: task),
               const SizedBox(height: AppSpacing.betweenTargets),
             ],
           ],
@@ -158,11 +162,25 @@ class _TodayList extends ConsumerWidget {
                   style: t.titleSmall),
               children: [
                 for (final task in data.tasks.where((task) => task.isDone)) ...[
-                  _TaskTile(task: task),
+                  _TaskTile(key: ValueKey(task.id), task: task),
                   const SizedBox(height: AppSpacing.base),
                 ],
               ],
             ),
+          ],
+          if (data.skippedCount > 0) ...[
+            const SizedBox(height: AppSpacing.base),
+            ExpansionTile(
+                tilePadding: EdgeInsets.zero,
+                title: Text('Đã bỏ qua (${data.skippedCount})',
+                    style: t.titleSmall),
+                children: [
+                  for (final task in data.tasks
+                      .where((task) => task.status == TaskStatus.skipped)) ...[
+                    _TaskTile(key: ValueKey(task.id), task: task),
+                    const SizedBox(height: AppSpacing.base),
+                  ]
+                ]),
           ],
           const SizedBox(height: AppSpacing.lg),
         ],
@@ -172,7 +190,7 @@ class _TodayList extends ConsumerWidget {
 }
 
 class _TaskTile extends ConsumerStatefulWidget {
-  const _TaskTile({required this.task, this.featured = false});
+  const _TaskTile({super.key, required this.task, this.featured = false});
   final TaskItem task;
   final bool featured;
 
