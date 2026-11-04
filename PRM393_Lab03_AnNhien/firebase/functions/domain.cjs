@@ -111,8 +111,8 @@ function createDomain(db, {now = () => Date.now(), generateCode = () => String(r
       }
       tx.create(ref,{senderUid:uid,status:'pending',tasks,message,createdAt:FieldValue.serverTimestamp(),acceptedIds:[]});
       tx.set(db.doc(`users/${momUid}/notifications/suggestion-${id}`),{
-        title:'Có lịch gợi ý mới',body:'Người thân gửi lịch. Bác tự chọn nhận hoặc bỏ qua.',
-        route:`/today/suggestions/${id}`,recipientUid:momUid,receivedAt:FieldValue.serverTimestamp()});
+        kind:'family',event:'suggestion_received',title:'Có lịch gợi ý mới',body:'Người thân gửi lịch. Bác tự chọn nhận hoặc bỏ qua.',
+        route:`/inbox/suggestions/${id}`,recipientUid:momUid,receivedAt:FieldValue.serverTimestamp()});
     });
     return {id};
   }

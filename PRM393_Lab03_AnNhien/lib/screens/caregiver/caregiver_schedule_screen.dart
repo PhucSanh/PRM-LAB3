@@ -14,8 +14,9 @@ import '../../widgets/state_views.dart';
 import '../../widgets/task_widgets.dart';
 
 class CaregiverScheduleScreen extends ConsumerStatefulWidget {
-  const CaregiverScheduleScreen({super.key, this.view});
+  const CaregiverScheduleScreen({super.key, this.view, this.date});
   final CalendarView? view;
+  final DateTime? date;
   @override
   ConsumerState<CaregiverScheduleScreen> createState() =>
       _CaregiverScheduleScreenState();
@@ -27,6 +28,11 @@ class _CaregiverScheduleScreenState
   void initState() {
     super.initState();
     Future.microtask(() {
+      if (mounted && widget.date != null) {
+        ref
+            .read(caregiverScheduleViewModelProvider.notifier)
+            .selectDate(widget.date!);
+      }
       if (mounted && widget.view != null) {
         ref
             .read(caregiverScheduleViewModelProvider.notifier)
@@ -38,6 +44,15 @@ class _CaregiverScheduleScreenState
   @override
   void didUpdateWidget(CaregiverScheduleScreen old) {
     super.didUpdateWidget(old);
+    if (old.date != widget.date && widget.date != null) {
+      Future.microtask(() {
+        if (mounted) {
+          ref
+              .read(caregiverScheduleViewModelProvider.notifier)
+              .selectDate(widget.date!);
+        }
+      });
+    }
     if (old.view != widget.view) {
       Future.microtask(() {
         if (mounted && widget.view != null) {
@@ -67,6 +82,12 @@ class _CaregiverScheduleScreenState
                     context.push('/caregiver/task/new');
                   }),
         children: [
+          AppButton(
+              label: 'Hộp thông báo',
+              icon: Icons.notifications_rounded,
+              kind: AppButtonKind.secondary,
+              wrapLabel: true,
+              onPressed: () => context.push('/inbox')),
           if (ref.watch(pairedMomUidProvider) == null)
             AppButton(
                 label: 'Ghép nối',

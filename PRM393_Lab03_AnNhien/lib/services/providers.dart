@@ -106,12 +106,11 @@ final reminderServiceProvider = Provider<ReminderService>((ref) {
 final profileSetupServiceProvider = Provider<ProfileSetupService>(
     (ref) => FirebaseProfileSetupService(ref.watch(_userDataProvider)));
 
-// F12 (Sanh) thêm, đang trỏ bản Fake có dữ liệu mẫu Figma (Mai · Con gái, 2 việc ngày mai),
-// không độ trễ (để test dựng cả app không còn Timer treo).
-// TODO(Hiếu): bản Firebase – Firestore users/{momUid}/suggestions + FCM "có gợi ý mới"
-// mở /today/suggestions/:id; rules cho con cháu đã ghép nối tạo, mẹ cập nhật status / popupShown.
+// F12 retains its separate demo contract. Never synthesize sample family alerts
+// in production. main_dev opts into samples explicitly. Real incoming push opens
+// /inbox/suggestions/:id through caregiverSuggestionServiceProvider below.
 final suggestionServiceProvider = Provider<SuggestionService>(
-    (ref) => FakeSuggestionService(withSample: true, delay: Duration.zero));
+    (ref) => FakeSuggestionService(withSample: false, delay: Duration.zero));
 
 /// F10 uses a labelled test PDF; F7 retains its own renderer contract.
 final demoReportServiceProvider = Provider<ReportService>((ref) =>
@@ -134,7 +133,16 @@ final reminderRuntimeProvider = Provider<ReminderRuntime>((ref) {
       ref.watch(authSdkProvider),
       ref.watch(caregiverScheduleServiceProvider),
       ref.watch(reminderServiceProvider) as LocalReminderService,
-      ref.watch(crashServiceProvider));
+      ref.watch(crashServiceProvider), onNativePermissionGranted: () async {
+    final messaging = ref.read(messagingServiceProvider);
+    if (messaging is FirebaseMessagingService) {
+      try {
+        await messaging.syncRegistration();
+      } catch (_) {
+        // Permission is already granted; registration retries on app resume.
+      }
+    }
+  });
   ref.onDispose(runtime.dispose);
   return runtime;
 });

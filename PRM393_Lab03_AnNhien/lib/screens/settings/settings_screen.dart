@@ -190,6 +190,12 @@ class _SettingsBody extends ConsumerWidget {
         ),
         const SizedBox(height: AppSpacing.xl),
         NavRow(
+            icon: AppIcons.bell,
+            title: 'Hộp thông báo',
+            subtitle: 'Tin từ gia đình và hệ thống',
+            onTap: () => context.push('/inbox')),
+        const SizedBox(height: AppSpacing.betweenTargets),
+        NavRow(
           icon: AppIcons.user,
           title: 'Tài khoản và ghép nối',
           subtitle: 'Kết nối với người thân',

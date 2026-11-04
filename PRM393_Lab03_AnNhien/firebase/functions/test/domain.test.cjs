@@ -90,3 +90,52 @@ test('dismiss creates no tasks or child notification; undo returns pending',asyn
   await domain.revokePairing(mom,mom,child);
   await assert.rejects(domain.sendSuggestion(child,{momUid:mom,id:'no-grant',tasks:[task]}),e=>e.code==='permission-denied');
 });
+
+const {createNotificationEvents,eventKey}=require('../notification-events.cjs');
+test('schedule push requires current grant and a different authenticated actor; retries preserve readAt',async()=>{
+  const {domain,mom,child}=await setup();const events=createNotificationEvents(db);
+  const input={eventId:'schedule-'+mom,ownerUid:mom,actorUid:child,taskId:'walk',after:task};
+  await events.scheduleChanged(input);
+  assert.equal((await db.collection(`users/${mom}/notifications`).get()).size,0);
+  await domain.redeemPairing(child,(await domain.createPairing(mom)).code);
+  await events.scheduleChanged({...input,actorUid:mom});
+  await events.scheduleChanged({...input,actorUid:undefined});
+  assert.equal((await db.collection(`users/${mom}/notifications`).get()).size,0);
+  await events.scheduleChanged(input);await events.scheduleChanged(input);
+  const id=eventKey('schedule',input.eventId),ref=db.doc(`users/${mom}/notifications/${id}`);
+  assert.equal((await ref.get()).data().route,'/today');
+  assert.equal((await ref.get()).data().kind,'family');
+  await ref.update({readAt:'preserved'});await events.scheduleChanged(input);
+  assert.equal((await ref.get()).data().readAt,'preserved');
+  await events.scheduleChanged({...input,eventId:'revision-only',before:task,after:{...task,revision:1}});
+  assert.equal((await db.collection(`users/${mom}/notifications`).get()).size,1);
+});
+test('completion notifies only linked child, once per occurrence; undo, skip, revoke do not notify',async()=>{
+  const {domain,mom,child}=await setup();const events=createNotificationEvents(db);
+  await domain.redeemPairing(child,(await domain.createPairing(mom)).code);
+  const completionId='walk_2026-11-04';
+  const after={taskId:'walk',date:'2026-11-04',status:'done'};
+  await db.doc(`users/${mom}/completions/${completionId}`).set(after);
+  await events.completed({ownerUid:mom,completionId,after});
+  await events.completed({ownerUid:mom,completionId,after});
+  let list=await db.collection(`users/${child}/notifications`).get();assert.equal(list.size,1);
+  assert.equal(list.docs[0].data().route,'/caregiver/schedule?date=2026-11-04');
+  await events.completed({ownerUid:mom,completionId,after:{...after,status:'skipped'}});
+  await events.completed({ownerUid:mom,completionId,after:{...after,status:'pending'}});
+  await domain.revokePairing(mom,mom,child);
+  const later={...after,date:'2026-11-05'};
+  await db.doc(`users/${mom}/completions/walk_2026-11-05`).set(later);
+  await events.completed({ownerUid:mom,completionId:'walk_2026-11-05',after:later});
+  list=await db.collection(`users/${child}/notifications`).get();assert.equal(list.size,1);
+});
+test('pairing lifecycle creates two system inbox entries atomically and idempotently',async()=>{
+  const {mom,child}=await setup();const events=createNotificationEvents(db);
+  const event={eventId:'pair-'+mom,ownerUid:mom,childUid:child,after:{displayName:'Con'}};
+  await Promise.all([events.pairingChanged(event),events.pairingChanged(event)]);
+  for(const uid of [mom,child]) {
+    const list=await db.collection(`users/${uid}/notifications`).get();assert.equal(list.size,1);
+    assert.equal(list.docs[0].data().kind,'system');assert.equal(list.docs[0].data().event,'pairing_linked');
+  }
+  await events.pairingChanged({...event,eventId:'unlink-'+mom,before:event.after,after:undefined});
+  assert.equal((await db.collection(`users/${mom}/notifications`).get()).size,2);
+});

@@ -72,6 +72,11 @@ class _TodayList extends ConsumerWidget {
           ),
           Text('Hôm nay, mình chăm sóc bản thân nhé.',
               style: t.bodyMedium?.copyWith(color: scheme.onSurfaceVariant)),
+          TextButton.icon(
+            onPressed: () => context.push('/inbox'),
+            icon: const Icon(Icons.notifications_rounded),
+            label: const Text('Hộp thông báo'),
+          ),
           const SizedBox(height: AppSpacing.lg),
           SectionCard(
             child: Column(
@@ -210,13 +215,15 @@ class _TaskTileState extends ConsumerState<_TaskTile> {
                 Text(time,
                     style: t.headlineMedium?.copyWith(color: scheme.primary)),
                 Row(mainAxisSize: MainAxisSize.min, children: [
-                  Icon(switch (task.status) {
+                  Icon(
+                      switch (task.status) {
                         TaskStatus.done => AppIcons.checkCircle,
                         TaskStatus.pending => AppIcons.clock,
                         TaskStatus.postponed => AppIcons.later,
                         TaskStatus.skipped => AppIcons.statusSkipped,
                       },
-                      color: scheme.primary, size: AppSizes.iconInChip),
+                      color: scheme.primary,
+                      size: AppSizes.iconInChip),
                   const SizedBox(width: AppSpacing.sm),
                   Flexible(child: Text(status, style: t.bodyMedium)),
                 ]),

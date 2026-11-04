@@ -27,6 +27,7 @@ import 'services/crash_service.dart';
 import 'services/family_repository.dart';
 import 'services/habit_repository.dart';
 import 'services/messaging_service.dart';
+import 'services/suggestion_service.dart' as incoming;
 import 'services/providers.dart';
 import 'services/remote_config_service.dart';
 import 'services/report_service.dart';
@@ -84,6 +85,9 @@ void main() {
       crashServiceProvider.overrideWithValue(FakeCrashService()),
       remoteConfigServiceProvider.overrideWithValue(FakeRemoteConfigService()),
       messagingServiceProvider.overrideWithValue(FakeMessagingService()),
+      suggestionServiceProvider.overrideWithValue(
+          incoming.FakeSuggestionService(
+              withSample: true, delay: Duration.zero)),
       reportServiceProvider.overrideWithValue(FakeReportService()),
     ],
     child: const AnNhienApp(),
