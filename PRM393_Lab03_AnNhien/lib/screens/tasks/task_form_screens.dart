@@ -698,23 +698,29 @@ class TaskSavedScreen extends ConsumerWidget {
                       })
                 ]))),
         body: SafeArea(
-            child: Padding(
-                padding: AppSpacing.screenPadding,
-                child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      const Icon(Icons.save_outlined, size: 112),
-                      const SizedBox(height: AppSpacing.lg),
-                      Text('Đã lưu xong!',
-                          style: Theme.of(context).textTheme.headlineMedium),
-                      const SizedBox(height: AppSpacing.xl),
-                      _ActivitySummary(activity: activity),
-                      const SizedBox(height: AppSpacing.md),
-                      Text(
-                          '${_time(state)}\n${_repeatText(state)}${state.remind ? '\nNhắc trước 10 phút' : ''}',
-                          style: Theme.of(context).textTheme.bodyLarge,
-                          textAlign: TextAlign.center)
-                    ]))));
+            child: LayoutBuilder(
+                builder: (context, constraints) => SingleChildScrollView(
+                    padding: AppSpacing.screenPadding,
+                    child: ConstrainedBox(
+                        constraints:
+                            BoxConstraints(minHeight: constraints.maxHeight),
+                        child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              const Icon(Icons.save_outlined, size: 112),
+                              const SizedBox(height: AppSpacing.lg),
+                              Text('Đã lưu xong!',
+                                  style: Theme.of(context)
+                                      .textTheme
+                                      .headlineMedium),
+                              const SizedBox(height: AppSpacing.xl),
+                              _ActivitySummary(activity: activity),
+                              const SizedBox(height: AppSpacing.md),
+                              Text(
+                                  '${_time(state)}\n${_repeatText(state)}${state.remind ? '\nNhắc trước 10 phút' : ''}',
+                                  style: Theme.of(context).textTheme.bodyLarge,
+                                  textAlign: TextAlign.center)
+                            ]))))));
   }
 }
 

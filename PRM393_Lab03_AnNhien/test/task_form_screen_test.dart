@@ -20,4 +20,17 @@ void main() {
       expect(tester.takeException(), isNull);
     });
   }
+
+  testWidgets('ST-Saved cuộn được ở màn hình 360dp thấp', (tester) async {
+    await tester.binding.setSurfaceSize(const Size(360, 640));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    await tester.pumpWidget(ProviderScope(
+        child: MaterialApp(
+            theme: AppTheme.light(), home: const TaskSavedScreen())));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Đã lưu xong!'), findsOneWidget);
+    expect(find.text('Về trang Hôm nay'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
 }

@@ -1,6 +1,7 @@
 import 'package:an_nhien/services/suggestion_service.dart' as incoming;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:an_nhien/models/app_user.dart';
+import 'package:an_nhien/models/task_item.dart';
 import 'package:an_nhien/models/user_profile.dart';
 import 'package:an_nhien/services/analytics_service.dart';
 import 'package:an_nhien/services/auth_service.dart';
@@ -24,7 +25,8 @@ import 'package:an_nhien/viewmodels/caregiver_schedule_view_model.dart';
 
 ProviderContainer demoContainer(
         {FakeCaregiverScheduleService? schedules,
-        FakeSuggestionService? suggestions}) =>
+        FakeSuggestionService? suggestions,
+        List<TaskItem>? tasks}) =>
     ProviderContainer(overrides: [
       suggestionServiceProvider.overrideWithValue(
           incoming.FakeSuggestionService(delay: Duration.zero)),
@@ -44,7 +46,7 @@ ProviderContainer demoContainer(
       caregiverSuggestionServiceProvider
           .overrideWithValue(suggestions ?? FakeSuggestionService()),
       pairingServiceProvider.overrideWithValue(FakePairingService()),
-      taskRepositoryProvider.overrideWithValue(FakeTaskRepository([])),
+      taskRepositoryProvider.overrideWithValue(FakeTaskRepository(tasks ?? [])),
       familyRepositoryProvider.overrideWithValue(FakeFamilyRepository()),
       habitRepositoryProvider.overrideWithValue(FakeHabitRepository()),
       settingsServiceProvider.overrideWithValue(FakeSettingsService()),
