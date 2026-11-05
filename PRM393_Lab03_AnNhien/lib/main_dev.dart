@@ -1,3 +1,4 @@
+import 'main.dart' as production;
 import 'models/user_profile.dart';
 import 'models/task_item.dart';
 import 'services/pairing_service.dart';
@@ -10,10 +11,11 @@ import 'services/caregiver_schedule_service.dart';
 import 'services/caregiver_suggestion_service.dart';
 import 'router/app_router.dart';
 import 'viewmodels/caregiver_schedule_view_model.dart';
-// Bản chạy DEV: bỏ qua Google Sign-In và Firebase, mọi service dùng bản Fake.
-// Dùng để code / xem màn khi chưa đăng nhập được. KHÔNG dùng cho bản nộp.
+// Entry mặc định dùng Google Sign-In/Firebase thật qua main.dart.
+// UI_PREVIEW=true mới bật dữ liệu Fake đăng nhập sẵn; chỉ dành cho xem UI.
 //
 //   flutter run -d emulator-5554 -t lib/main_dev.dart
+// Xem UI không đăng nhập: thêm --dart-define=UI_PREVIEW=true
 //
 // Chọn vai trò demo: --dart-define=DEMO_ROLE=elder|caregiver.
 // Mở thẳng màn: --dart-define=INITIAL_ROUTE=/caregiver/schedule. Bản thật vẫn chạy bằng lib/main.dart.
@@ -34,7 +36,14 @@ import 'services/remote_config_service.dart';
 import 'services/report_service.dart';
 import 'services/task_repository.dart';
 
-void main() {
+Future<void> main() async {
+  // Existing launch configurations also use real Google/Firebase login by default.
+  // Fake pre-authenticated data is available only by explicit UI_PREVIEW opt-in.
+  const preview = bool.fromEnvironment('UI_PREVIEW', defaultValue: false);
+  if (!preview) {
+    await production.main();
+    return;
+  }
   WidgetsFlutterBinding.ensureInitialized();
   const roleName = String.fromEnvironment('DEMO_ROLE', defaultValue: 'elder');
   final demoRole = UserRole.values.byName(roleName);
@@ -58,6 +67,7 @@ void main() {
   ]);
   runApp(ProviderScope(
     overrides: [
+      authGuardEnabledProvider.overrideWithValue(false),
       initialRouteProvider.overrideWithValue(const String.fromEnvironment(
           'INITIAL_ROUTE',
           defaultValue: '/intro')),

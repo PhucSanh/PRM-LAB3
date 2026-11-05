@@ -33,6 +33,7 @@ ProviderContainer demoContainer(
         List<TaskItem>? tasks,
         TaskRepository? taskRepository}) =>
     ProviderContainer(overrides: [
+      authGuardEnabledProvider.overrideWithValue(false),
       initialRouteProvider.overrideWithValue(initialRoute),
       suggestionServiceProvider.overrideWithValue(
           incoming.FakeSuggestionService(delay: Duration.zero)),
