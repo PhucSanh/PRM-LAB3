@@ -211,6 +211,8 @@ void main() {
           child:
               MaterialApp(theme: AppTheme.light(), home: const InboxScreen())));
       await tester.pumpAndSettle();
+      await tester.scrollUntilVisible(find.text('Đến giờ đi bộ'), 250,
+          scrollable: find.byType(Scrollable).first);
       expect(find.text('Đến giờ đi bộ'), findsOneWidget);
       expect(tester.takeException(), isNull);
     });

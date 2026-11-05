@@ -9,11 +9,13 @@ import 'local_reminder_service.dart';
 /// Refresh native pending reminders at app start and each realtime task/status
 /// change. New tasks from the child's device therefore also schedule on mom's.
 class ReminderRuntime with WidgetsBindingObserver {
-  ReminderRuntime(this.auth, this.schedules, this.reminders, this.crash);
+  ReminderRuntime(this.auth, this.schedules, this.reminders, this.crash,
+      {this.onNativePermissionGranted});
   final FirebaseAuth auth;
   final CaregiverScheduleService schedules;
   final LocalReminderService reminders;
   final CrashService crash;
+  final Future<void> Function()? onNativePermissionGranted;
   StreamSubscription<User?>? _auth;
   StreamSubscription<List<ScheduleOccurrence>>? _tasks;
   int _generation = 0;
@@ -23,7 +25,10 @@ class ReminderRuntime with WidgetsBindingObserver {
   Future<void> init() async {
     await reminders.init();
     WidgetsBinding.instance.addObserver(this);
-    reminders.onPermissionGranted = () => reminders.sync(_last);
+    reminders.onPermissionGranted = () async {
+      await reminders.sync(_last);
+      await onNativePermissionGranted?.call();
+    };
     _auth = auth.authStateChanges().listen((user) {
       _bind(user).catchError((Object e, StackTrace st) => _report(e, st));
     });

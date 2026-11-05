@@ -93,6 +93,7 @@ void main() {
     await tester.tap(find.byKey(const Key('s03-flashcard')));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 300));
+    await tester.ensureVisible(find.text('Đã xong'));
     await tester.tap(find.text('Đã xong'));
     await tester.pump();
     await tester.tap(find.text('Đúng, đã xong'));

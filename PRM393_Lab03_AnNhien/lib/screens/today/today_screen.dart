@@ -77,7 +77,12 @@ class _TodayContentState extends ConsumerState<_TodayContent> {
 
   @override
   Widget build(BuildContext context) {
-    final name = ref.watch(authServiceProvider).currentUser?.displayName;
+    // S03 vẫn hiển thị được trong chế độ Fake/test khi Firebase Auth chưa
+    // khởi tạo; lúc đó dùng cách xưng hô mặc định thay vì làm hỏng cả màn.
+    String? name;
+    try {
+      name = ref.watch(authServiceProvider).currentUser?.displayName;
+    } catch (_) {}
     final greeting = 'Chào ${name?.trim().isNotEmpty == true ? name : 'Bác'}';
     return ListView(
       key: ValueKey(_showFlashcards ? 's03-flashcards' : 's03-main'),

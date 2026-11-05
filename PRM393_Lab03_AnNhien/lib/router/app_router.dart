@@ -10,6 +10,7 @@ import '../models/user_profile.dart';
 import '../screens/firebase_demo/inbox_screen.dart';
 import '../screens/firebase_demo/firebase_demo_screen.dart';
 import '../models/app_notification.dart';
+import '../models/task_item.dart';
 import '../models/notification_target.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -68,16 +69,16 @@ final routerProvider = Provider<GoRouter>((ref) {
   final refresh = ValueNotifier<int>(0);
   ref.onDispose(refresh.dispose);
   String? lastUid;
-  String? pendingNotification;
+  AppNotification? pendingNotification;
   ref.listen(localReminderOpenedProvider, (_, next) {
     next.whenData((item) {
-      pendingNotification = notificationTarget(item.route);
+      pendingNotification = item;
     });
     refresh.value++;
   });
   ref.listen(notificationOpenedProvider, (_, next) {
     next.whenData((item) {
-      pendingNotification = notificationTarget(item.route);
+      pendingNotification = item;
     });
     refresh.value++;
   });
@@ -145,10 +146,16 @@ final routerProvider = Provider<GoRouter>((ref) {
               : '/today';
         }
       }
-      final target = pendingNotification;
-      if (target != null) {
+      final pending = pendingNotification;
+      if (pending != null) {
         pendingNotification = null;
-        return target == path ? null : target;
+        final parent = pending.parentUid;
+        final target = parent != null &&
+                parent.isNotEmpty &&
+                ref.read(profileProvider).asData?.value?.pairedMomUid != parent
+            ? '/inbox'
+            : notificationTarget(pending.route);
+        return target == state.uri.toString() ? null : target;
       }
       return null;
     },
@@ -193,6 +200,10 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(path: '/settings/data', builder: (_, __) => const DataScreen()),
       // F10 Firebase – Hiếu
       GoRoute(path: '/inbox', builder: (_, __) => const InboxScreen()),
+      GoRoute(
+          path: '/inbox/suggestions/:id',
+          builder: (_, state) =>
+              SuggestionDemoScreen(suggestionId: state.pathParameters['id']!)),
       // Chế độ Con cháu: mọi route /caregiver/* nằm ngoài shell của Bác.
       // F13/F14 – Hiếu. Guard demo vẫn mặc định tắt.
       GoRoute(
@@ -207,10 +218,13 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
           path: '/caregiver/schedule',
           builder: (_, state) => CaregiverScheduleScreen(
-                  view: switch (state.uri.queryParameters['view']) {
+              date: parseDateKey(state.uri.queryParameters['date']),
+              view: switch (state.uri.queryParameters['view']) {
                 'week' => CalendarView.week,
                 'month' => CalendarView.month,
-                _ => CalendarView.day
+                _ => state.uri.queryParameters.containsKey('date')
+                    ? CalendarView.day
+                    : null
               })),
       GoRoute(
           path: '/caregiver/task/new',

@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../theme/app_spacing.dart';
@@ -38,6 +39,15 @@ class _PairingScreenState extends ConsumerState<PairingScreen> {
     super.dispose();
   }
 
+  Future<void> _redeem() async {
+    FocusManager.instance.primaryFocus?.unfocus();
+    final vm = ref.read(pairingViewModelProvider.notifier);
+    if (await vm.redeem(controller.text.trim()) && mounted) {
+      ref.invalidate(pairedMomUidProvider);
+      context.go('/caregiver/schedule');
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final state = ref.watch(pairingViewModelProvider);
@@ -47,21 +57,25 @@ class _PairingScreenState extends ConsumerState<PairingScreen> {
     return CaregiverPage(
         title:
             widget.showCode ? 'Mã ghép nối của Bác' : 'Nhập mã từ máy của mẹ',
-        onBack: () => context.go('/account'),
+        onBack: () {
+          if (context.canPop()) {
+            context.pop();
+          } else {
+            context.go('/account');
+          }
+        },
         footer: widget.showCode
             ? null
-            : AppButton(
-                label: 'Ghép nối',
-                icon: Icons.phonelink,
-                busy: state.busy,
-                wrapLabel: true,
-                onPressed: () async {
-                  if (await vm.redeem(controller.text.trim()) &&
-                      context.mounted) {
-                    ref.invalidate(pairedMomUidProvider);
-                    context.go('/caregiver/schedule');
-                  }
-                }),
+            : ValueListenableBuilder<TextEditingValue>(
+                valueListenable: controller,
+                builder: (context, value, _) => AppButton(
+                  label: 'Ghép nối',
+                  icon: Icons.phonelink,
+                  busy: state.busy,
+                  wrapLabel: true,
+                  onPressed: value.text.length == 6 ? _redeem : null,
+                ),
+              ),
         children: [
           Text(
               widget.showCode
@@ -109,6 +123,9 @@ class _PairingScreenState extends ConsumerState<PairingScreen> {
                 label: 'Mã ghép nối',
                 controller: controller,
                 keyboardType: TextInputType.number,
+                inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                textInputAction: TextInputAction.done,
+                onSubmitted: (_) => _redeem(),
                 maxLength: 6,
                 autofillHints: const [AutofillHints.oneTimeCode],
                 hint: '123456',

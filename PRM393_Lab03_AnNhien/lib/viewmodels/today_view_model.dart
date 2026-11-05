@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import '../models/task_item.dart';
 import '../services/providers.dart';
 import '../services/task_repository.dart';
@@ -26,15 +28,21 @@ class _TodayMutation {
 
 /// Dữ liệu trình bày của S03. Tất cả phép tính của Hôm nay nằm trong VM.
 class TodayData {
-  const TodayData({required this.tasks});
+  const TodayData({required this.tasks, this.refreshError});
   final List<TaskItem> tasks;
+  final String? refreshError;
 
   int get doneCount => tasks.where((t) => t.isDone).length;
   int get total => tasks.length;
-  int get handledCount =>
-      tasks.where((t) => t.status != TaskStatus.pending).length;
-  TaskItem? get next =>
-      tasks.where((t) => t.status == TaskStatus.pending).firstOrNull;
+  Iterable<TaskItem> get remaining => tasks.where((task) =>
+      task.status == TaskStatus.pending || task.status == TaskStatus.postponed);
+  int get skippedCount =>
+      tasks.where((task) => task.status == TaskStatus.skipped).length;
+  int get handledCount => tasks
+      .where(
+          (t) => t.status == TaskStatus.done || t.status == TaskStatus.skipped)
+      .length;
+  TaskItem? get next => remaining.firstOrNull;
   bool get allHandled => total > 0 && handledCount == total;
   bool get allDone => total > 0 && doneCount == total;
 }
@@ -42,31 +50,43 @@ class TodayData {
 /// F3 Hôm nay – MVVM: màn hình chỉ gọi các thao tác này, không sửa repository trực tiếp.
 class TodayViewModel extends Notifier<UiState<TodayData>> {
   _TodayMutation? _lastMutation;
+  int _loadGeneration = 0;
 
   @override
   UiState<TodayData> build() {
+    ++_loadGeneration;
     Future.microtask(load);
     return const UiLoading();
   }
 
   Future<void> load({bool showLoading = true}) async {
     if (!ref.mounted) return;
-    if (showLoading) state = const UiLoading();
+    final generation = ++_loadGeneration;
+    final previous =
+        state is UiData<TodayData> ? (state as UiData<TodayData>).data : null;
+    if (showLoading && previous == null) state = const UiLoading();
     try {
       final tasks =
           await ref.read(taskRepositoryProvider).tasksForDay(DateTime.now());
-      if (!ref.mounted) return;
+      if (!ref.mounted || generation != _loadGeneration) return;
       final sorted = [...tasks]..sort(
           (a, b) => (a.hour * 60 + a.minute).compareTo(b.hour * 60 + b.minute));
       state =
           sorted.isEmpty ? const UiEmpty() : UiData(TodayData(tasks: sorted));
     } catch (error, stackTrace) {
-      if (!ref.mounted) return;
-      await ref
-          .read(crashServiceProvider)
-          .recordError(error, stackTrace, reason: 'load_today');
-      if (!ref.mounted) return;
-      state = const UiError('Chưa tải được việc hôm nay.');
+      if (!ref.mounted || generation != _loadGeneration) return;
+      state = previous == null
+          ? const UiError('Chưa tải được việc hôm nay.')
+          : UiData(TodayData(
+              tasks: previous.tasks,
+              refreshError:
+                  'Chưa cập nhật được. Lịch đang hiển thị vẫn được giữ lại.'));
+      try {
+        unawaited(ref
+            .read(crashServiceProvider)
+            .recordError(error, stackTrace, reason: 'load_today')
+            .catchError((Object _) {}));
+      } catch (_) {}
     }
   }
 
@@ -184,8 +204,11 @@ class TodayViewModel extends Notifier<UiState<TodayData>> {
   }) async {
     try {
       await change();
-      await analytics();
       _lastMutation = _TodayMutation(before: before, action: action);
+      // Analytics không được làm mất một thao tác đã lưu thành công.
+      try {
+        await analytics();
+      } catch (_) {}
       await load(showLoading: false);
       return true;
     } catch (error, stackTrace) {

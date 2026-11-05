@@ -3,7 +3,9 @@ const {initializeApp} = require('firebase-admin/app');
 const {getFirestore} = require('firebase-admin/firestore');
 const {getMessaging} = require('firebase-admin/messaging');
 const {onCall,HttpsError} = require('firebase-functions/v2/https');
-const {onDocumentCreated} = require('firebase-functions/v2/firestore');
+const {onDocumentCreated,onDocumentWritten,onDocumentWrittenWithAuthContext} = require('firebase-functions/v2/firestore');
+const {createNotificationEvents} = require('./notification-events.cjs');
+const {sendInboxPush} = require('./push-delivery.cjs');
 const {createDomain,DomainError} = require('./domain.cjs');
 initializeApp();
 const db=getFirestore(); const domain=createDomain(db);
@@ -18,21 +20,23 @@ exports.revokePairing=callable((uid,d)=>domain.revokePairing(uid,d.momUid,d.chil
 exports.sendSuggestion=callable((uid,d)=>domain.sendSuggestion(uid,d));
 exports.resolveSuggestion=callable((uid,d)=>domain.resolveSuggestion(uid,d));
 exports.undoDismiss=callable((uid,d)=>domain.undoDismiss(uid,d));
+const notifications = createNotificationEvents(db);
+exports.notifyScheduleChanged = onDocumentWrittenWithAuthContext({...options,
+  document:'users/{uid}/tasks/{taskId}',retry:true}, event => notifications.scheduleChanged({
+    eventId:event.id, ownerUid:event.params.uid, actorUid:event.authId, taskId:event.params.taskId,
+    before:event.data?.before.data(), after:event.data?.after.data(),
+  }));
+exports.notifyTaskCompleted = onDocumentWritten({...options,
+  document:'users/{uid}/completions/{id}',retry:true}, event => notifications.completed({
+    ownerUid:event.params.uid, completionId:event.params.id,
+    before:event.data?.before.data(), after:event.data?.after.data(),
+  }));
+exports.notifyPairingChanged = onDocumentWritten({...options,
+  document:'users/{uid}/caregivers/{childUid}',retry:true}, event => notifications.pairingChanged({
+    eventId:event.id, ownerUid:event.params.uid, childUid:event.params.childUid,
+    before:event.data?.before.data(), after:event.data?.after.data(),
+  }));
 // Inbox is already persisted by the transaction before this trigger sends push.
 // Delivery is at least once. Stable notification id lets the client deduplicate.
-exports.notifyInbox=onDocumentCreated({...options,document:'users/{uid}/notifications/{id}',retry:true},async event=>{
-  const data=event.data?.data(); if(!data) return;
-  const devices=await db.collection(`users/${event.params.uid}/devices`).get();
-  const fresh=devices.docs.filter(d=>d.data().updatedAt?.toMillis()>Date.now()-30*86400000);
-  for(let offset=0;offset<fresh.length;offset+=500) {
-    const chunk=fresh.slice(offset,offset+500);
-    const result=await getMessaging().sendEachForMulticast({tokens:chunk.map(d=>d.data().token),
-      notification:{title:'An Nhiên',body:'Bác có thông báo mới.'},
-      data:{notification_id:event.params.id,recipient_uid:event.params.uid,route:data.route||'/inbox'},
-      android:{collapseKey:event.params.id}});
-    await Promise.all(result.responses.map((r,i)=>r.error?.code==='messaging/registration-token-not-registered'?chunk[i].ref.delete():null));
-    if(result.responses.some(r=>r.error && ['messaging/internal-error','messaging/server-unavailable'].includes(r.error.code))) {
-      throw new Error('Transient FCM error');
-    }
-  }
-});
+exports.notifyInbox=onDocumentCreated({...options,document:'users/{uid}/notifications/{id}',retry:true},event=>
+  sendInboxPush(db,getMessaging(),{uid:event.params.uid,id:event.params.id,data:event.data?.data()}));

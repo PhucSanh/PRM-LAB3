@@ -50,8 +50,8 @@ abstract final class HabitStyle {
   static String descriptionOf(String key) => _descriptions[key] ?? '';
 }
 
-/// Ô icon thói quen (DESIGN.md › `habit-icon-*`; Figma S04 `1:580`, S08 `1:1590`, S16 `1:1934`): nền màu nhấn,
-/// icon trắng, bo 12. Mặc định 48 × 48 (icon 32); S16 dùng `size: AppSizes.minTarget` (icon 48).
+/// Ô icon thói quen (đã cập nhật màu dịu + icon đậm; thiết kế gốc DESIGN.md › `habit-icon-*`; Figma S04 `1:580`, S08 `1:1590`, S16 `1:1934`): nền màu nhấn,
+/// icon đậm tương phản, bo mềm theo kích thước. Mặc định 48 × 48 (icon 32); S16 dùng `size: AppSizes.minTarget` (icon 48).
 /// Luôn đặt cạnh tên thói quen / tên việc (R-ICON-01); TalkBack đọc tên thói quen.
 class HabitBadge extends StatelessWidget {
   const HabitBadge({
@@ -73,17 +73,24 @@ class HabitBadge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = HabitPalette.of(habitKey);
     return Semantics(
       image: true,
       label: semanticLabel ?? HabitStyle.nameOf(habitKey),
       child: Container(
         width: size,
         height: size,
-        decoration: BoxDecoration(color: HabitPalette.of(habitKey).accent, borderRadius: AppRadius.mdAll),
+        decoration: BoxDecoration(
+          color: colors.bg,
+          borderRadius: BorderRadius.circular(size * 0.3),
+          border: Border.all(color: colors.fg.withValues(alpha: 0.16)),
+        ),
         child: Icon(
           icon ?? HabitStyle.iconOf(habitKey),
           size: size * AppSizes.icon / AppSizes.habitIcon,
-          color: HabitPalette.onAccent,
+          color: Theme.of(context).colorScheme.brightness == Brightness.dark
+              ? Theme.of(context).colorScheme.onSurface
+              : colors.fg,
         ),
       ),
     );
@@ -125,7 +132,8 @@ class HabitTile extends StatelessWidget {
     final title = name ?? HabitStyle.nameOf(habitKey);
 
     final trailing = selected == null
-        ? Icon(AppIcons.chevronRight, size: AppSizes.icon, color: scheme.onSurfaceVariant)
+        ? Icon(AppIcons.chevronRight,
+            size: AppSizes.icon, color: scheme.onSurfaceVariant)
         : Icon(
             isSelected ? AppIcons.radioOn : AppIcons.radioOff,
             size: AppSizes.icon,
@@ -150,18 +158,23 @@ class HabitTile extends StatelessWidget {
           HabitBadge(habitKey: habitKey, icon: icon),
           const SizedBox(width: AppSpacing.md),
           Expanded(
-            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            child:
+                Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
               Text(title, style: theme.textTheme.titleMedium),
               if (description != null) ...[
                 const SizedBox(height: AppSpacing.xs),
-                Text(description!, style: theme.textTheme.bodyMedium?.copyWith(color: scheme.onSurfaceVariant)),
+                Text(description!,
+                    style: theme.textTheme.bodyMedium
+                        ?.copyWith(color: scheme.onSurfaceVariant)),
               ],
               if (selected != null) ...[
                 const SizedBox(height: AppSpacing.xs),
                 Text(
                   isSelected ? 'Đã chọn' : 'Chọn',
                   style: theme.textTheme.labelMedium?.copyWith(
-                    color: isSelected ? scheme.onPrimaryContainer : scheme.onSurfaceVariant,
+                    color: isSelected
+                        ? scheme.onPrimaryContainer
+                        : scheme.onSurfaceVariant,
                   ),
                 ),
               ],
@@ -178,7 +191,12 @@ class HabitTile extends StatelessWidget {
 /// Khung thẻ trắng, viền nhạt, vạch màu thói quen 6 dp bên trái (DESIGN.md › `card-accent-bar`), cả thẻ bấm được,
 /// cao ≥ 72. [selected]: nền `primaryContainer`, viền `primary` 2 dp. Dùng chung cho [HabitTile] và `TaskRow`.
 class HabitAccentCard extends StatelessWidget {
-  const HabitAccentCard({super.key, required this.habitKey, required this.child, this.onTap, this.selected = false});
+  const HabitAccentCard(
+      {super.key,
+      required this.habitKey,
+      required this.child,
+      this.onTap,
+      this.selected = false});
 
   final String habitKey;
   final Widget child;
@@ -201,11 +219,16 @@ class HabitAccentCard extends StatelessWidget {
         onTap: onTap,
         child: IntrinsicHeight(
           child: Row(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-            Container(width: AppSizes.accentBar, color: HabitPalette.of(habitKey).accent),
+            Container(
+                width: AppSizes.accentBar,
+                color: HabitPalette.of(habitKey).accent),
             Expanded(
               child: ConstrainedBox(
-                constraints: const BoxConstraints(minHeight: AppSizes.minTarget),
-                child: Padding(padding: const EdgeInsets.all(AppSpacing.base), child: child),
+                constraints:
+                    const BoxConstraints(minHeight: AppSizes.minTarget),
+                child: Padding(
+                    padding: const EdgeInsets.all(AppSpacing.base),
+                    child: child),
               ),
             ),
           ]),

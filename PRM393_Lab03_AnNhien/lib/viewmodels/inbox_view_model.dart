@@ -5,6 +5,7 @@ import '../models/notification_target.dart';
 import '../services/providers.dart';
 import 'session_view_model.dart';
 import 'account_view_model.dart';
+import 'caregiver_schedule_view_model.dart';
 import 'ui_state.dart';
 
 final inboxViewModelProvider = NotifierProvider.autoDispose<InboxViewModel,
@@ -37,10 +38,31 @@ class InboxViewModel extends Notifier<UiState<List<AppNotification>>> {
   }
 
   void retry() => ref.invalidateSelf();
-  Future<String> open(AppNotification item) async {
+  Future<bool> markRead(AppNotification item) async {
     try {
-      await ref.read(analyticsServiceProvider).logEvent('open_notification');
+      await ref
+          .read(messagingServiceProvider)
+          .markRead(item.id)
+          .timeout(const Duration(seconds: 3));
+      return true;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  Future<String> open(AppNotification item) async {
+    unawaited(markRead(item));
+    try {
+      unawaited(ref
+          .read(analyticsServiceProvider)
+          .logEvent('open_notification')
+          .catchError((Object _) {}));
     } catch (_) {}
+    if (item.parentUid != null &&
+        item.parentUid!.isNotEmpty &&
+        item.parentUid != ref.read(pairedMomUidProvider)) {
+      return '/inbox';
+    }
     return notificationTarget(item.route);
   }
 
@@ -48,9 +70,11 @@ class InboxViewModel extends Notifier<UiState<List<AppNotification>>> {
     try {
       final allowed =
           await ref.read(messagingServiceProvider).requestPermission();
-      await ref
-          .read(analyticsServiceProvider)
-          .logEvent('notification_permission', {'allowed': allowed ? 1 : 0});
+      try {
+        await ref
+            .read(analyticsServiceProvider)
+            .logEvent('notification_permission', {'allowed': allowed ? 1 : 0});
+      } catch (_) {}
       return allowed
           ? 'Đã bật thông báo.'
           : 'Thông báo đang tắt. Bác có thể bật trong cài đặt máy.';

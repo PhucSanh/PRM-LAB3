@@ -38,7 +38,7 @@ void main() {
   });
 
   group('HabitBadge', () {
-    testWidgets('đủ 9 khoá không lỗi: màu nhấn + icon trắng + TalkBack đọc tên', (tester) async {
+    testWidgets('đủ 9 khoá không lỗi: nền dịu + icon đậm + TalkBack đọc tên', (tester) async {
       final semantics = tester.ensureSemantics();
       await pumpHarness(
         tester,
@@ -48,10 +48,10 @@ void main() {
       for (final k in _keys) {
         final badge = find.byWidgetPredicate((w) => w is HabitBadge && w.habitKey == k);
         final box = tester.widget<Container>(find.descendant(of: badge, matching: find.byType(Container)));
-        expect((box.decoration! as BoxDecoration).color, HabitPalette.of(k).accent, reason: k);
+        expect((box.decoration! as BoxDecoration).color, HabitPalette.of(k).bg, reason: k);
         final icon = tester.widget<Icon>(find.descendant(of: badge, matching: find.byType(Icon)));
         expect(icon.icon, HabitStyle.iconOf(k));
-        expect(icon.color, HabitPalette.onAccent);
+        expect(icon.color, HabitPalette.of(k).fg);
         expect(tester.getSize(badge), const Size.square(AppSizes.habitIcon));
         expect(tester.getSemantics(badge), isSemantics(label: HabitStyle.nameOf(k), isImage: true));
       }
