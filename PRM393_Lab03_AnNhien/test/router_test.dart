@@ -8,21 +8,21 @@ import 'package:flutter_test/flutter_test.dart';
 
 /// Mọi route placeholder trong architecture.md mục 7.2: path mẫu → mã màn hiện trên `FeaturePlaceholder`.
 const _placeholders = {
-  '/today/voice': 'V01 · F5',
-  '/today/all': 'S11 · F7',
-  '/reminder/t1': 'S14 · F6',
-  '/week': 'S07 · F7',
-  '/week/2026-11-02': 'S11 · F7',
-  '/habits': 'S08 · F9',
-  '/habits/move': 'S16 · F9',
-  '/family': 'S09 · F11',
-  '/family/add': 'S12 · F11',
-  '/family/p1/edit': 'N09 · F11',
-  '/family/p1/share': 'S17 · F11',
-  // '/settings' (S10) đã là màn thật – xem test/settings_screen_test.dart.
-  // '/settings/profile' (N06) đã là màn thật – xem test/profile_screen_test.dart.
-  '/settings/reminders': 'N07 · F6',
-  // '/settings/help' (N08), '/settings/data' (N20) đã là màn thật – xem test/settings_static_screens_test.dart.
+  '/today/voice': 'Nói để thêm việc',
+  '/settings/reminders': 'Cài đặt nhắc việc',
+};
+
+const _migratedRoutes = {
+  '/today/all': 'Lịch của Bác',
+  '/week': 'Lịch của Bác',
+  '/week/2026-11-02': 'Lịch của Bác',
+  '/week/2026-11-02/task/t1': 'Tưới rau ngoài vườn',
+  '/habits': 'Vận động tự nhiên',
+  '/habits/move': 'Vận động tự nhiên',
+  '/family': 'Danh bạ gia đình',
+  '/family/add': 'Tên người thân',
+  '/family/p1/edit': 'Người thân này không còn trong danh bạ.',
+  '/family/p1/share': 'Người thân này không còn trong danh bạ.',
 };
 
 /// F4 không còn là placeholder: mỗi route phải xác nhận nội dung thực tế.
@@ -39,7 +39,6 @@ const _f4Routes = <String, String>{
 /// F3 không còn là placeholder: S04 phải lấy được task từ repository dùng chung.
 const _f3Routes = <String, String>{
   '/today/task/t1': 'Việc của Bác',
-  '/week/2026-11-02/task/t1': 'Việc của Bác',
 };
 
 const _editTask = TaskItem(
@@ -51,9 +50,10 @@ const _editTask = TaskItem(
 );
 
 void main() {
-  for (final MapEntry(key: path, value: code) in _placeholders.entries) {
+  for (final MapEntry(key: path, value: code)
+      in {..._placeholders, ..._migratedRoutes}.entries) {
     testWidgets('$path → $code', (tester) async {
-      final container = demoContainer();
+      final container = demoContainer(tasks: const [_editTask]);
       addTearDown(container.dispose);
       await tester.pumpWidget(UncontrolledProviderScope(
           container: container, child: const AnNhienApp()));
@@ -63,7 +63,7 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(tester.takeException(), isNull);
-      expect(find.text(code), findsOneWidget);
+      expect(find.textContaining(code), findsWidgets);
 
       await tester.pumpWidget(const SizedBox.shrink());
       await tester.pump(const Duration(milliseconds: 400));

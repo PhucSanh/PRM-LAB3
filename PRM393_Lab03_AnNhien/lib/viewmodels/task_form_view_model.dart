@@ -1,3 +1,4 @@
+import 'calm_feature_providers.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../models/task_item.dart';
@@ -199,6 +200,7 @@ class TaskFormViewModel extends Notifier<TaskFormState> {
       _lastMutation = before;
       _lastWasDelete = false;
       ref.invalidate(todayViewModelProvider);
+      ref.invalidate(calendarTasksProvider);
       state = state.copyWith(
           saveState: TaskSaveState.saved, original: task, editingId: task.id);
       return true;
@@ -232,6 +234,7 @@ class TaskFormViewModel extends Notifier<TaskFormState> {
       _lastMutation = task;
       _lastWasDelete = true;
       ref.invalidate(todayViewModelProvider);
+      ref.invalidate(calendarTasksProvider);
       return true;
     } catch (error, stack) {
       await ref
@@ -253,6 +256,7 @@ class TaskFormViewModel extends Notifier<TaskFormState> {
       await ref.read(taskRepositoryProvider).save(last);
     }
     ref.invalidate(todayViewModelProvider);
+      ref.invalidate(calendarTasksProvider);
   }
 }
 

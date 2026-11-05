@@ -70,6 +70,7 @@ class _CaregiverScheduleScreenState
         vm = ref.read(caregiverScheduleViewModelProvider.notifier);
     return CaregiverPage(
         title: 'Lịch của mẹ',
+        root: true,
         titleAction: IconButton(
             tooltip: 'Hộp thông báo',
             onPressed: () => context.push('/inbox'),
@@ -77,7 +78,7 @@ class _CaregiverScheduleScreenState
         onBack: () => context.go('/account'),
         footer: AppButton(
             label: 'Tạo lịch cho mẹ',
-            icon: Icons.add,
+            icon: Icons.add_rounded,
             wrapLabel: true,
             onPressed: ref.watch(pairedMomUidProvider) == null
                 ? null
@@ -155,14 +156,14 @@ class _CaregiverScheduleScreenState
           if (ref.watch(pairedMomUidProvider) == null)
             AppButton(
                 label: 'Ghép nối',
-                icon: Icons.phonelink,
+                icon: Icons.phonelink_rounded,
                 onPressed: () => context.push('/caregiver/pair')),
           switch (s.items) {
             UiLoading() => const LoadingView(),
             UiError(:final message) =>
               ErrorView(message: message, onRetry: vm.load),
             UiEmpty() => EmptyView(
-                icon: Icons.event_available,
+                icon: Icons.event_available_rounded,
                 title: 'Chưa có việc trong khoảng này',
                 message: ref.watch(pairedMomUidProvider) == null
                     ? 'Ghép nối trước để cùng xem lịch.'
@@ -173,7 +174,7 @@ class _CaregiverScheduleScreenState
                     .toList();
                 return selected.isEmpty
                     ? const EmptyView(
-                        icon: Icons.event_available,
+                        icon: Icons.event_available_rounded,
                         title: 'Ngày này chưa có việc')
                     : Column(children: [
                         for (final o in selected) ...[
@@ -200,74 +201,98 @@ class _CaregiverScheduleScreenState
       _ => <ScheduleOccurrence>[]
     };
     final colors = Theme.of(context).colorScheme;
-    return Column(children: [
-      Row(children: [
-        for (final label in const ['T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'CN'])
-          Expanded(
-              child: ExcludeSemantics(
-                  child: FittedBox(
-                      fit: BoxFit.scaleDown,
-                      child: Text(label,
-                          style: Theme.of(context).textTheme.bodySmall))))
-      ]),
-      const SizedBox(height: 8),
-      for (var row = 0; row < slots ~/ 7; row++)
-        Row(children: [
-          for (var col = 0; col < 7; col++)
-            Expanded(child: Builder(builder: (context) {
-              final index = row * 7 + col - offset;
-              if (index < 0 || index >= count) {
-                return SizedBox(height: month ? 48 : 56);
-              }
-              final day = first.add(Duration(days: index));
-              final selected = dateKey(day) == dateKey(s.date);
-              final n =
-                  data.where((o) => dateKey(o.date) == dateKey(day)).length;
-              return Semantics(
-                  button: true,
-                  selected: selected,
-                  label: 'Ngày ${day.day} tháng ${day.month}, $n việc',
-                  child: ExcludeSemantics(
-                      child: InkWell(
-                          borderRadius: BorderRadius.circular(18),
-                          onTap: () => vm.selectDate(day),
-                          child: Container(
-                              constraints:
-                                  BoxConstraints(minHeight: month ? 44 : 56),
-                              margin: const EdgeInsets.all(2),
-                              decoration: BoxDecoration(
-                                  color: selected ? colors.primary : null,
-                                  borderRadius: BorderRadius.circular(18),
-                                  border:
-                                      dateKey(day) == dateKey(vietnamToday())
-                                          ? Border.all(color: colors.primary)
-                                          : null),
-                              child: Column(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    FittedBox(
-                                        fit: BoxFit.scaleDown,
-                                        child: Text('${day.day}',
-                                            style: TextStyle(
-                                                fontWeight: FontWeight.w700,
-                                                color: selected
-                                                    ? colors.onPrimary
-                                                    : colors.onSurface))),
-                                    const SizedBox(height: 3),
-                                    Container(
-                                        width: 5,
-                                        height: 5,
-                                        decoration: BoxDecoration(
-                                            shape: BoxShape.circle,
-                                            color: n == 0
-                                                ? Colors.transparent
-                                                : selected
-                                                    ? colors.onPrimary
-                                                    : colors.primary)),
-                                  ])))));
-            }))
-        ]),
-    ]);
+    return LayoutBuilder(builder: (context, constraints) {
+      final text = Theme.of(context).textTheme.bodySmall;
+      final painter = TextPainter(
+        text: TextSpan(text: 'T7', style: text),
+        textDirection: Directionality.of(context),
+        textScaler: MediaQuery.textScalerOf(context),
+      )..layout();
+      final cellWidth = (painter.width + 2 * AppSpacing.md)
+          .clamp(AppSizes.minTarget, double.infinity);
+      painter.dispose();
+      // Keep all seven days readable; horizontal scroll replaces font shrinking.
+      return SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: SizedBox(
+          width: constraints.maxWidth.clamp(7 * cellWidth, double.infinity),
+          child: Column(children: [
+            Row(children: [
+              for (final label in const [
+                'T2',
+                'T3',
+                'T4',
+                'T5',
+                'T6',
+                'T7',
+                'CN'
+              ])
+                Expanded(
+                    child: ExcludeSemantics(
+                        child: Text(label,
+                            textAlign: TextAlign.center, style: text)))
+            ]),
+            const SizedBox(height: 8),
+            for (var row = 0; row < slots ~/ 7; row++)
+              Row(children: [
+                for (var col = 0; col < 7; col++)
+                  Expanded(child: Builder(builder: (context) {
+                    final index = row * 7 + col - offset;
+                    if (index < 0 || index >= count) {
+                      return const SizedBox(height: AppSizes.minTarget);
+                    }
+                    final day = first.add(Duration(days: index));
+                    final selected = dateKey(day) == dateKey(s.date);
+                    final n = data
+                        .where((o) => dateKey(o.date) == dateKey(day))
+                        .length;
+                    return Semantics(
+                        button: true,
+                        selected: selected,
+                        label: 'Ngày ${day.day} tháng ${day.month}, $n việc',
+                        child: ExcludeSemantics(
+                            child: InkWell(
+                                borderRadius: BorderRadius.circular(18),
+                                onTap: () => vm.selectDate(day),
+                                child: Container(
+                                    constraints: const BoxConstraints(
+                                        minHeight: AppSizes.minTarget),
+                                    margin: const EdgeInsets.all(2),
+                                    decoration: BoxDecoration(
+                                        color: selected ? colors.primary : null,
+                                        borderRadius: BorderRadius.circular(18),
+                                        border: dateKey(day) ==
+                                                dateKey(vietnamToday())
+                                            ? Border.all(color: colors.primary)
+                                            : null),
+                                    child: Column(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.center,
+                                        children: [
+                                          Text('${day.day}',
+                                              style: text?.copyWith(
+                                                  fontWeight: FontWeight.w700,
+                                                  color: selected
+                                                      ? colors.onPrimary
+                                                      : colors.onSurface)),
+                                          const SizedBox(height: 3),
+                                          Container(
+                                              width: 5,
+                                              height: 5,
+                                              decoration: BoxDecoration(
+                                                  shape: BoxShape.circle,
+                                                  color: n == 0
+                                                      ? Colors.transparent
+                                                      : selected
+                                                          ? colors.onPrimary
+                                                          : colors.primary)),
+                                        ])))));
+                  }))
+              ]),
+          ]),
+        ),
+      );
+    });
   }
 
   Widget _row(BuildContext context, ScheduleOccurrence o) => TaskRow(

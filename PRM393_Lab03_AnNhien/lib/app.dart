@@ -8,6 +8,8 @@ import 'viewmodels/display_settings_sync.dart';
 import 'viewmodels/inbox_view_model.dart';
 import 'viewmodels/session_view_model.dart';
 import 'models/app_notification.dart';
+import 'models/user_profile.dart';
+import 'viewmodels/account_view_model.dart';
 
 class AnNhienApp extends ConsumerStatefulWidget {
   const AnNhienApp({super.key});
@@ -17,6 +19,12 @@ class AnNhienApp extends ConsumerStatefulWidget {
 }
 
 class _AnNhienAppState extends ConsumerState<AnNhienApp> {
+  @override
+  void initState() {
+    super.initState();
+    AppTheme.registerFontLicenses();
+  }
+
   String? _uid;
   final _seen = <String>{};
   final messenger = GlobalKey<ScaffoldMessengerState>();
@@ -25,6 +33,9 @@ class _AnNhienAppState extends ConsumerState<AnNhienApp> {
     ref.watch(displaySettingsSyncProvider); // F8: áp cài đặt đã lưu khi mở app.
     final fontScale = ref.watch(fontScaleProvider);
     final highContrast = ref.watch(highContrastProvider);
+    // Resolved session profile, never a route-name guess. Unknown role stays elderly.
+    final caregiver =
+        ref.watch(profileProvider).asData?.value?.role == UserRole.caregiver;
     ref.listen(sessionProvider, (_, next) {
       final uid = next.asData?.value?.uid;
       if (uid != _uid) {
@@ -60,7 +71,9 @@ class _AnNhienAppState extends ConsumerState<AnNhienApp> {
       title: 'An Nhiên',
       scaffoldMessengerKey: messenger,
       debugShowCheckedModeBanner: false,
-      theme: highContrast ? AppTheme.highContrast() : AppTheme.light(),
+      theme: highContrast
+          ? AppTheme.highContrast(caregiver: caregiver)
+          : AppTheme.light(caregiver: caregiver),
       routerConfig: ref.watch(routerProvider),
       // Cỡ chữ Bác chọn nhân với cỡ chữ hệ thống, trần 2.0 (architecture.md mục 12).
       builder: (context, child) {

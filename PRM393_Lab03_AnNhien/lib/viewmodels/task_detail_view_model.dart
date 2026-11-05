@@ -36,6 +36,7 @@ class TaskDetailViewModel extends Notifier<UiState<TaskItem>> {
 
   Future<TodayViewModel> _today() async {
     final today = ref.read(todayViewModelProvider.notifier);
+    await Future<void>.value();
     // Route S04 cũng có thể được mở trực tiếp từ deep-link, khi S03 chưa load.
     if (today.taskById(_taskId) == null) await today.load();
     return today;

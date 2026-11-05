@@ -15,7 +15,8 @@ enum AppFontScale {
 const double maxTextScale = 2.0;
 
 /// Cỡ chữ toàn app. Mặc định "Lớn" (Figma S01, S10). Giữ trong bộ nhớ; F8 nối `SettingsService` sau.
-final fontScaleProvider = NotifierProvider<FontScaleNotifier, AppFontScale>(FontScaleNotifier.new);
+final fontScaleProvider =
+    NotifierProvider<FontScaleNotifier, AppFontScale>(FontScaleNotifier.new);
 
 class FontScaleNotifier extends Notifier<AppFontScale> {
   @override
@@ -25,7 +26,8 @@ class FontScaleNotifier extends Notifier<AppFontScale> {
 }
 
 /// Tương phản cao (S10 "Chữ và nền rõ hơn"). Mặc định tắt. F8 nối `SettingsService` sau.
-final highContrastProvider = NotifierProvider<HighContrastNotifier, bool>(HighContrastNotifier.new);
+final highContrastProvider =
+    NotifierProvider<HighContrastNotifier, bool>(HighContrastNotifier.new);
 
 class HighContrastNotifier extends Notifier<bool> {
   @override

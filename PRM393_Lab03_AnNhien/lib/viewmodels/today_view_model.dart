@@ -248,14 +248,13 @@ class TodayViewModel extends Notifier<UiState<TodayData>> {
     }
   }
 
-  Future<void> undo(String taskId) async {
+  Future<void> undo(String taskId,
+      {TaskStatus previousStatus = TaskStatus.pending}) async {
     if (_lastMutation?.before.id == taskId) {
       await undoLastAction();
       return;
     }
-    await ref
-        .read(taskRepositoryProvider)
-        .setStatus(taskId, TaskStatus.pending);
+    await ref.read(taskRepositoryProvider).setStatus(taskId, previousStatus);
     await load();
   }
 

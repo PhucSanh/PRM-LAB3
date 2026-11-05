@@ -8,6 +8,7 @@ import '../../theme/app_spacing.dart';
 import '../../viewmodels/suggestion_compose_view_model.dart';
 import '../../viewmodels/ui_state.dart';
 import '../../widgets/app_back_bar.dart';
+import '../../widgets/botanical_scene.dart';
 import '../../widgets/app_button.dart';
 import '../../widgets/app_text_field.dart';
 import '../../widgets/choice_group.dart';
@@ -24,7 +25,8 @@ import '../../widgets/time_field.dart';
 /// Chưa ghép nối (Figma không vẽ) → `EmptyView` + "Ghép nối máy" (DT-30).
 /// Lệch Figma đã được người dùng đồng ý: DT-29 (G01 / G01b), DT-30 (G02, chưa ghép nối).
 class SuggestionComposeScreen extends ConsumerStatefulWidget {
-  const SuggestionComposeScreen({super.key});
+  const SuggestionComposeScreen({super.key, this.root = false});
+  final bool root;
 
   @override
   ConsumerState<SuggestionComposeScreen> createState() =>
@@ -51,7 +53,7 @@ class _SuggestionComposeScreenState
     final vm = ref.read(suggestionComposeViewModelProvider.notifier);
 
     return Scaffold(
-      appBar: AppBackBar(onBack: _leave),
+      appBar: widget.root ? null : AppBackBar.adaptive(context, onBack: _leave),
       body: SafeArea(
         child: switch (state) {
           UiLoading() => const LoadingView(message: 'Đang mở gợi ý…'),
@@ -197,6 +199,7 @@ class _Compose extends StatelessWidget {
     final scheme = theme.colorScheme;
     return _PinnedFooterLayout(
       body: [
+        const BotanicalScene(height: 180, branch: false),
         Semantics(
             header: true,
             child: Text('Gợi ý lịch cho mẹ',

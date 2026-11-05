@@ -11,7 +11,7 @@ import '../../widgets/app_button.dart';
 import '../../widgets/app_text_field.dart';
 import '../../widgets/caregiver_parts.dart';
 import '../../widgets/confirm_dialog.dart';
-import '../../widgets/caregiver_design_icon.dart';
+import '../../widgets/botanical_scene.dart';
 import '../../widgets/form_parts.dart';
 
 class PairingScreen extends ConsumerStatefulWidget {
@@ -70,13 +70,14 @@ class _PairingScreenState extends ConsumerState<PairingScreen> {
                 valueListenable: controller,
                 builder: (context, value, _) => AppButton(
                   label: 'Ghép nối',
-                  icon: Icons.phonelink,
+                  icon: Icons.phonelink_rounded,
                   busy: state.busy,
                   wrapLabel: true,
                   onPressed: value.text.length == 6 ? _redeem : null,
                 ),
               ),
         children: [
+          const BotanicalScene(height: 160, round: true),
           Text(
               widget.showCode
                   ? 'Chỉ đưa mã cho người thân Bác cho phép xem và sửa lịch.'
@@ -99,22 +100,24 @@ class _PairingScreenState extends ConsumerState<PairingScreen> {
               ]),
             AppButton(
                 label: state.code == null ? 'Tạo mã ghép nối' : 'Tạo mã mới',
-                icon: Icons.phonelink_setup,
+                icon: Icons.phonelink_setup_rounded,
                 busy: state.busy,
                 wrapLabel: true,
                 onPressed: () async {
                   final yes = await showConfirmDialog<bool>(context,
-                      icon: Icons.family_restroom,
+                      icon: Icons.family_restroom_rounded,
                       title: 'Cho người thân cùng xem và sửa lịch?',
                       message:
                           'Người nhập đúng mã có thể xem lịch và lập lịch giúp Bác. Mã chỉ dùng một lần trong 10 phút.',
                       options: const [
                         ConfirmOption(
                             label: 'Đồng ý, tạo mã',
-                            icon: Icons.check,
+                            icon: Icons.check_rounded,
                             value: true),
                         ConfirmOption(
-                            label: 'Để sau', icon: Icons.close, value: false)
+                            label: 'Để sau',
+                            icon: Icons.close_rounded,
+                            value: false)
                       ]);
                   if (yes == true) await vm.createCode();
                 }),
@@ -132,7 +135,7 @@ class _PairingScreenState extends ConsumerState<PairingScreen> {
                 errorText: state.message),
             CaregiverInfoCard(children: [
               Row(children: [
-                const CaregiverDesignIcon('0-560e5.svg'),
+                const Icon(Icons.phonelink_rounded),
                 const SizedBox(width: AppSpacing.md),
                 Expanded(
                     child: Text('Trên máy của mẹ',
@@ -147,7 +150,7 @@ class _PairingScreenState extends ConsumerState<PairingScreen> {
                   loading: () => const Text('Đang tải người thân đã ghép nối…'),
                   error: (e, st) => AppButton(
                       label: 'Thử tải lại người thân',
-                      icon: Icons.refresh,
+                      icon: Icons.refresh_rounded,
                       kind: AppButtonKind.secondary,
                       wrapLabel: true,
                       onPressed: () => ref.invalidate(pairingLinksProvider)),
@@ -157,7 +160,7 @@ class _PairingScreenState extends ConsumerState<PairingScreen> {
                     for (final link in links)
                       AppButton(
                           label: 'Ngưng ghép nối với ${link.name}',
-                          icon: Icons.link_off,
+                          icon: Icons.link_off_rounded,
                           kind: AppButtonKind.dangerOutline,
                           wrapLabel: true,
                           onPressed: state.busy
@@ -168,18 +171,18 @@ class _PairingScreenState extends ConsumerState<PairingScreen> {
                                   if (uid == null) return;
                                   final yes = await showConfirmDialog<bool>(
                                       context,
-                                      icon: Icons.link_off,
+                                      icon: Icons.link_off_rounded,
                                       title: 'Ngưng ghép nối với người thân?',
                                       message:
                                           'Người thân này không còn xem hoặc sửa lịch của Bác. Lịch đã lưu vẫn được giữ.',
                                       options: const [
                                         ConfirmOption(
                                             label: 'Giữ ghép nối',
-                                            icon: Icons.close,
+                                            icon: Icons.close_rounded,
                                             value: false),
                                         ConfirmOption(
                                             label: 'Ngưng ghép nối',
-                                            icon: Icons.link_off,
+                                            icon: Icons.link_off_rounded,
                                             value: true,
                                             kind: AppButtonKind.dangerOutline)
                                       ]);
@@ -194,14 +197,14 @@ class _PairingScreenState extends ConsumerState<PairingScreen> {
           if (!widget.showCode && ref.watch(pairedMomUidProvider) != null)
             AppButton(
                 label: 'Xem lịch của mẹ',
-                icon: Icons.calendar_month,
+                icon: Icons.calendar_month_rounded,
                 kind: AppButtonKind.secondary,
                 wrapLabel: true,
                 onPressed: () => context.go('/caregiver/schedule')),
           if (!widget.showCode && ref.watch(pairedMomUidProvider) != null)
             AppButton(
                 label: 'Ngưng ghép nối',
-                icon: Icons.link_off,
+                icon: Icons.link_off_rounded,
                 kind: AppButtonKind.dangerOutline,
                 wrapLabel: true,
                 onPressed: state.busy
@@ -211,18 +214,18 @@ class _PairingScreenState extends ConsumerState<PairingScreen> {
                             child = ref.read(sessionProvider).value?.uid;
                         if (mom == null || child == null) return;
                         final yes = await showConfirmDialog<bool>(context,
-                            icon: Icons.link_off,
+                            icon: Icons.link_off_rounded,
                             title: 'Ngưng ghép nối với máy của mẹ?',
                             message:
                                 'Con cháu không còn xem hoặc sửa lịch. Lịch đã lưu của mẹ vẫn được giữ.',
                             options: const [
                               ConfirmOption(
                                   label: 'Giữ ghép nối',
-                                  icon: Icons.close,
+                                  icon: Icons.close_rounded,
                                   value: false),
                               ConfirmOption(
                                   label: 'Ngưng ghép nối',
-                                  icon: Icons.link_off,
+                                  icon: Icons.link_off_rounded,
                                   value: true,
                                   kind: AppButtonKind.dangerOutline)
                             ]);

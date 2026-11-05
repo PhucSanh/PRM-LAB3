@@ -50,6 +50,11 @@ void main() {
     return container;
   }
 
+  Future<void> openFontOptions(WidgetTester tester) async {
+    await tester.tap(find.byTooltip('Cỡ chữ'));
+    await tester.pumpAndSettle();
+  }
+
   for (final width in [360.0, 412.0]) {
     for (final scale in [1.3, maxTextScale]) {
       testWidgets('$width dp × $scale: không tràn, nút "Bắt đầu" luôn thấy',
@@ -61,8 +66,10 @@ void main() {
         expect(button.bottom, lessThanOrEqualTo(800));
         expect(button.top, greaterThanOrEqualTo(0));
 
+        await openFontOptions(tester);
         // Cuộn tới lựa chọn cuối vẫn chạm được.
-        await tester.scrollUntilVisible(find.text('Rất lớn'), 100);
+        await tester.scrollUntilVisible(find.text('Rất lớn'), 100,
+            scrollable: find.byType(Scrollable).last);
         expect(tester.takeException(), isNull);
       });
     }
@@ -71,6 +78,7 @@ void main() {
   testWidgets('mặc định "Lớn", không có nút Quay lại', (tester) async {
     final c = await pumpWelcome(tester);
     expect(c.read(fontScaleProvider), AppFontScale.lon);
+    await openFontOptions(tester);
     expect(find.text('Đang chọn'), findsOneWidget);
     expect(find.text('Quay lại'), findsNothing);
   });
@@ -78,7 +86,9 @@ void main() {
   testWidgets('chạm "Rất lớn" → chữ toàn app đổi ngay và được lưu',
       (tester) async {
     final c = await pumpWelcome(tester);
-    await tester.scrollUntilVisible(find.text('Rất lớn'), 100);
+    await openFontOptions(tester);
+    await tester.scrollUntilVisible(find.text('Rất lớn'), 100,
+        scrollable: find.byType(Scrollable).last);
     await tester.tap(find.text('Rất lớn'));
     await tester.pumpAndSettle();
     expect(c.read(fontScaleProvider), AppFontScale.ratLon);

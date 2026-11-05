@@ -49,7 +49,7 @@ class CaregiverDetailScreen extends ConsumerWidget {
                     items.where((o) => dateKey(o.date) == day).firstOrNull;
                 if (selected == null) {
                   return const EmptyView(
-                      icon: Icons.event_busy,
+                      icon: Icons.event_busy_rounded,
                       title: 'Không có việc vào ngày này',
                       message: 'Lịch có thể đã thay đổi hoặc ngưng lặp lại.');
                 }
@@ -74,7 +74,7 @@ class CaregiverDetailScreen extends ConsumerWidget {
                         ]),
                       AppButton(
                           label: 'Sửa việc',
-                          icon: Icons.edit,
+                          icon: Icons.edit_rounded,
                           wrapLabel: true,
                           onPressed: actions.busy
                               ? null
@@ -90,7 +90,7 @@ class CaregiverDetailScreen extends ConsumerWidget {
                       const SizedBox(height: AppSpacing.betweenTargets),
                       AppButton(
                           label: 'Ngưng lặp lại',
-                          icon: Icons.event_busy,
+                          icon: Icons.event_busy_rounded,
                           kind: AppButtonKind.dangerOutline,
                           wrapLabel: true,
                           onPressed: actions.busy
@@ -98,18 +98,18 @@ class CaregiverDetailScreen extends ConsumerWidget {
                               : () async {
                                   final yes = await showConfirmDialog<bool>(
                                       context,
-                                      icon: Icons.event_busy,
+                                      icon: Icons.event_busy_rounded,
                                       title: 'Ngưng lặp lại việc này?',
                                       message:
                                           'Từ ${dateKey(selected.date)}, mẹ sẽ không được nhắc việc này. Những lần đã làm vẫn được giữ lại.',
                                       options: const [
                                         ConfirmOption(
                                             label: 'Giữ lại',
-                                            icon: Icons.close,
+                                            icon: Icons.close_rounded,
                                             value: false),
                                         ConfirmOption(
                                             label: 'Ngưng lặp lại',
-                                            icon: Icons.event_busy,
+                                            icon: Icons.event_busy_rounded,
                                             value: true,
                                             kind: AppButtonKind.dangerOutline)
                                       ]);

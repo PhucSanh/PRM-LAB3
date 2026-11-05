@@ -18,13 +18,13 @@ class AccountScreen extends ConsumerWidget {
     final action = ref.watch(signOutViewModelProvider);
     final text = Theme.of(context).textTheme;
     return Scaffold(
-      appBar: AppBackBar(onBack: () {
+      appBar: AppBackBar.adaptive(context, onBack: () {
         if (context.canPop()) {
           context.pop();
         } else {
           context.go(profile.value?.role == UserRole.caregiver
               ? '/caregiver/schedule'
-              : '/today');
+              : '/calendar');
         }
       }),
       body: SafeArea(
@@ -65,27 +65,27 @@ class AccountScreen extends ConsumerWidget {
           AppButton(
               label: profile.value?.role == UserRole.caregiver
                   ? 'Xem lịch của mẹ'
-                  : 'Về Hôm nay',
+                  : 'Về Lịch',
               wrapLabel: true,
-              icon: Icons.arrow_forward,
+              icon: Icons.arrow_forward_rounded,
               onPressed: action.busy
                   ? null
                   : () => context.go(profile.value?.role == null
                       ? '/session'
                       : profile.value?.role == UserRole.caregiver
                           ? '/caregiver/schedule'
-                          : '/today')),
+                          : '/calendar')),
           const SizedBox(height: AppSpacing.betweenTargets),
           AppButton(
               label: 'Mã ghép nối của Bác',
-              icon: Icons.phonelink_setup,
+              icon: Icons.phonelink_setup_rounded,
               kind: AppButtonKind.secondary,
               wrapLabel: true,
               onPressed: () => context.push('/pairing/code')),
           const SizedBox(height: AppSpacing.betweenTargets),
           AppButton(
               label: 'Ghép nối và lịch của mẹ',
-              icon: Icons.calendar_month,
+              icon: Icons.calendar_month_rounded,
               kind: AppButtonKind.secondary,
               wrapLabel: true,
               onPressed: () => context.push('/caregiver/schedule')),
@@ -97,7 +97,7 @@ class AccountScreen extends ConsumerWidget {
             children: [
               AppButton(
                   label: 'Nhận lịch gợi ý (khu thử)',
-                  icon: Icons.inbox,
+                  icon: Icons.inbox_rounded,
                   kind: AppButtonKind.secondary,
                   wrapLabel: true,
                   onPressed: () =>
@@ -106,7 +106,7 @@ class AccountScreen extends ConsumerWidget {
               AppButton(
                   label: 'Khu thử tính năng',
                   wrapLabel: true,
-                  icon: Icons.science_outlined,
+                  icon: Icons.science_rounded,
                   kind: AppButtonKind.secondary,
                   onPressed: action.busy
                       ? null
@@ -117,7 +117,7 @@ class AccountScreen extends ConsumerWidget {
           const SizedBox(height: AppSpacing.betweenTargets),
           AppButton(
               label: 'Đăng xuất',
-              icon: Icons.logout,
+              icon: Icons.logout_rounded,
               kind: AppButtonKind.dangerOutline,
               busy: action.busy,
               onPressed: () async {

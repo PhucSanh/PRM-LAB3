@@ -33,9 +33,8 @@ class NavRow extends StatelessWidget {
       onTap: onTap,
       child: Material(
         color: scheme.surface,
-        shape: RoundedRectangleBorder(
+        shape: const RoundedRectangleBorder(
           borderRadius: AppRadius.cardAll,
-          side: BorderSide(color: scheme.outlineVariant),
         ),
         clipBehavior: Clip.antiAlias,
         child: InkWell(

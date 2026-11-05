@@ -33,7 +33,8 @@ class TryReminderScreen extends ConsumerWidget {
       _ => false,
     };
     return Scaffold(
-      appBar: AppBackBar(
+      appBar: AppBackBar.adaptive(
+        context,
         onBack:
             atStart ? () => context.go('/setup/notifications') : vm.backToStart,
       ),
@@ -182,7 +183,7 @@ class _Start extends StatelessWidget {
         if (failed) FieldMessage.error(state.error!),
         AppButton(
           label: failed ? 'Thử lại' : 'Gửi thử',
-          icon: failed ? AppIcons.retry : Icons.notifications_active_outlined,
+          icon: failed ? AppIcons.retry : Icons.notifications_active_rounded,
           busy: state.sending,
           onPressed: onSend,
         ),
@@ -215,9 +216,10 @@ class _AskReceived extends StatelessWidget {
             FieldLabel('Lời nhắc có hiện lên', icon: AppIcons.bell),
             Divider(height: AppSpacing.xl),
             FieldLabel('Chuông hoặc rung có phát',
-                icon: Icons.notifications_active_outlined),
+                icon: Icons.notifications_active_rounded),
             Divider(height: AppSpacing.xl),
-            FieldLabel('Chữ trong lời nhắc có dễ đọc', icon: Icons.text_fields),
+            FieldLabel('Chữ trong lời nhắc có dễ đọc',
+                icon: Icons.text_fields_rounded),
           ]),
         ),
         FieldMessage.hint('Bác có thể xem lại sau.'),
@@ -230,7 +232,7 @@ class _AskReceived extends StatelessWidget {
         ),
         AppButton(
           label: 'Chưa nhận được',
-          icon: Icons.notifications_off_outlined,
+          icon: Icons.notifications_off_rounded,
           kind: AppButtonKind.secondary,
           onPressed: onNo,
         ),
@@ -251,7 +253,7 @@ class _NotReceived extends StatelessWidget {
   static const _steps = [
     (AppIcons.bell, 'Kiểm tra quyền', 'Cho phép An Nhiên gửi lời nhắc.'),
     (
-      Icons.smartphone_outlined,
+      Icons.smartphone_rounded,
       'Kiểm tra âm lượng',
       'Tăng âm lượng; tắt Không làm phiền.'
     ),

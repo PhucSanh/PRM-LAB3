@@ -212,16 +212,13 @@ class HabitAccentCard extends StatelessWidget {
         borderRadius: AppRadius.cardAll,
         side: selected
             ? BorderSide(color: scheme.primary, width: AppSizes.border)
-            : BorderSide(color: scheme.outlineVariant),
+            : BorderSide.none,
       ),
       clipBehavior: Clip.antiAlias,
       child: InkWell(
         onTap: onTap,
         child: IntrinsicHeight(
           child: Row(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-            Container(
-                width: AppSizes.accentBar,
-                color: HabitPalette.of(habitKey).accent),
             Expanded(
               child: ConstrainedBox(
                 constraints:

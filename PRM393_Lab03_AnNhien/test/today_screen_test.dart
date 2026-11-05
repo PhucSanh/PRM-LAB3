@@ -62,6 +62,8 @@ void main() {
     expect(find.text('Việc 1/2'), findsOneWidget);
     await tester.drag(find.byType(Scrollable).first, const Offset(0, -360));
     await tester.pump();
+    await tester.ensureVisible(find.text('Việc sau'));
+    await tester.pumpAndSettle();
     await tester.tap(find.text('Việc sau'));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 300));

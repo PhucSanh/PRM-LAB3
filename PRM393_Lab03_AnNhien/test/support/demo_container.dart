@@ -1,3 +1,4 @@
+import 'package:an_nhien/router/app_router.dart';
 import 'package:an_nhien/services/suggestion_service.dart' as incoming;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:an_nhien/models/app_user.dart';
@@ -24,21 +25,24 @@ import 'package:an_nhien/services/task_repository.dart';
 import 'package:an_nhien/viewmodels/caregiver_schedule_view_model.dart';
 
 ProviderContainer demoContainer(
-        {FakeCaregiverScheduleService? schedules,
+        {String initialRoute = '/today',
+        UserRole? role = UserRole.elder,
+        FakeCaregiverScheduleService? schedules,
         FakeSuggestionService? suggestions,
         MessagingService? messages,
         List<TaskItem>? tasks,
         TaskRepository? taskRepository}) =>
     ProviderContainer(overrides: [
+      initialRouteProvider.overrideWithValue(initialRoute),
       suggestionServiceProvider.overrideWithValue(
           incoming.FakeSuggestionService(delay: Duration.zero)),
       authServiceProvider.overrideWithValue(FakeAuthService(
           signedIn: const AppUser(uid: 'demo-user', displayName: 'Bác Lan'))),
       profileServiceProvider.overrideWithValue(FakeProfileService([
-        const UserProfile(
+        UserProfile(
             uid: 'demo-user',
             displayName: 'Bác Lan',
-            role: UserRole.elder,
+            role: role,
             onboarded: true,
             pairedMomUid: 'demo-mom')
       ])),
@@ -48,8 +52,8 @@ ProviderContainer demoContainer(
       caregiverSuggestionServiceProvider
           .overrideWithValue(suggestions ?? FakeSuggestionService()),
       pairingServiceProvider.overrideWithValue(FakePairingService()),
-      taskRepositoryProvider.overrideWithValue(
-          taskRepository ?? FakeTaskRepository(tasks ?? [])),
+      taskRepositoryProvider
+          .overrideWithValue(taskRepository ?? FakeTaskRepository(tasks ?? [])),
       familyRepositoryProvider.overrideWithValue(FakeFamilyRepository()),
       habitRepositoryProvider.overrideWithValue(FakeHabitRepository()),
       settingsServiceProvider.overrideWithValue(FakeSettingsService()),

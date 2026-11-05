@@ -71,7 +71,7 @@ class AppTextField extends StatelessWidget {
               inputFormatters: inputFormatters,
               onSubmitted: onSubmitted,
               style: theme.textTheme.bodyLarge
-                  ?.copyWith(fontWeight: FontWeight.w500),
+                  ?.copyWith(fontWeight: FontWeight.w400),
               decoration: InputDecoration(
                 fillColor: hasError ? scheme.errorContainer : scheme.surface,
                 enabledBorder: border(

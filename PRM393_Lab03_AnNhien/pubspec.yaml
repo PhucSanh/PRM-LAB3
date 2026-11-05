@@ -44,9 +44,19 @@ flutter:
           weight: 600
         - asset: assets/fonts/BeVietnamPro-Bold.ttf
           weight: 700
+    - family: NotoSerif
+      fonts:
+        - asset: assets/fonts/NotoSerif-Regular.ttf
+    - family: NotoSerifDisplay
+      fonts:
+        - asset: assets/fonts/NotoSerifDisplay-Regular.ttf
+          weight: 400
+        - asset: assets/fonts/NotoSerifDisplay-Bold.ttf
+          weight: 700
   assets:
     - assets/caregiver/
     - assets/fonts/DejaVuSans.ttf
+    - assets/fonts/NotoSerifDisplay-LICENSE.txt
   # TODO(A – Sanh, F0): thêm font Be Vietnam Pro vào assets/fonts/ rồi mở khối dưới.
   # fonts:
   #   - family: BeVietnamPro

@@ -15,6 +15,7 @@ import 'viewmodels/caregiver_schedule_view_model.dart';
 //
 //   flutter run -d emulator-5554 -t lib/main_dev.dart
 //
+// Chọn vai trò demo: --dart-define=DEMO_ROLE=elder|caregiver.
 // Mở thẳng màn: --dart-define=INITIAL_ROUTE=/caregiver/schedule. Bản thật vẫn chạy bằng lib/main.dart.
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -35,6 +36,8 @@ import 'services/task_repository.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
+  const roleName = String.fromEnvironment('DEMO_ROLE', defaultValue: 'elder');
+  final demoRole = UserRole.values.byName(roleName);
   final schedules = FakeCaregiverScheduleService([
     TaskItem(
         id: 'demo-walk',
@@ -55,13 +58,14 @@ void main() {
   ]);
   runApp(ProviderScope(
     overrides: [
-      initialRouteProvider.overrideWithValue(
-          const String.fromEnvironment('INITIAL_ROUTE', defaultValue: '/demo')),
+      initialRouteProvider.overrideWithValue(const String.fromEnvironment(
+          'INITIAL_ROUTE',
+          defaultValue: '/intro')),
       profileServiceProvider.overrideWithValue(FakeProfileService([
-        const UserProfile(
+        UserProfile(
             uid: 'dev-uid',
             displayName: 'Bác Lan',
-            role: UserRole.elder,
+            role: demoRole,
             onboarded: true,
             pairedMomUid: 'demo-mom'),
       ])),

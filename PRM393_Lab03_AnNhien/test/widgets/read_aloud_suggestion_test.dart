@@ -9,22 +9,27 @@ import 'harness.dart';
 
 void main() {
   group('ReadAloudButton', () {
-    testWidgets('chưa đọc: "Đọc to" + loa, cao ≥ 72, bấm gọi onPressed', (tester) async {
+    testWidgets('chưa đọc: "Đọc to" + loa, cao ≥ 72, bấm gọi onPressed',
+        (tester) async {
       var taps = 0;
       await pumpHarness(tester, ReadAloudButton(onPressed: () => taps++));
       expect(find.text('Đọc to'), findsOneWidget);
       expect(find.byIcon(AppIcons.volume), findsOneWidget);
-      expect(tester.getSize(find.byType(OutlinedButton)).height, greaterThanOrEqualTo(AppSizes.minTarget));
+      expect(tester.getSize(find.byType(OutlinedButton)).height,
+          greaterThanOrEqualTo(AppSizes.minTarget));
       await tester.tap(find.text('Đọc to'));
       expect(taps, 1);
     });
 
-    testWidgets('đang đọc: "Đang đọc…" (liveRegion) + "Dừng đọc"', (tester) async {
+    testWidgets('đang đọc: "Đang đọc…" (liveRegion) + "Dừng đọc"',
+        (tester) async {
       final semantics = tester.ensureSemantics();
       var taps = 0;
-      await pumpHarness(tester, ReadAloudButton(onPressed: () => taps++, speaking: true));
+      await pumpHarness(
+          tester, ReadAloudButton(onPressed: () => taps++, speaking: true));
       expect(find.text('Đang đọc…'), findsOneWidget);
-      expect(tester.getSemantics(find.text('Đang đọc…')), isSemantics(isLiveRegion: true));
+      expect(tester.getSemantics(find.text('Đang đọc…')),
+          isSemantics(isLiveRegion: true));
       await tester.tap(find.text('Dừng đọc'));
       expect(taps, 1);
       semantics.dispose();
@@ -32,7 +37,9 @@ void main() {
   });
 
   group('SuggestionCard', () {
-    testWidgets('G12: tiêu đề, tên việc, câu trạng thái; Xem gợi ý / Bỏ qua gợi ý gọi đúng callback', (tester) async {
+    testWidgets(
+        'G12: tiêu đề, tên việc, câu trạng thái; Xem gợi ý / Bỏ qua gợi ý gọi đúng callback',
+        (tester) async {
       final calls = <String>[];
       await pumpHarness(
         tester,
@@ -51,11 +58,14 @@ void main() {
       expect(find.text('Chưa thêm vào lịch. Bác tự chọn.'), findsOneWidget);
       await tester.tap(find.text('Xem gợi ý'));
       await tester.ensureVisible(find.text('Bỏ qua gợi ý'));
+      await tester.pumpAndSettle();
       await tester.tap(find.text('Bỏ qua gợi ý'));
       expect(calls, ['open', 'dismiss']);
     });
 
-    testWidgets('quá 3 việc thì gom "và … việc khác"; không có onDismiss thì ẩn nút', (tester) async {
+    testWidgets(
+        'quá 3 việc thì gom "và … việc khác"; không có onDismiss thì ẩn nút',
+        (tester) async {
       await pumpHarness(
         tester,
         SuggestionCard(
@@ -73,7 +83,9 @@ void main() {
   });
 
   for (final (width, scale) in [(360.0, 1.3), (360.0, 2.0), (412.0, 2.0)]) {
-    testWidgets('$width dp × $scale: đọc to (2 trạng thái) + thẻ gợi ý không tràn', (tester) async {
+    testWidgets(
+        '$width dp × $scale: đọc to (2 trạng thái) + thẻ gợi ý không tràn',
+        (tester) async {
       await pumpHarness(
         tester,
         ListView(padding: AppSpacing.screenPadding, children: [
@@ -84,7 +96,10 @@ void main() {
           SuggestionCard(
             fromName: 'Nguyễn Thị Mai',
             itemCount: 2,
-            previewTitles: const ['Đi bộ quanh công viên với cô Tám', 'Gọi điện cho Mai'],
+            previewTitles: const [
+              'Đi bộ quanh công viên với cô Tám',
+              'Gọi điện cho Mai'
+            ],
             onOpen: () {},
             onDismiss: () {},
           ),

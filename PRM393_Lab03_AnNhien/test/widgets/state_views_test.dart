@@ -13,7 +13,8 @@ void main() {
       testWidgets('LoadingView · $tag', (tester) async {
         await pumpHarness(
           tester,
-          const LoadingView(message: 'Đang lưu việc…', hint: 'Không cần bấm gì thêm'),
+          const LoadingView(
+              message: 'Đang lưu việc…', hint: 'Không cần bấm gì thêm'),
           width: width,
           scale: scale,
           settle: false,
@@ -29,13 +30,16 @@ void main() {
         await pumpHarness(
           tester,
           EmptyView(
-            icon: Icons.wb_sunny_outlined,
+            icon: Icons.wb_sunny_rounded,
             title: 'Hôm nay chưa có việc nào',
             message: 'Bắt đầu nhẹ nhàng với một việc nhỏ.',
-            action: AppButton(label: 'Thêm việc đầu tiên', icon: Icons.add, onPressed: () => primary++),
+            action: AppButton(
+                label: 'Thêm việc đầu tiên',
+                icon: Icons.add_rounded,
+                onPressed: () => primary++),
             secondaryAction: AppButton(
               label: 'Dùng lịch mẫu',
-              icon: Icons.view_list_outlined,
+              icon: Icons.view_list_rounded,
               kind: AppButtonKind.secondary,
               onPressed: () => secondary++,
             ),
@@ -51,7 +55,8 @@ void main() {
         expect((primary, secondary), (1, 1));
       });
 
-      testWidgets('ErrorView · $tag: luôn có Thử lại + nút phụ', (tester) async {
+      testWidgets('ErrorView · $tag: luôn có Thử lại + nút phụ',
+          (tester) async {
         var retries = 0, back = 0;
         await pumpHarness(
           tester,
@@ -63,7 +68,7 @@ void main() {
             extraActions: [
               AppButton(
                   label: 'Quay lại sửa',
-                  icon: Icons.edit_outlined,
+                  icon: Icons.edit_rounded,
                   kind: AppButtonKind.secondary,
                   onPressed: () => back++),
             ],
@@ -82,10 +87,12 @@ void main() {
   }
 
   testWidgets('ErrorView báo lỗi cho TalkBack bằng liveRegion', (tester) async {
-    await pumpHarness(tester, ErrorView(message: 'Mất mạng rồi Bác ơi.', onRetry: () {}));
+    await pumpHarness(
+        tester, ErrorView(message: 'Mất mạng rồi Bác ơi.', onRetry: () {}));
     final liveRegion = find.ancestor(
       of: find.text('Mất mạng rồi Bác ơi.'),
-      matching: find.byWidgetPredicate((w) => w is Semantics && w.properties.liveRegion == true),
+      matching: find.byWidgetPredicate(
+          (w) => w is Semantics && w.properties.liveRegion == true),
     );
     expect(liveRegion, findsOneWidget);
   });

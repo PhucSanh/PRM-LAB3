@@ -42,6 +42,9 @@ import '../widgets/app_shell.dart';
 import '../widgets/dev/widget_gallery.dart';
 import '../widgets/feature_placeholder.dart';
 import '../screens/tasks/task_form_screens.dart';
+import '../screens/calm/calendar_screen.dart';
+import '../screens/calm/activities_screen.dart';
+import '../screens/calm/family_screen.dart';
 
 /// Route map theo architecture.md mục 7.2 (gốc: flutter-handoff.md Lab 2). Chủ file: A – Sanh.
 /// Ai làm màn nào: thay `FeaturePlaceholder` bằng màn thật của mình.
@@ -53,7 +56,7 @@ final authGuardEnabledProvider = Provider<bool>(
     (ref) => const bool.fromEnvironment('AUTH_GUARD', defaultValue: false));
 
 final initialRouteProvider = Provider<String>((ref) =>
-    const String.fromEnvironment('INITIAL_ROUTE', defaultValue: '/today'));
+    const String.fromEnvironment('INITIAL_ROUTE', defaultValue: '/intro'));
 
 final localReminderOpenedProvider = StreamProvider<AppNotification>((ref) {
   if (!ref.watch(nativeReminderEventsEnabledProvider)) {
@@ -95,10 +98,8 @@ final routerProvider = Provider<GoRouter>((ref) {
     });
     refresh.value++;
   }, fireImmediately: true);
-  if (ref.watch(authGuardEnabledProvider)) {
-    ref.listen(profileProvider, (_, __) => refresh.value++,
-        fireImmediately: true);
-  }
+  ref.listen(profileProvider, (_, __) => refresh.value++,
+      fireImmediately: true);
   ref.listen(signOutViewModelProvider, (_, __) => refresh.value++);
   late final GoRouter router;
 
@@ -116,6 +117,15 @@ final routerProvider = Provider<GoRouter>((ref) {
     refreshListenable: refresh,
     redirect: (context, state) {
       final path = state.uri.path;
+      final role = ref.read(profileProvider).asData?.value?.role;
+      if (role == UserRole.caregiver && path == '/calendar') {
+        return state.uri.replace(path: '/caregiver/schedule').toString();
+      }
+      if (role == UserRole.caregiver && path == '/family') {
+        return '/caregiver/family';
+      }
+      // Public introduction is shown once on launch; its CTA uses normal guards.
+      if (path == '/intro' && pendingNotification == null) return null;
       // Giữ guard TẮT trong bản demo theo yêu cầu 03/11.
       if (ref.read(authGuardEnabledProvider)) {
         final session = ref.read(sessionProvider);
@@ -143,7 +153,7 @@ final routerProvider = Provider<GoRouter>((ref) {
             path.startsWith('/setup')) {
           return user.role == UserRole.caregiver
               ? '/caregiver/schedule'
-              : '/today';
+              : '/calendar';
         }
       }
       final pending = pendingNotification;
@@ -166,6 +176,9 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(path: '/role', builder: (_, __) => const RoleScreen()),
       GoRoute(path: '/account', builder: (_, __) => const AccountScreen()),
       // F2 Onboarding – Hương
+      GoRoute(
+          path: '/intro',
+          builder: (_, __) => const WelcomeScreen(launch: true)),
       GoRoute(path: '/welcome', builder: (_, __) => const WelcomeScreen()),
       GoRoute(path: '/setup', builder: (_, __) => const SetupProfileScreen()),
       GoRoute(
@@ -185,7 +198,9 @@ final routerProvider = Provider<GoRouter>((ref) {
       // F6 Lời nhắc – Khang
       GoRoute(
           path: '/reminder/:taskId',
-          builder: (_, __) => ph('S14 · F6', 'Lời nhắc đến giờ', 'Khang')),
+          builder: (_, state) => state.pathParameters['taskId'] == 'preview'
+              ? const CalmReminderPreviewScreen()
+              : CalmTaskDetailScreen(id: state.pathParameters['taskId']!)),
       GoRoute(
           path: '/settings/reminders',
           builder: (_, __) => ph('N07 · F6', 'Cài đặt nhắc việc', 'Khang')),
@@ -204,7 +219,7 @@ final routerProvider = Provider<GoRouter>((ref) {
           path: '/inbox/suggestions/:id',
           builder: (_, state) =>
               SuggestionDemoScreen(suggestionId: state.pathParameters['id']!)),
-      // Chế độ Con cháu: mọi route /caregiver/* nằm ngoài shell của Bác.
+      // Chế độ Con cháu: editor/detail ở root, ba destination có shell riêng.
       // F13/F14 – Hiếu. Guard demo vẫn mặc định tắt.
       GoRoute(
           path: '/settings/firebase-demo/suggestions',
@@ -215,17 +230,6 @@ final routerProvider = Provider<GoRouter>((ref) {
           builder: (_, __) => const PairingScreen(showCode: true)),
       GoRoute(
           path: '/caregiver/pair', builder: (_, __) => const PairingScreen()),
-      GoRoute(
-          path: '/caregiver/schedule',
-          builder: (_, state) => CaregiverScheduleScreen(
-              date: parseDateKey(state.uri.queryParameters['date']),
-              view: switch (state.uri.queryParameters['view']) {
-                'week' => CalendarView.week,
-                'month' => CalendarView.month,
-                _ => state.uri.queryParameters.containsKey('date')
-                    ? CalendarView.day
-                    : null
-              })),
       GoRoute(
           path: '/caregiver/task/new',
           builder: (_, __) => const CaregiverFormScreen(),
@@ -246,19 +250,83 @@ final routerProvider = Provider<GoRouter>((ref) {
               id: state.pathParameters['id']!,
               day: state.uri.queryParameters['date'] ??
                   DateTime.now().toIso8601String().substring(0, 10))),
-      // F12 Gợi ý lịch (phía Con cháu) – Sanh
-      GoRoute(
-          path: '/caregiver/suggest',
-          builder: (_, __) => const SuggestionComposeScreen()),
       // F0 Trang xem thử widget – chỉ có ở bản debug (cần đăng nhập như mọi route khác).
       if (kDebugMode)
         GoRoute(
             path: '/dev/widgets',
             builder: (_, __) => const WidgetGallery(animate: false)),
+      // Legacy routes remain valid after the navigation migration.
+      GoRoute(path: '/week', redirect: (_, __) => '/calendar'),
+      GoRoute(
+          path: '/week/:date',
+          redirect: (_, state) =>
+              '/calendar?date=${Uri.encodeComponent(state.pathParameters['date']!)}'),
+      GoRoute(
+          path: '/week/:date/task/:id',
+          redirect: (_, state) =>
+              '/calendar/task/${Uri.encodeComponent(state.pathParameters['id']!)}?date=${Uri.encodeComponent(state.pathParameters['date']!)}'),
+      GoRoute(
+          path: '/habits', redirect: (_, __) => '/activities?section=habits'),
+      GoRoute(
+          path: '/habits/:key',
+          redirect: (_, state) =>
+              '/activities/habits/${Uri.encodeComponent(state.pathParameters['key']!)}'),
+      GoRoute(
+          path: '/family/add', builder: (_, __) => const FamilyEditorScreen()),
+      GoRoute(
+          path: '/family/:personId/edit',
+          builder: (_, state) =>
+              FamilyEditorScreen(id: state.pathParameters['personId']!)),
+      GoRoute(
+          path: '/family/:personId/share',
+          builder: (_, state) =>
+              FamilyContactScreen(id: state.pathParameters['personId']!)),
       StatefulShellRoute.indexedStack(
-        builder: (_, __, shell) => AppShell(navigationShell: shell),
+        builder: (_, __, shell) =>
+            AppShell(navigationShell: shell, caregiver: true),
         branches: [
           StatefulShellBranch(routes: [
+            GoRoute(
+                path: '/caregiver/schedule',
+                builder: (_, state) => CaregiverScheduleScreen(
+                    date: parseDateKey(state.uri.queryParameters['date']),
+                    view: switch (state.uri.queryParameters['view']) {
+                      'week' => CalendarView.week,
+                      'month' => CalendarView.month,
+                      _ => state.uri.queryParameters.containsKey('date')
+                          ? CalendarView.day
+                          : null
+                    }))
+          ]),
+          StatefulShellBranch(routes: [
+            GoRoute(
+                path: '/caregiver/suggest',
+                builder: (_, __) => const SuggestionComposeScreen(root: true))
+          ]),
+          StatefulShellBranch(routes: [
+            GoRoute(
+                path: '/caregiver/family',
+                builder: (_, __) => const FamilyScreen(caregiver: true))
+          ]),
+        ],
+      ),
+      StatefulShellRoute.indexedStack(
+        builder: (_, state, shell) => AppShell(
+            navigationShell: shell, legacyToday: state.uri.path == '/today'),
+        branches: [
+          StatefulShellBranch(routes: [
+            GoRoute(
+                path: '/calendar',
+                builder: (_, state) => CalendarScreen(
+                    date: parseDateKey(state.uri.queryParameters['date'])),
+                routes: [
+                  GoRoute(
+                      path: 'task/:id',
+                      builder: (_, state) => CalmTaskDetailScreen(
+                          id: state.pathParameters['id']!,
+                          date:
+                              parseDateKey(state.uri.queryParameters['date'])))
+                ]),
             // F3 Hôm nay – Khang
             GoRoute(
                 path: '/today',
@@ -290,9 +358,7 @@ final routerProvider = Provider<GoRouter>((ref) {
                           ph('V01 · F5', 'Nói để thêm việc', 'Khang')),
                   // F7 Lịch tuần – Hương
                   GoRoute(
-                      path: 'all',
-                      builder: (_, __) =>
-                          ph('S11 · F7', 'Chi tiết ngày – hôm nay', 'Hương')),
+                      path: 'all', builder: (_, __) => const CalendarScreen()),
                   // F12 Gợi ý lịch (phía Bác) – Sanh
                   GoRoute(
                       path: 'suggestions/:id',
@@ -303,60 +369,19 @@ final routerProvider = Provider<GoRouter>((ref) {
                 ]),
           ]),
           StatefulShellBranch(routes: [
-            // F7 Lịch tuần – Hương
             GoRoute(
-                path: '/week',
-                builder: (_, __) =>
-                    ph('S07 · F7', 'Lịch tuần', 'Hương', back: false),
+                path: '/activities',
+                builder: (_, state) => ActivitiesScreen(
+                    section: state.uri.queryParameters['section'] ?? 'explore'),
                 routes: [
                   GoRoute(
-                      path: ':date',
-                      builder: (_, __) =>
-                          ph('S11 · F7', 'Chi tiết ngày', 'Hương'),
-                      routes: [
-                        // F3 Chi tiết hoạt động (mở từ lịch tuần) – Khang
-                        GoRoute(
-                            path: 'task/:id',
-                            builder: (_, state) => TaskDetailScreen(
-                                taskId: state.pathParameters['id']!,
-                                day: DateTime.tryParse(
-                                    state.pathParameters['date'] ?? ''))),
-                      ]),
+                      path: 'habits/:key',
+                      builder: (_, state) => HabitDetailScreen(
+                          habitKey: state.pathParameters['key']!))
                 ]),
           ]),
           StatefulShellBranch(routes: [
-            // F9 9 thói quen – Hương
-            GoRoute(
-                path: '/habits',
-                builder: (_, __) =>
-                    ph('S08 · F9', '9 thói quen', 'Hương', back: false),
-                routes: [
-                  GoRoute(
-                      path: ':key',
-                      builder: (_, __) =>
-                          ph('S16 · F9', 'Chi tiết thói quen', 'Hương')),
-                ]),
-          ]),
-          StatefulShellBranch(routes: [
-            // F11 Gia đình – Hương
-            GoRoute(
-                path: '/family',
-                builder: (_, __) =>
-                    ph('S09 · F11', 'Gia đình', 'Hương', back: false),
-                routes: [
-                  GoRoute(
-                      path: 'add',
-                      builder: (_, __) =>
-                          ph('S12 · F11', 'Thêm người thân', 'Hương')),
-                  GoRoute(
-                      path: ':personId/edit',
-                      builder: (_, __) =>
-                          ph('N09 · F11', 'Sửa người thân', 'Hương')),
-                  GoRoute(
-                      path: ':personId/share',
-                      builder: (_, __) =>
-                          ph('S17 · F11', 'Nhắn tin cho người thân', 'Hương')),
-                ]),
+            GoRoute(path: '/family', builder: (_, __) => const FamilyScreen()),
           ]),
         ],
       ),

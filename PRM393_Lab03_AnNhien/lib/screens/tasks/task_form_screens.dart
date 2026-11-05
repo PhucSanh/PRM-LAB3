@@ -7,17 +7,19 @@ import '../../theme/app_colors.dart';
 import '../../theme/app_spacing.dart';
 import '../../viewmodels/task_form_view_model.dart';
 import '../../widgets/app_button.dart';
+import '../../widgets/app_back_bar.dart';
+import '../../widgets/botanical_scene.dart';
 import '../../widgets/app_text_field.dart';
 import '../../widgets/choice_group.dart';
 import '../../widgets/confirm_dialog.dart';
 import '../../widgets/form_parts.dart';
 
 const _activities = <_Activity>[
-  _Activity('move', 'Đi bộ nhẹ nhàng', Icons.directions_walk),
-  _Activity('plant', 'Chăm cây', Icons.local_florist_outlined),
-  _Activity('family', 'Gọi người thân', Icons.phone_in_talk_outlined),
-  _Activity('eighty', 'Ăn sáng chậm rãi', Icons.restaurant_outlined),
-  _Activity('tea', 'Uống trà với bạn', Icons.local_cafe_outlined),
+  _Activity('move', 'Đi bộ nhẹ nhàng', Icons.directions_walk_rounded),
+  _Activity('plant', 'Chăm cây', Icons.local_florist_rounded),
+  _Activity('family', 'Gọi người thân', Icons.phone_in_talk_rounded),
+  _Activity('eighty', 'Ăn sáng chậm rãi', Icons.restaurant_rounded),
+  _Activity('tea', 'Uống trà với bạn', Icons.local_cafe_rounded),
 ];
 
 class _Activity {
@@ -61,22 +63,20 @@ class _ActivitySelectionScreenState
     final vm = ref.read(taskFormViewModelProvider.notifier);
     final items = expanded ? _activities : _activities.take(3).toList();
     return Scaffold(
-      appBar: AppBar(
-          leading: BackButton(onPressed: () => context.pop()),
-          title: const Text('Quay lại'),
-          actions: const [
-            Padding(
-                padding: EdgeInsets.only(right: AppSpacing.screen),
-                child: Center(child: Text('Bước 1/2')))
-          ]),
+      appBar: AppBackBar.adaptive(context,
+          step: 'Bước 1/2',
+          onBack: () =>
+              context.canPop() ? context.pop() : context.go('/calendar')),
       bottomNavigationBar: SafeArea(
           child: Padding(
               padding: const EdgeInsets.all(AppSpacing.screen),
               child: AppButton(
                   label: 'Tiếp tục',
-                  icon: Icons.arrow_forward,
+                  icon: Icons.arrow_forward_rounded,
                   onPressed: () => context.push('/today/add/time')))),
       body: ListView(padding: AppSpacing.screenPadding, children: [
+        const BotanicalScene(height: 140, branch: false),
+        const SizedBox(height: AppSpacing.lg),
         Text('Bác muốn làm gì?',
             style: Theme.of(context).textTheme.headlineMedium),
         const SizedBox(height: AppSpacing.xl),
@@ -92,14 +92,15 @@ class _ActivitySelectionScreenState
           Expanded(
               child: AppButton(
                   label: 'Nói việc',
-                  icon: Icons.mic_none,
+                  icon: Icons.mic_none_rounded,
                   kind: AppButtonKind.secondary,
                   onPressed: () => context.push('/today/voice'))),
           const SizedBox(width: AppSpacing.md),
           Expanded(
               child: AppButton(
                   label: expanded ? 'Thu gọn' : 'Xem thêm',
-                  icon: expanded ? Icons.expand_less : Icons.add,
+                  icon:
+                      expanded ? Icons.expand_less_rounded : Icons.add_rounded,
                   kind: AppButtonKind.secondary,
                   onPressed: () => setState(() => expanded = !expanded))),
         ]),
@@ -150,8 +151,8 @@ class _ActivityChoice extends StatelessWidget {
                               style: Theme.of(context).textTheme.titleLarge)),
                       Icon(
                           selected
-                              ? Icons.check_circle
-                              : Icons.radio_button_unchecked,
+                              ? Icons.check_circle_rounded
+                              : Icons.radio_button_unchecked_rounded,
                           color: selected ? scheme.primary : scheme.outline,
                           size: 40),
                       const SizedBox(width: AppSpacing.sm),
@@ -209,17 +210,19 @@ class _TaskConfigureScreenState extends ConsumerState<TaskConfigureScreen> {
     final state = ref.read(taskFormViewModelProvider);
     if (!state.isDirty) return true;
     final leave = await showConfirmDialog<bool>(context,
-        icon: Icons.info_outline,
+        icon: Icons.info_outline_rounded,
         title: 'Chưa lưu thay đổi',
         message: 'Nếu rời khỏi đây, phần vừa chỉnh sẽ không được lưu.',
         options: const [
           ConfirmOption(
               label: 'Tiếp tục chỉnh',
-              icon: Icons.edit_outlined,
+              icon: Icons.edit_rounded,
               value: false,
               kind: AppButtonKind.primary),
           ConfirmOption(
-              label: 'Bỏ thay đổi', icon: Icons.delete_outline, value: true),
+              label: 'Bỏ thay đổi',
+              icon: Icons.delete_outline_rounded,
+              value: true),
         ]);
     return leave ?? false;
   }
@@ -249,24 +252,23 @@ class _TaskConfigureScreenState extends ConsumerState<TaskConfigureScreen> {
         Navigator.of(this.context).pop();
       },
       child: Scaffold(
-        appBar: AppBar(
-            leading: BackButton(onPressed: () async {
-              if (await _onWillPop() && context.mounted) context.pop();
-            }),
-            title: Text(edit ? 'Sửa việc' : 'Quay lại'),
-            actions: edit
-                ? null
-                : const [
-                    Padding(
-                        padding: EdgeInsets.only(right: AppSpacing.screen),
-                        child: Center(child: Text('Bước 2/2')))
-                  ]),
+        appBar: AppBackBar.adaptive(context,
+            backLabel: edit ? 'Sửa việc' : 'Quay lại',
+            step: edit ? null : 'Bước 2/2', onBack: () async {
+          if (await _onWillPop() && context.mounted) {
+            if (context.canPop()) {
+              context.pop();
+            } else {
+              context.go('/calendar');
+            }
+          }
+        }),
         bottomNavigationBar: SafeArea(
             child: Padding(
                 padding: const EdgeInsets.all(AppSpacing.screen),
                 child: AppButton(
                     label: edit ? 'Lưu thay đổi' : 'Lưu việc này',
-                    icon: Icons.save_outlined,
+                    icon: Icons.save_rounded,
                     onPressed: () async {
                       final saved = await vm.save();
                       if (!context.mounted) return;
@@ -277,7 +279,7 @@ class _TaskConfigureScreenState extends ConsumerState<TaskConfigureScreen> {
                             action: SnackBarAction(
                                 label: 'Hoàn tác',
                                 onPressed: vm.undoLastMutation)));
-                        context.go('/today');
+                        context.go('/calendar');
                       } else if (saved) {
                         context.go('/today/add/result');
                       }
@@ -290,7 +292,7 @@ class _TaskConfigureScreenState extends ConsumerState<TaskConfigureScreen> {
                 style: Theme.of(context).textTheme.headlineMedium),
           AppTextField(
               label: 'Tên việc',
-              icon: Icons.edit_outlined,
+              icon: Icons.edit_rounded,
               hint: 'Đi bộ buổi sáng',
               controller: _title,
               errorText:
@@ -315,7 +317,7 @@ class _TaskConfigureScreenState extends ConsumerState<TaskConfigureScreen> {
                         .toList())
           ],
           const SizedBox(height: AppSpacing.lg),
-          const _SectionTitle(icon: Icons.schedule_outlined, text: 'Giờ làm'),
+          const _SectionTitle(icon: Icons.schedule_rounded, text: 'Giờ làm'),
           _PickerTile(
               text: _time(state),
               onTap: () async {
@@ -333,7 +335,7 @@ class _TaskConfigureScreenState extends ConsumerState<TaskConfigureScreen> {
                     ?.copyWith(color: Theme.of(context).colorScheme.error)),
           ],
           const SizedBox(height: AppSpacing.lg),
-          const _SectionTitle(icon: Icons.repeat, text: 'Lặp lại'),
+          const _SectionTitle(icon: Icons.repeat_rounded, text: 'Lặp lại'),
           ChoiceGroup<RepeatRule>(
               options: const [
                 ChoiceOption(value: RepeatRule.daily, label: 'Mỗi ngày'),
@@ -354,7 +356,7 @@ class _TaskConfigureScreenState extends ConsumerState<TaskConfigureScreen> {
               }),
           const SizedBox(height: AppSpacing.lg),
           const _SectionTitle(
-              icon: Icons.calendar_month_outlined, text: 'Ngày làm'),
+              icon: Icons.calendar_month_rounded, text: 'Ngày làm'),
           _PickerTile(
               text: state.date == null
                   ? 'Chọn ngày'
@@ -367,14 +369,14 @@ class _TaskConfigureScreenState extends ConsumerState<TaskConfigureScreen> {
           SwitchListTile.adaptive(
               value: state.remind,
               onChanged: vm.setRemind,
-              title:
-                  const FieldLabel('Nhắc nhở', icon: Icons.notifications_none),
+              title: const FieldLabel('Nhắc nhở',
+                  icon: Icons.notifications_none_rounded),
               subtitle: Text(state.remind ? 'Bật' : 'Tắt')),
           if (edit) ...[
             const SizedBox(height: AppSpacing.lg),
             AppButton(
                 label: 'Xóa việc',
-                icon: Icons.delete_outline,
+                icon: Icons.delete_outline_rounded,
                 kind: AppButtonKind.dangerOutline,
                 onPressed: () => _confirmDelete(context, state, vm))
           ],
@@ -392,7 +394,7 @@ class _TaskConfigureScreenState extends ConsumerState<TaskConfigureScreen> {
     }
     if (scope == null || !context.mounted) return;
     final confirmed = await showConfirmDialog<bool>(context,
-        icon: Icons.delete_outline,
+        icon: Icons.delete_outline_rounded,
         title: 'Xóa việc “${state.title}”?',
         message: scope == ChangeScope.once
             ? 'Chỉ xóa lần này. Ngày khác vẫn giữ.'
@@ -401,12 +403,12 @@ class _TaskConfigureScreenState extends ConsumerState<TaskConfigureScreen> {
         options: const [
           ConfirmOption(
               label: 'Không xóa, giữ lại',
-              icon: Icons.close,
+              icon: Icons.close_rounded,
               value: false,
               kind: AppButtonKind.primary),
           ConfirmOption(
               label: 'Xóa khỏi lịch',
-              icon: Icons.delete_outline,
+              icon: Icons.delete_outline_rounded,
               value: true,
               kind: AppButtonKind.dangerOutline),
         ]);
@@ -416,7 +418,7 @@ class _TaskConfigureScreenState extends ConsumerState<TaskConfigureScreen> {
           content: Text('Đã xóa ${state.title} khỏi lịch.'),
           action: SnackBarAction(
               label: 'Hoàn tác', onPressed: vm.undoLastMutation)));
-      context.go('/today');
+      context.go('/calendar');
     }
   }
 }
@@ -463,7 +465,7 @@ class _PickerTile extends StatelessWidget {
       onPressed: onTap,
       child: Row(children: [
         Expanded(child: Text(text)),
-        const Icon(Icons.keyboard_arrow_down)
+        const Icon(Icons.keyboard_arrow_down_rounded)
       ]));
 }
 
@@ -486,18 +488,18 @@ class _TaskDateScreenState extends State<TaskDateScreen> {
               child: Column(mainAxisSize: MainAxisSize.min, children: [
                 AppButton(
                     label: 'Xong',
-                    icon: Icons.check,
+                    icon: Icons.check_rounded,
                     onPressed: () => context.pop(selected)),
                 const SizedBox(height: AppSpacing.sm),
                 AppButton(
                     label: 'Hủy',
-                    icon: Icons.close,
+                    icon: Icons.close_rounded,
                     kind: AppButtonKind.secondary,
                     onPressed: context.pop)
               ]))),
       body: ListView(padding: AppSpacing.screenPadding, children: [
         const _SectionTitle(
-            icon: Icons.calendar_month_outlined, text: 'Chọn ngày'),
+            icon: Icons.calendar_month_rounded, text: 'Chọn ngày'),
         Text('Chọn ngày, rồi bấm Xong để xác nhận.',
             style: Theme.of(context).textTheme.bodyLarge),
         CalendarDatePicker(
@@ -540,18 +542,18 @@ class _TaskRepeatScreenState extends ConsumerState<TaskRepeatScreen> {
               child: Column(mainAxisSize: MainAxisSize.min, children: [
                 AppButton(
                     label: 'Lưu các ngày đã chọn',
-                    icon: Icons.save_outlined,
+                    icon: Icons.save_rounded,
                     onPressed:
                         selected.isEmpty ? null : () => context.pop(selected)),
                 const SizedBox(height: AppSpacing.sm),
                 AppButton(
                     label: 'Hủy',
-                    icon: Icons.close,
+                    icon: Icons.close_rounded,
                     kind: AppButtonKind.secondary,
                     onPressed: context.pop)
               ]))),
       body: ListView(padding: AppSpacing.screenPadding, children: [
-        const _SectionTitle(icon: Icons.repeat, text: 'Lặp lại'),
+        const _SectionTitle(icon: Icons.repeat_rounded, text: 'Lặp lại'),
         Text('Chọn những ngày Bác muốn làm việc này.',
             style: Theme.of(context).textTheme.bodyLarge),
         const SizedBox(height: AppSpacing.lg),
@@ -588,7 +590,7 @@ class TaskScopeRoute extends StatelessWidget {
           child: Padding(
             padding: AppSpacing.screenPadding,
             child: Column(mainAxisSize: MainAxisSize.min, children: [
-              const Icon(Icons.repeat, size: 80),
+              const Icon(Icons.repeat_rounded, size: 80),
               const SizedBox(height: AppSpacing.lg),
               Text('Thay đổi lần nào?',
                   style: Theme.of(context).textTheme.headlineMedium),
@@ -597,18 +599,18 @@ class TaskScopeRoute extends StatelessWidget {
               const SizedBox(height: AppSpacing.lg),
               AppButton(
                   label: 'Chỉ lần này',
-                  icon: Icons.calendar_today_outlined,
+                  icon: Icons.calendar_today_rounded,
                   onPressed: () => context.pop(ChangeScope.once)),
               const SizedBox(height: AppSpacing.sm),
               AppButton(
                   label: 'Lần này và các lần sau',
-                  icon: Icons.date_range_outlined,
+                  icon: Icons.date_range_rounded,
                   kind: AppButtonKind.secondary,
                   onPressed: () => context.pop(ChangeScope.thisAndFollowing)),
               const SizedBox(height: AppSpacing.sm),
               AppButton(
                   label: 'Giữ nguyên',
-                  icon: Icons.close,
+                  icon: Icons.close_rounded,
                   kind: AppButtonKind.text,
                   onPressed: context.pop),
             ]),
@@ -643,7 +645,10 @@ class TaskSaveStatusScreen extends ConsumerWidget {
                 child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Icon(error ? Icons.error_outline : Icons.sync,
+                      Icon(
+                          error
+                              ? Icons.error_outline_rounded
+                              : Icons.sync_rounded,
                           size: 112,
                           color: error
                               ? Theme.of(context).colorScheme.error
@@ -663,21 +668,21 @@ class TaskSaveStatusScreen extends ConsumerWidget {
                       if (error) ...[
                         AppButton(
                             label: 'Thử lại',
-                            icon: Icons.refresh,
+                            icon: Icons.refresh_rounded,
                             onPressed: () => ref
                                 .read(taskFormViewModelProvider.notifier)
                                 .save()),
                         const SizedBox(height: AppSpacing.sm),
                         AppButton(
                             label: 'Quay lại sửa',
-                            icon: Icons.edit_outlined,
+                            icon: Icons.edit_rounded,
                             kind: AppButtonKind.secondary,
                             onPressed: onBackToForm)
                       ] else
                         AppButton(
                             label: 'Về trang Hôm nay',
-                            icon: Icons.wb_sunny_outlined,
-                            onPressed: () => context.go('/today'))
+                            icon: Icons.wb_sunny_rounded,
+                            onPressed: () => context.go('/calendar'))
                     ]))));
   }
 }
@@ -697,12 +702,12 @@ class TaskSavedScreen extends ConsumerWidget {
                 child: Column(mainAxisSize: MainAxisSize.min, children: [
                   AppButton(
                       label: 'Về trang Hôm nay',
-                      icon: Icons.wb_sunny_outlined,
-                      onPressed: () => context.go('/today')),
+                      icon: Icons.wb_sunny_rounded,
+                      onPressed: () => context.go('/calendar')),
                   const SizedBox(height: AppSpacing.sm),
                   AppButton(
                       label: 'Thêm việc khác',
-                      icon: Icons.add,
+                      icon: Icons.add_rounded,
                       kind: AppButtonKind.secondary,
                       onPressed: () {
                         ref
@@ -721,7 +726,7 @@ class TaskSavedScreen extends ConsumerWidget {
                         child: Column(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              const Icon(Icons.save_outlined, size: 112),
+                              const Icon(Icons.save_rounded, size: 112),
                               const SizedBox(height: AppSpacing.lg),
                               Text('Đã lưu xong!',
                                   style: Theme.of(context)
@@ -760,7 +765,7 @@ Future<(int, int, bool)?> showTaskTimeDialog(
                     .isBefore(now);
             return AlertDialog(
                 title: const Row(mainAxisSize: MainAxisSize.min, children: [
-                  Icon(Icons.schedule_outlined),
+                  Icon(Icons.schedule_rounded),
                   SizedBox(width: AppSpacing.sm),
                   Text('Giờ làm')
                 ]),
@@ -835,21 +840,23 @@ Future<(int, int, bool)?> showTaskTimeDialog(
 
 Future<ChangeScope?> showScopeDialog(BuildContext context, String title) =>
     showConfirmDialog<ChangeScope?>(context,
-        icon: Icons.repeat,
+        icon: Icons.repeat_rounded,
         title: 'Thay đổi lần nào?',
         message: '$title, lặp lại',
         details: const [
-          ConfirmDetail(icon: Icons.info_outline, text: 'Lịch sử được giữ lại')
+          ConfirmDetail(
+              icon: Icons.info_outline_rounded, text: 'Lịch sử được giữ lại')
         ],
         options: const [
           ConfirmOption(
               label: 'Chỉ lần này',
-              icon: Icons.calendar_today_outlined,
+              icon: Icons.calendar_today_rounded,
               value: ChangeScope.once,
               kind: AppButtonKind.primary),
           ConfirmOption(
               label: 'Lần này và các lần sau',
-              icon: Icons.date_range_outlined,
+              icon: Icons.date_range_rounded,
               value: ChangeScope.thisAndFollowing),
-          ConfirmOption(label: 'Giữ nguyên', icon: Icons.close, value: null)
+          ConfirmOption(
+              label: 'Giữ nguyên', icon: Icons.close_rounded, value: null)
         ]);

@@ -41,7 +41,7 @@ class DataScreen extends StatelessWidget {
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
     return Scaffold(
-      appBar: const AppBackBar(),
+      appBar: AppBackBar.adaptive(context),
       body: SafeArea(
         top: false,
         child:
