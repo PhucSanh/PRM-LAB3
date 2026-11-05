@@ -48,6 +48,18 @@ class TaskFormState {
   final String? editingId;
   final TaskItem? original;
 
+  /// Chỉ chặn giờ đã qua khi Bác đang đặt việc cho đúng ngày hôm nay.
+  bool get isTimeInPastToday {
+    final selectedDate = date;
+    if (selectedDate == null) return false;
+    final now = DateTime.now();
+    final isToday = selectedDate.year == now.year &&
+        selectedDate.month == now.month &&
+        selectedDate.day == now.day;
+    if (!isToday) return false;
+    return DateTime(now.year, now.month, now.day, hour, minute).isBefore(now);
+  }
+
   bool get isDirty => mode == TaskFormMode.edit
       ? title != original?.title ||
           hour != original?.hour ||
@@ -106,7 +118,20 @@ class TaskFormViewModel extends Notifier<TaskFormState> {
   @override
   TaskFormState build() => const TaskFormState();
 
-  void startCreate() => state = TaskFormState(date: DateTime.now());
+  /// Khởi tạo F4 bằng việc mặc định và giờ tròn kế tiếp để Bác chỉ cần sửa khi
+  /// muốn. Ví dụ 15:33 → 16:00; 23:33 → ngày kế tiếp lúc 0:00.
+  void startCreate() {
+    final now = DateTime.now();
+    final nextHour = DateTime(now.year, now.month, now.day, now.hour + 1);
+    state = TaskFormState(
+      activity: 'move',
+      title: 'Đi bộ nhẹ nhàng',
+      date: DateTime(nextHour.year, nextHour.month, nextHour.day),
+      hour: nextHour.hour,
+      minute: 0,
+      isAm: nextHour.hour < 12,
+    );
+  }
 
   Future<bool> startEdit(String id) async {
     final tasks =
@@ -129,8 +154,14 @@ class TaskFormViewModel extends Notifier<TaskFormState> {
     return true;
   }
 
-  void selectActivity(String activity) =>
-      state = state.copyWith(activity: activity);
+  void selectActivity(String activity, {String? suggestedTitle}) =>
+      state = state.copyWith(
+          activity: activity,
+          title: state.mode == TaskFormMode.create && suggestedTitle != null
+              ? suggestedTitle
+              : state.title,
+          showValidation: false,
+          clearError: true);
   void setTitle(String value) => state =
       state.copyWith(title: value, showValidation: false, clearError: true);
   void setDate(DateTime value) => state = state.copyWith(date: value);
@@ -143,7 +174,7 @@ class TaskFormViewModel extends Notifier<TaskFormState> {
       state.copyWith(saveState: TaskSaveState.editing, clearError: true);
 
   Future<bool> save({ChangeScope? scope}) async {
-    if (state.title.trim().isEmpty) {
+    if (state.title.trim().isEmpty || state.isTimeInPastToday) {
       state = state.copyWith(showValidation: true);
       return false;
     }

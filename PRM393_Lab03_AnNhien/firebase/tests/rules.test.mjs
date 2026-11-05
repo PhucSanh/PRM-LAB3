@@ -130,6 +130,17 @@ test('completion status is per day; owner only; deterministic identity and serve
   await assertFails(setDoc(doc(db('mom'),'users/mom/completions/wrong'),completion));
   await assertFails(setDoc(doc(db('mom'),'users/mom/completions/missing_2026-11-04'),{...completion,taskId:'missing'}));
 });
+test('reschedule is occurrence-specific, validated, and owner-readable',async()=>{
+  await assertSucceeds(setDoc(doc(db('mom'),'users/mom/tasks/t'),v2));
+  const moved={taskId:'t',sourceDate:'2026-11-04',targetDate:'2026-11-06',hour:15,minute:30,
+    history:[{fromDate:'2026-11-04',fromHour:9,fromMinute:0}],updatedAt:serverTimestamp()};
+  const own=doc(db('mom'),'users/mom/taskReschedules/t_2026-11-04');
+  await assertSucceeds(setDoc(own,moved));
+  await assertSucceeds(getDoc(own));
+  await assertFails(setDoc(doc(db('mom'),'users/mom/taskReschedules/wrong'),moved));
+  await assertFails(setDoc(doc(db('mom'),'users/mom/taskReschedules/t_2026-11-04'),{...moved,hour:24}));
+  await assertFails(setDoc(doc(db('stranger'),'users/mom/taskReschedules/t_2026-11-04'),moved));
+});
 test('profile cannot forge pairing or change established role; settings merge is valid',async()=>{
   const own=doc(db('mom'),'users/mom');
   await assertFails(setDoc(own,{role:'elder',pairedMomUid:'victim'}));

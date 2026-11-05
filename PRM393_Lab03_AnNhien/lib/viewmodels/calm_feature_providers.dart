@@ -58,10 +58,16 @@ class CalendarActions extends Notifier<bool> {
     state = true;
     try {
       final today = ref.read(todayViewModelProvider.notifier);
+      // Let the notifier's initial microtask start before awaiting our load.
+      await Future<void>.value();
       if (undo) {
         await today.undo(task.id, previousStatus: task.status);
       } else {
-        await today.markDone(task.id);
+        if (today.taskById(task.id) == null) await today.load();
+        if (!await today.markDone(task.id, source: 'calendar')) {
+          throw const AppException(
+              'Chưa thể cập nhật hoạt động. Vui lòng thử lại.');
+        }
       }
       if (ref.mounted) ref.invalidate(calendarTasksProvider(dateKey(day)));
     } finally {

@@ -22,23 +22,29 @@ Future<void> initialLoad(ProviderContainer c) async {
   }
 }
 
-class DelayedAnalytics extends FakeAnalyticsService {
-  final pending = Completer<void>();
+class _ThrowingTaskRepository implements TaskRepository {
   @override
-  Future<void> logEvent(String name, [Map<String, Object>? params]) =>
-      pending.future;
-}
+  Future<void> delete(String taskId) async {}
 
-class RefreshRepository extends FakeTaskRepository {
-  RefreshRepository(super.seed);
-  bool fail = false;
-  Completer<List<TaskItem>>? pending;
   @override
-  Future<List<TaskItem>> tasksForDay(DateTime day) async {
-    if (fail) throw StateError('offline');
-    if (pending != null) return pending!.future;
-    return super.tasksForDay(day);
-  }
+  Future<void> save(TaskItem task) async {}
+
+  @override
+  Future<void> setStatus(String taskId, TaskStatus status) async {}
+
+  @override
+  Future<TaskRescheduleChange> reschedule(TaskItem task,
+          {required DateTime targetDay,
+          required int hour,
+          required int minute}) async =>
+      throw StateError('network unavailable');
+
+  @override
+  Future<void> restoreReschedule(TaskRescheduleChange change) async {}
+
+  @override
+  Future<List<TaskItem>> tasksForDay(DateTime day) =>
+      Future<List<TaskItem>>.error(StateError('network unavailable'));
 }
 
 void main() {
@@ -79,84 +85,90 @@ void main() {
     data = (c.read(todayViewModelProvider) as UiData<TodayData>).data;
     expect(data.doneCount, 2);
   });
-  test('postponed remains actionable, skipped does not become next', () {
-    const data = TodayData(tasks: [
-      TaskItem(
-          id: 'skip',
-          title: 'Bỏ qua',
-          habitKey: 'move',
-          hour: 7,
-          minute: 0,
-          status: TaskStatus.skipped),
-      TaskItem(
-          id: 'later',
-          title: 'Đã dời',
-          habitKey: 'move',
-          hour: 8,
-          minute: 0,
-          status: TaskStatus.postponed),
-      TaskItem(
-          id: 'pending',
-          title: 'Tiếp theo',
-          habitKey: 'tea',
-          hour: 9,
-          minute: 0),
-    ]);
-    expect(data.next?.id, 'later');
-    expect(data.remaining.map((task) => task.id), ['later', 'pending']);
-    expect(data.skippedCount, 1);
-  });
 
-  test('completion returns without waiting for analytics', () async {
-    final analytics = DelayedAnalytics();
-    final c = ProviderContainer(overrides: [
-      taskRepositoryProvider.overrideWithValue(FakeTaskRepository(const [
-        TaskItem(id: 'a', title: 'Đi bộ', habitKey: 'move', hour: 8, minute: 0)
-      ])),
-      analyticsServiceProvider.overrideWithValue(analytics),
-      crashServiceProvider.overrideWithValue(FakeCrashService()),
+  test('dời, bỏ qua và hoàn tác giữ cùng nguồn task', () async {
+    final now = DateTime.now();
+    final c = containerWith([
+      TaskItem(
+          id: 'a',
+          title: 'Đi bộ',
+          habitKey: 'move',
+          hour: 9,
+          minute: 0,
+          repeat: RepeatRule.once,
+          startDate: dateKey(now)),
     ]);
-    addTearDown(() {
-      analytics.pending.complete();
-      c.dispose();
-    });
+    final vm = c.read(todayViewModelProvider.notifier);
     await initialLoad(c);
-    await c
-        .read(todayViewModelProvider.notifier)
-        .markDone('a')
-        .timeout(const Duration(seconds: 1));
-    expect((c.read(todayViewModelProvider) as UiData<TodayData>).data.doneCount,
-        1);
+
+    final expected = DateTime.now().add(const Duration(minutes: 30));
+    expect(await vm.postpone('a', PostponeOption.thirtyMinutes), isTrue);
+    var task =
+        (await c.read(taskRepositoryProvider).tasksForDay(expected)).single;
+    expect(task.status, TaskStatus.pending);
+    expect(task.hour, expected.hour);
+    expect(task.minute, expected.minute);
+
+    expect(await vm.undoLastAction(), isTrue);
+    task = (await c.read(taskRepositoryProvider).tasksForDay(DateTime.now()))
+        .single;
+    expect(task.status, TaskStatus.pending);
+    expect(task.minute, 0);
+
+    final oneHourLater = DateTime.now().add(const Duration(hours: 1));
+    expect(await vm.postpone('a', PostponeOption.oneHour), isTrue);
+    task =
+        (await c.read(taskRepositoryProvider).tasksForDay(oneHourLater)).single;
+    expect(task.hour, oneHourLater.hour);
+    expect(task.minute, oneHourLater.minute);
+    expect(await vm.undoLastAction(), isTrue);
+
+    expect(await vm.skip('a'), isTrue);
+    task =
+        (c.read(todayViewModelProvider) as UiData<TodayData>).data.tasks.single;
+    expect(task.status, TaskStatus.skipped);
   });
 
   test(
-      'refresh keeps cached tasks on error and cannot overwrite a newer completion',
+      'dời sang ngày mai vẫn là việc chưa hoàn thành và undo khôi phục hôm nay',
       () async {
-    const task =
-        TaskItem(id: 'a', title: 'Đi bộ', habitKey: 'move', hour: 8, minute: 0);
-    final repository = RefreshRepository([task]);
+    final now = DateTime.now();
+    final c = containerWith([
+      TaskItem(
+          id: 'a',
+          title: 'Đi bộ',
+          habitKey: 'move',
+          hour: 9,
+          minute: 0,
+          repeat: RepeatRule.once,
+          startDate: dateKey(now)),
+    ]);
+    final vm = c.read(todayViewModelProvider.notifier);
+    await initialLoad(c);
+
+    expect(await vm.postpone('a', PostponeOption.tomorrow), isTrue);
+    expect(c.read(todayViewModelProvider), isA<UiEmpty<TodayData>>());
+    final tomorrow = DateTime.now().add(const Duration(days: 1));
+    final moved = await c.read(taskRepositoryProvider).tasksForDay(tomorrow);
+    expect(moved, hasLength(1));
+    expect(moved.single.status, TaskStatus.pending);
+    expect(moved.single.hour, 9);
+
+    expect(await vm.undoLastAction(), isTrue);
+    final today = c.read(todayViewModelProvider) as UiData<TodayData>;
+    expect(today.data.tasks.single.hour, 9);
+    expect(await c.read(taskRepositoryProvider).tasksForDay(tomorrow), isEmpty);
+  });
+
+  test('lỗi tải lịch → UiError và được ghi nhận', () async {
     final c = ProviderContainer(overrides: [
-      taskRepositoryProvider.overrideWithValue(repository),
+      taskRepositoryProvider.overrideWithValue(_ThrowingTaskRepository()),
       analyticsServiceProvider.overrideWithValue(FakeAnalyticsService()),
       crashServiceProvider.overrideWithValue(FakeCrashService()),
     ]);
     addTearDown(c.dispose);
     await initialLoad(c);
-    final vm = c.read(todayViewModelProvider.notifier);
-    repository.fail = true;
-    await vm.load();
-    var data = (c.read(todayViewModelProvider) as UiData<TodayData>).data;
-    expect(data.tasks.single.id, 'a');
-    expect(data.refreshError, isNotNull);
-    repository.fail = false;
-    repository.pending = Completer<List<TaskItem>>();
-    final refresh = vm.load();
-    expect(c.read(todayViewModelProvider), isA<UiData<TodayData>>());
-    await vm.markDone('a');
-    repository.pending!.complete([task]);
-    await refresh;
-    data = (c.read(todayViewModelProvider) as UiData<TodayData>).data;
-    expect(data.doneCount, 1);
-    expect(data.refreshError, isNull);
+
+    expect(c.read(todayViewModelProvider), isA<UiError<TodayData>>());
   });
 }

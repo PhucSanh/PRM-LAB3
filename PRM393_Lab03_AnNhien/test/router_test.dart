@@ -13,7 +13,6 @@ const _placeholders = {
 };
 
 const _migratedRoutes = {
-  '/today/task/t1': 'Tưới rau ngoài vườn',
   '/today/all': 'Lịch của Bác',
   '/week': 'Lịch của Bác',
   '/week/2026-11-02': 'Lịch của Bác',
@@ -35,6 +34,11 @@ const _f4Routes = <String, String>{
   '/task/repeat': 'Chọn ngày trong tuần',
   '/task/scope': 'Thay đổi lần nào?',
   '/today/task/t1/edit': 'Sửa việc',
+};
+
+/// F3 không còn là placeholder: S04 phải lấy được task từ repository dùng chung.
+const _f3Routes = <String, String>{
+  '/today/task/t1': 'Việc của Bác',
 };
 
 const _editTask = TaskItem(
@@ -84,6 +88,26 @@ void main() {
         expect(find.text(_editTask.title), findsOneWidget);
         expect(find.byType(CircularProgressIndicator), findsNothing);
       }
+
+      await tester.pumpWidget(const SizedBox.shrink());
+      await tester.pump(const Duration(milliseconds: 400));
+    });
+  }
+
+  for (final MapEntry(key: path, value: content) in _f3Routes.entries) {
+    testWidgets('$path → màn F3 thật', (tester) async {
+      final container = demoContainer(tasks: [_editTask]);
+      addTearDown(container.dispose);
+      await tester.pumpWidget(UncontrolledProviderScope(
+          container: container, child: const AnNhienApp()));
+      await tester.pumpAndSettle();
+
+      container.read(routerProvider).go(path);
+      await tester.pumpAndSettle();
+
+      expect(tester.takeException(), isNull);
+      expect(find.text(content), findsOneWidget);
+      expect(find.text(_editTask.title), findsOneWidget);
 
       await tester.pumpWidget(const SizedBox.shrink());
       await tester.pump(const Duration(milliseconds: 400));

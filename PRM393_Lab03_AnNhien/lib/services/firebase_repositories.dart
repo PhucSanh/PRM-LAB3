@@ -87,6 +87,7 @@ class FirebaseTaskRepository implements TaskRepository {
   @override
   Future<List<TaskItem>> tasksForDay(DateTime day) => data.run(() async {
         final tasks = await data.collection('tasks').get();
+        final rescheduleDocs = await data.collection('taskReschedules').get();
         final statuses = await data
             .collection('completions')
             .where('date', isEqualTo: dateKey(day))
@@ -100,15 +101,36 @@ class FirebaseTaskRepository implements TaskRepository {
         final templates = {
           for (final d in tasks.docs) d.id: TaskItem.fromMap(d.id, d.data())
         };
-        return tasks.docs
+        final dayKey = dateKey(day);
+        final reschedules = {
+          for (final d in rescheduleDocs.docs)
+            d.id: TaskReschedule.fromMap(d.data())
+        };
+        final scheduled = tasks.docs
             .map((d) => TaskItem.fromMap(d.id, d.data()))
-            .where((t) => t.occursOn(day))
+            .where((t) =>
+                t.occursOn(day) && !reschedules.containsKey('${t.id}_$dayKey'))
             .map((t) => t.copyWith(
                 status: resolveOccurrenceStatus(t, templates, byTask),
-                occurrenceDate: dateKey(day)))
-            .toList()
-          ..sort((a, b) =>
-              (a.hour * 60 + a.minute).compareTo(b.hour * 60 + b.minute));
+                occurrenceDate: dayKey,
+                rescheduleSourceDate: dayKey))
+            .toList();
+        for (final reschedule
+            in reschedules.values.where((r) => r.targetDate == dayKey)) {
+          final task = templates[reschedule.taskId];
+          if (task != null) {
+            scheduled.add(task.copyWith(
+              hour: reschedule.hour,
+              minute: reschedule.minute,
+              status: byTask[task.id] ?? TaskStatus.pending,
+              occurrenceDate: dayKey,
+              rescheduleSourceDate: reschedule.sourceDate,
+            ));
+          }
+        }
+        scheduled.sort((a, b) =>
+            (a.hour * 60 + a.minute).compareTo(b.hour * 60 + b.minute));
+        return scheduled;
       });
   @override
   Future<void> save(TaskItem task) => data.run(() async {
@@ -143,4 +165,52 @@ class FirebaseTaskRepository implements TaskRepository {
   @override
   Future<void> delete(String taskId) =>
       data.run(() => data.collection('tasks').doc(taskId).delete());
+
+  @override
+  Future<TaskRescheduleChange> reschedule(TaskItem task,
+          {required DateTime targetDay,
+          required int hour,
+          required int minute}) =>
+      data.run(() async {
+        final sourceDate =
+            task.rescheduleSourceDate ?? task.occurrenceDate ?? dateKey(today);
+        final key = '${task.id}_$sourceDate';
+        final doc = data.collection('taskReschedules').doc(key);
+        final snapshot = await doc.get();
+        final before =
+            snapshot.exists ? TaskReschedule.fromMap(snapshot.data()!) : null;
+        final history = [
+          ...?before?.history,
+          <String, Object?>{
+            'fromDate': before?.targetDate ?? sourceDate,
+            'fromHour': before?.hour ?? task.hour,
+            'fromMinute': before?.minute ?? task.minute,
+          },
+        ];
+        final next = TaskReschedule(
+          taskId: task.id,
+          sourceDate: sourceDate,
+          targetDate: dateKey(targetDay),
+          hour: hour,
+          minute: minute,
+          history: history,
+        );
+        await doc
+            .set({...next.toMap(), 'updatedAt': FieldValue.serverTimestamp()});
+        return TaskRescheduleChange(key: key, before: before);
+      });
+
+  @override
+  Future<void> restoreReschedule(TaskRescheduleChange change) =>
+      data.run(() async {
+        final doc = data.collection('taskReschedules').doc(change.key);
+        if (change.before == null) {
+          await doc.delete();
+        } else {
+          await doc.set({
+            ...change.before!.toMap(),
+            'updatedAt': FieldValue.serverTimestamp()
+          });
+        }
+      });
 }

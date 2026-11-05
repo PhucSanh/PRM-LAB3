@@ -28,6 +28,7 @@ class TaskItem {
       this.durationMinutes = 15,
       this.revision = 0,
       this.occurrenceDate,
+      this.rescheduleSourceDate,
       this.completionSourceId});
   final String id, title, habitKey;
   final int hour, minute, durationMinutes, revision;
@@ -40,6 +41,10 @@ class TaskItem {
 
   /// Chỉ ở bộ nhớ; được dùng khi hiển thị kết quả tasksForDay.
   final String? occurrenceDate;
+
+  /// Ngày gốc của occurrence đã được dời. Chỉ dùng ở bộ nhớ khi đọc lịch;
+  /// schema task gốc không bị thay đổi bởi thao tác dời một lần.
+  final String? rescheduleSourceDate;
 
   /// Parent series for pre-existing completion records after a scope split.
   /// A completion recorded on this task's own ID always takes precedence.
@@ -125,6 +130,7 @@ class TaskItem {
           int? durationMinutes,
           int? revision,
           String? occurrenceDate,
+          String? rescheduleSourceDate,
           String? completionSourceId}) =>
       TaskItem(
           id: id ?? this.id,
@@ -144,6 +150,8 @@ class TaskItem {
           durationMinutes: durationMinutes ?? this.durationMinutes,
           revision: revision ?? this.revision,
           occurrenceDate: occurrenceDate ?? this.occurrenceDate,
+          rescheduleSourceDate:
+              rescheduleSourceDate ?? this.rescheduleSourceDate,
           completionSourceId: completionSourceId ?? this.completionSourceId);
 
   Map<String, Object?> toMap() => {

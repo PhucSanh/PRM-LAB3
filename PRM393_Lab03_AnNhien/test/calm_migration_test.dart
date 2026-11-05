@@ -211,6 +211,8 @@ void main() {
         tester, '/calendar/task/${task.id}?date=$day',
         repository: repository);
     await tapText(tester, 'Hoàn thành');
+    await tester.pump(const Duration(milliseconds: 610));
+    await tester.pumpAndSettle();
     final saved = repository.tasksForDay(vietnamToday());
     await tester.pump(const Duration(milliseconds: 310));
     expect((await saved).single.status, TaskStatus.done);
@@ -225,6 +227,28 @@ void main() {
             .read(calendarActionsProvider.notifier)
             .setDone(task, vietnamToday().add(const Duration(days: 1))),
         throwsException);
+    expect(tester.takeException(), isNull);
+    await closeApp(tester);
+  });
+  testWidgets('calendar completion restores postponed status on undo',
+      (tester) async {
+    final postponed = task.copyWith(status: TaskStatus.postponed);
+    final repository = FakeTaskRepository([postponed]);
+    final day = dateKey(vietnamToday());
+    await pumpApp(tester, '/calendar/task/${task.id}?date=$day',
+        repository: repository);
+    await tapText(tester, 'Hoàn thành');
+    await tester.pump(const Duration(milliseconds: 610));
+    await tester.pumpAndSettle();
+    final completed = repository.tasksForDay(vietnamToday());
+    await tester.pump(const Duration(milliseconds: 310));
+    expect((await completed).single.status, TaskStatus.done);
+    await tapText(tester, 'Hoàn tác');
+    await tester.pump(const Duration(milliseconds: 610));
+    await tester.pumpAndSettle();
+    final restored = repository.tasksForDay(vietnamToday());
+    await tester.pump(const Duration(milliseconds: 310));
+    expect((await restored).single.status, TaskStatus.postponed);
     expect(tester.takeException(), isNull);
     await closeApp(tester);
   });
