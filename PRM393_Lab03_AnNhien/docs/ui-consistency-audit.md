@@ -23,3 +23,12 @@ Nguồn hiện hành: palette VELORA của app, heading Be Vietnam Pro SemiBold 
 Không đổi ViewModel/service/model, schema, notification payload, scheduling, guard hoặc vai trò. Kiểm tra vẫn bao gồm save/undo, dirty confirmation, chọn ngày/lặp, đăng nhập/đăng xuất và deep link. Dashboard `/today` giữ bố cục theo phạm vi ban đầu; các component dùng chung trên đó nhận theme mới, không bị thay tính năng.
 
 TalkBack/VoiceOver và smoke với tài khoản production chưa được xác nhận trong lượt này; không có thiết bị adb kết nối. APK build từ `lib/main.dart` dùng Firebase thật, không phải preview tự đăng nhập.
+
+## Kết quả cuối
+
+- `flutter test`: **799 passed**, gồm toàn bộ golden comparison không dùng update mode.
+- `flutter analyze`: **No issues found**.
+- APK debug từ `lib/main.dart`: build thành công, giữ đăng nhập Google/Firebase bật mặc định.
+- Đã kiểm tra ảnh role/settings/activity/repeat và sửa hai lỗi đọc chữ thực tế: header Quay lại bị cắt, ô hoạt động bị bóp cột.
+- Thêm 20 golden ở 100%/200% cho các màn trước đây thiếu coverage; các luồng lưu/undo/auth/onboarding đều qua.
+- `git diff --check`: sạch. Không xác nhận cài/emulator smoke vì adb chưa có thiết bị kết nối.
