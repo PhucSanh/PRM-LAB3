@@ -76,4 +76,12 @@ abstract final class AppIcons {
   // Hồ sơ N06 (Figma `38:187`; F8 bước 03 đề xuất, F0 duyệt).
   static const smile = Icons.sentiment_satisfied_alt_outlined; // smile – "An Nhiên gọi Bác là"
   static const sunrise = Icons.wb_twilight; // sunrise – "Bác thức dậy lúc"
+
+  // Gia đình S09 (Figma `1:1993` / `26:2`; F11 bước 02 đề xuất, F0 – Sanh duyệt).
+  static const message = Icons.chat_bubble_outline; // message-square – "Nhắn tin"
+  static const userPlus = Icons.person_add_alt; // user-plus – "Thêm người thân"
+
+  // Thêm người thân S12 (Figma `14:120` / `1:2146`; F11 bước 03 đề xuất, F0 – Sanh duyệt).
+  static const contact = Icons.contact_page_outlined; // contact – "Chọn từ danh bạ"
+  static const search = Icons.search; // search – ô "Tìm tên"
 }

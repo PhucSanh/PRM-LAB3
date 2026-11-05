@@ -22,6 +22,8 @@ import '../viewmodels/account_view_model.dart';
 import '../viewmodels/today_view_model.dart';
 import '../services/providers.dart';
 import '../screens/sign_in/sign_in_screen.dart';
+import '../screens/family/family_screen.dart';
+import '../screens/family/relative_form_screen.dart';
 import '../screens/suggestion/suggestion_compose_screen.dart';
 import '../screens/suggestion/suggestion_review_screen.dart';
 import '../viewmodels/suggestion_review_view_model.dart' show SuggestionEntry;
@@ -180,8 +182,8 @@ final routerProvider = Provider<GoRouter>((ref) {
           ]),
           StatefulShellBranch(routes: [
             // F11 Gia đình – Hương
-            GoRoute(path: '/family', builder: (_, __) => ph('S09 · F11', 'Gia đình', 'Hương', back: false), routes: [
-              GoRoute(path: 'add', builder: (_, __) => ph('S12 · F11', 'Thêm người thân', 'Hương')),
+            GoRoute(path: '/family', builder: (_, __) => const FamilyScreen(), routes: [
+              GoRoute(path: 'add', builder: (_, __) => const RelativeFormScreen()),
               GoRoute(path: ':personId/edit', builder: (_, __) => ph('N09 · F11', 'Sửa người thân', 'Hương')),
               GoRoute(path: ':personId/share', builder: (_, __) => ph('S17 · F11', 'Nhắn tin cho người thân', 'Hương')),
             ]),

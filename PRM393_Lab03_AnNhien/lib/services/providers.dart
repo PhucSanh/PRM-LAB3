@@ -18,6 +18,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'analytics_service.dart';
 import 'auth_service.dart';
+import 'contact_launcher_service.dart';
+import 'contacts_service.dart';
 import 'crash_service.dart';
 import 'family_repository.dart';
 import 'habit_repository.dart';
@@ -87,6 +89,13 @@ final profileSetupServiceProvider =
 // mở /today/suggestions/:id; rules cho con cháu đã ghép nối tạo, mẹ cập nhật status / popupShown.
 final suggestionServiceProvider = Provider<SuggestionService>(
     (ref) => FakeSuggestionService(withSample: true, delay: Duration.zero));
+
+// F11 (Hương) thêm, đang trỏ bản Fake (danh bạ mẫu Figma S12 `1:2146`, đã cho phép khi hỏi).
+// TODO(Hiếu): bản thật khi có package (đề xuất trong PR F11: flutter_contacts, url_launcher).
+final contactsServiceProvider =
+    Provider<ContactsService>((ref) => FakeContactsService());
+final contactLauncherServiceProvider =
+    Provider<ContactLauncherService>((ref) => FakeContactLauncherService());
 
 /// F10 uses a labelled test PDF; F7 retains its own renderer contract.
 final demoReportServiceProvider = Provider<ReportService>((ref) =>
