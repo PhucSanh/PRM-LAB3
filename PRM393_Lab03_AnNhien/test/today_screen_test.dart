@@ -93,11 +93,16 @@ void main() {
     await tester.tap(find.byKey(const Key('s03-flashcard')));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 300));
-    await tester.scrollUntilVisible(find.text('Đã xong'), 300,
-        scrollable: find.byKey(const Key('s03-flashcards')));
-    await tester.tap(find.text('Đã xong'));
+    final completeButton = find.bySemanticsLabel('Đã xong');
+    await tester.scrollUntilVisible(completeButton, 300,
+        scrollable: find.byType(Scrollable).first);
+    // scrollUntilVisible dừng khi nút vừa ló ở đáy; cuộn thêm để xác nhận
+    // vùng chạm không bị thanh điều hướng của AppShell che.
+    await tester.drag(find.byType(Scrollable).first, const Offset(0, -160));
     await tester.pump();
-    await tester.tap(find.text('Đúng, đã xong'));
+    await tester.tap(completeButton);
+    await tester.pumpAndSettle();
+    await tester.tap(find.bySemanticsLabel('Đúng, đã xong'));
     await tester.pump();
     // Hoàn thành gọi lại nguồn task một lần để đồng bộ S04 trước khi điều
     // hướng; FakeTaskRepository có độ trễ 300ms cho mỗi lần đọc.

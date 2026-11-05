@@ -76,7 +76,14 @@ class _TaskDetail extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => ListView(
-        padding: const EdgeInsets.all(AppSpacing.screen),
+        // Màn này nằm trong AppShell có thanh điều hướng đáy. Chừa đủ phần
+        // cuộn cuối để các nút hành động (đặc biệt “Đã xong”) không bị thanh
+        // đó che ở màn hình thấp.
+        padding: const EdgeInsets.fromLTRB(
+            AppSpacing.screen,
+            AppSpacing.screen,
+            AppSpacing.screen,
+            AppSpacing.screen + AppSizes.navBar),
         children: [
           Semantics(
             header: true,
