@@ -35,6 +35,16 @@ service cloud.firestore {
         && (d.repeat in ['once','daily'] || d.repeat in ['weekly','someDays'] && d.weekdays.size() > 0
           || d.repeat == 'monthly' && (d.monthDays.size() > 0 || d.lastDayOfMonth));
     }
+    function validReschedule(d) {
+      return d.keys().hasOnly(['taskId','sourceDate','targetDate','hour','minute','history','updatedAt'])
+        && d.keys().hasAll(['taskId','sourceDate','targetDate','hour','minute','history','updatedAt'])
+        && d.taskId is string && d.taskId.size() > 0 && d.taskId.size() <= 128
+        && date(d.sourceDate) && date(d.targetDate)
+        && d.hour is int && d.hour >= 0 && d.hour <= 23
+        && d.minute is int && d.minute >= 0 && d.minute <= 59
+        && d.history is list && d.history.size() <= 50
+        && d.updatedAt == request.time;
+    }
     function validProfile(d) {
       return d.get('role',null) in [null,'elder','caregiver']
         && d.get('onboarded',false) is bool
@@ -104,6 +114,14 @@ service cloud.firestore {
           && request.resource.data.status in ['pending','done','postponed','skipped']
           && request.resource.data.updatedAt == request.time;
         allow delete: if owner(uid);
+      }
+      match /taskReschedules/{id} {
+        allow read: if owner(uid) || caregiver(uid);
+        allow create, update: if (owner(uid) || caregiver(uid))
+          && validReschedule(request.resource.data)
+          && id == request.resource.data.taskId + '_' + request.resource.data.sourceDate
+          && exists(/databases/$(database)/documents/users/$(uid)/tasks/$(request.resource.data.taskId));
+        allow delete: if owner(uid) || caregiver(uid);
       }
       match /suggestions/{id} {
         // Dismiss/partial state is private to Bác. Child has no status readback.

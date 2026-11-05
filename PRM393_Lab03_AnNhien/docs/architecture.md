@@ -120,7 +120,7 @@ Màn dùng `switch (state)` để vẽ đủ 4 trạng thái. Hành động mộ
 | `/welcome` · `/setup` · `/setup/notifications` | S01 · S02 · S13 / S13d | F2 | `/welcome` có (`WelcomeScreen`), `/setup` có (`SetupProfileScreen`, 3 state + DLG-WakeTime); `/setup/notifications` có (`NotificationsScreen`, S13 / S13d) |
 | `/setup/try-reminder` · `/setup/first-task` | N01–N03 · N04 → N05 → N18 → N19 | F2 | `/setup/try-reminder` có (`TryReminderScreen`, N01 / N02 / N03); `/setup/first-task` có (`FirstTaskScreen`, N04 / N05 / N18); N19 là state S03 của Khang |
 | `/today` (tab 0) | S03 + mọi state S03-*, ST-Empty, N17, G11 / G12 | F3 | có |
-| `/today/task/:id` · `/today/task/:id/edit` | S04 · S15 | F3 · F4 | placeholder |
+| `/today/task/:id` · `/today/task/:id/edit` | S04 · S15 | F3 · F4 | có (`TaskDetailScreen` · `TaskConfigureScreen`) |
 | `/today/add` · `/today/add/time` · `/today/add/result` | S05 · S06 · ST-Loading / Saved / Error, N16 | F4 | placeholder |
 | `/task/date` · `/task/repeat` · `/task/scope` | N11 · N12 · N13 (màn con, `pop(result)`) | F4 | placeholder |
 | `/today/voice` | V00–V05 | F5 | placeholder |
@@ -191,7 +191,7 @@ Mỗi ViewModel còn dùng `AnalyticsService` (ghi event) và `CrashService` (l�
 | `OnboardingViewModel` | F2 | Hương | S01, S02, DLG-WakeTime, S13, S13d | SettingsService, AuthService (tên gợi ý, uid), ProfileSetupService (tạm thay ProfileService), ReminderService | S01, S02, S13 / S13d xong (bước 02–04) |
 | `TryReminderViewModel` | F2 | Hương | N01, N02, N03 | ReminderService | xong (bước 05) |
 | `FirstTaskViewModel` | F2 | Hương | N04, N05, N18 | HabitRepository, TaskRepository, ProfileService (`markOnboarded`), ReminderService (`schedule`), AuthService (uid) | xong (bước 06) |
-| `TaskDetailViewModel` | F3 | Khang | S04 | TaskRepository |  |
+| `TaskDetailViewModel` | F3 | Khang | S04 | TaskRepository | ✅ |
 | `TaskFormViewModel` | F4 | Khang | S05, S06, S06e, S06o, ST-Validation, DLG-TaskTime, N11, N12, N13, N14, ST-Loading, ST-Loading-offline, ST-Saved, ST-Error, N16, S15, DLG-Delete | HabitRepository, TaskRepository, CrashService, ReminderService |  |
 | `VoiceAddViewModel` | F5 | Khang | V00, V01, V02, V03, V04, V05 | SpeechService, RemoteConfigService, TaskRepository |  |
 | `ReminderViewModel` | F6 | Khang | S14 | ReminderService, RemoteConfigService |  |
