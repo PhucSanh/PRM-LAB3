@@ -33,7 +33,7 @@ class SignInScreen extends ConsumerWidget {
                   const Spacer(),
                   const BotanicalScene(height: 260, welcome: true),
                   const SizedBox(height: AppSpacing.base),
-                  Text('An Nhiên', style: AppTypography.welcomeWordmark),
+                  const Text('An Nhiên', style: AppTypography.welcomeWordmark),
                   const SizedBox(height: AppSpacing.sm),
                   Text('Nhẹ nhàng chăm sóc mỗi ngày.',
                       style: t.bodyMedium?.copyWith(
