@@ -42,6 +42,8 @@ import '../widgets/app_shell.dart';
 import '../widgets/dev/widget_gallery.dart';
 import '../widgets/feature_placeholder.dart';
 import '../screens/tasks/task_form_screens.dart';
+import '../screens/reminder/reminder_screen.dart';
+import '../screens/reminder/reminder_settings_screen.dart';
 
 /// Route map theo architecture.md mục 7.2 (gốc: flutter-handoff.md Lab 2). Chủ file: A – Sanh.
 /// Ai làm màn nào: thay `FeaturePlaceholder` bằng màn thật của mình.
@@ -185,10 +187,14 @@ final routerProvider = Provider<GoRouter>((ref) {
       // F6 Lời nhắc – Khang
       GoRoute(
           path: '/reminder/:taskId',
-          builder: (_, __) => ph('S14 · F6', 'Lời nhắc đến giờ', 'Khang')),
+          builder: (_, state) =>
+              ReminderScreen(
+                taskId: state.pathParameters['taskId']!,
+                preview: state.uri.queryParameters['preview'] == 'true',
+              )),
       GoRoute(
           path: '/settings/reminders',
-          builder: (_, __) => ph('N07 · F6', 'Cài đặt nhắc việc', 'Khang')),
+          builder: (_, __) => const ReminderSettingsScreen()),
       // F8 Cài đặt & hồ sơ – Sanh (khu demo Firebase F10 – Hiếu)
       GoRoute(path: '/settings', builder: (_, __) => const SettingsScreen()),
       GoRoute(

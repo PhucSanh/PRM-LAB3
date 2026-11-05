@@ -10,7 +10,6 @@ import 'package:flutter_test/flutter_test.dart';
 const _placeholders = {
   '/today/voice': 'V01 · F5',
   '/today/all': 'S11 · F7',
-  '/reminder/t1': 'S14 · F6',
   '/week': 'S07 · F7',
   '/week/2026-11-02': 'S11 · F7',
   '/habits': 'S08 · F9',
@@ -21,7 +20,6 @@ const _placeholders = {
   '/family/p1/share': 'S17 · F11',
   // '/settings' (S10) đã là màn thật – xem test/settings_screen_test.dart.
   // '/settings/profile' (N06) đã là màn thật – xem test/profile_screen_test.dart.
-  '/settings/reminders': 'N07 · F6',
   // '/settings/help' (N08), '/settings/data' (N20) đã là màn thật – xem test/settings_static_screens_test.dart.
 };
 
@@ -40,6 +38,12 @@ const _f4Routes = <String, String>{
 const _f3Routes = <String, String>{
   '/today/task/t1': 'Việc của Bác',
   '/week/2026-11-02/task/t1': 'Việc của Bác',
+};
+
+/// F6 không còn là placeholder: S14 cần task thật, N07 cần cài đặt thật.
+const _f6Routes = <String, String>{
+  '/reminder/t1': 'Lời nhắc',
+  '/settings/reminders': 'Cài đặt nhắc việc',
 };
 
 const _editTask = TaskItem(
@@ -89,6 +93,24 @@ void main() {
         expect(find.byType(CircularProgressIndicator), findsNothing);
       }
 
+      await tester.pumpWidget(const SizedBox.shrink());
+      await tester.pump(const Duration(milliseconds: 400));
+    });
+  }
+
+  for (final MapEntry(key: path, value: content) in _f6Routes.entries) {
+    testWidgets('$path → màn F6 thật', (tester) async {
+      final container = demoContainer(tasks: [_editTask]);
+      addTearDown(container.dispose);
+      await tester.pumpWidget(UncontrolledProviderScope(
+          container: container, child: const AnNhienApp()));
+      await tester.pumpAndSettle();
+
+      container.read(routerProvider).go(path);
+      await tester.pumpAndSettle();
+
+      expect(tester.takeException(), isNull);
+      expect(find.text(content), findsOneWidget);
       await tester.pumpWidget(const SizedBox.shrink());
       await tester.pump(const Duration(milliseconds: 400));
     });
