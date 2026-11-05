@@ -66,14 +66,15 @@ class _CaregiverFormScreenState extends ConsumerState<CaregiverFormScreen> {
       return;
     }
     final discard = await showConfirmDialog<bool>(context,
-        icon: Icons.edit_note,
+        icon: Icons.edit_note_rounded,
         title: 'Rời màn khi chưa lưu?',
         message: 'Thông tin đang nhập chưa được gửi cho mẹ.',
         options: const [
-          ConfirmOption(label: 'Tiếp tục nhập', icon: Icons.edit, value: false),
+          ConfirmOption(
+              label: 'Tiếp tục nhập', icon: Icons.edit_rounded, value: false),
           ConfirmOption(
               label: 'Bỏ thay đổi',
-              icon: Icons.close,
+              icon: Icons.close_rounded,
               value: true,
               kind: AppButtonKind.dangerOutline)
         ]);
@@ -89,14 +90,15 @@ class _CaregiverFormScreenState extends ConsumerState<CaregiverFormScreen> {
     if (!mounted) return;
     if (!ok && ref.read(caregiverFormViewModelProvider).conflicts.isNotEmpty) {
       final send = await showConfirmDialog<bool>(context,
-          icon: Icons.schedule,
+          icon: Icons.schedule_rounded,
           title: 'Có việc trùng giờ',
           message:
               'Lịch trùng giờ với việc đã có trong lịch. Mẹ có thể khó làm cả hai việc.',
           options: const [
             ConfirmOption(
-                label: 'Đổi giờ khác', icon: Icons.edit, value: false),
-            ConfirmOption(label: 'Vẫn gửi', icon: Icons.send, value: true)
+                label: 'Đổi giờ khác', icon: Icons.edit_rounded, value: false),
+            ConfirmOption(
+                label: 'Vẫn gửi', icon: Icons.send_rounded, value: true)
           ]);
       if (!mounted) return;
       if (send == true) {
@@ -137,7 +139,9 @@ class _CaregiverFormScreenState extends ConsumerState<CaregiverFormScreen> {
                     : widget.step == 2
                         ? 'Dùng lịch này'
                         : 'Xem lại',
-                icon: widget.step == 3 ? Icons.send : Icons.arrow_forward,
+                icon: widget.step == 3
+                    ? Icons.send_rounded
+                    : Icons.arrow_forward_rounded,
                 busy: s.busy,
                 wrapLabel: true,
                 onPressed: () {
@@ -376,7 +380,7 @@ class _CaregiverFormScreenState extends ConsumerState<CaregiverFormScreen> {
                       label: t.endDate == null
                           ? 'Thêm ngày kết thúc (hiện không giới hạn)'
                           : 'Bỏ ngày kết thúc',
-                      icon: Icons.all_inclusive,
+                      icon: Icons.all_inclusive_rounded,
                       kind: AppButtonKind.text,
                       wrapLabel: true,
                       onPressed: () async {
@@ -463,7 +467,7 @@ class CaregiverSentScreen extends ConsumerWidget {
                     : 'Mẹ có thể xem việc trong lịch.'),
           AppButton(
               label: 'Xem lịch của mẹ',
-              icon: Icons.calendar_month,
+              icon: Icons.calendar_month_rounded,
               wrapLabel: true,
               onPressed: () => context.go('/caregiver/schedule')),
         ]);

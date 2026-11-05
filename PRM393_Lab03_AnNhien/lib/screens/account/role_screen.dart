@@ -20,7 +20,7 @@ class RoleScreen extends ConsumerWidget {
         IconButton(
             tooltip: 'Tài khoản',
             onPressed: () => context.push('/account'),
-            icon: const Icon(Icons.account_circle_outlined)),
+            icon: const Icon(Icons.account_circle_rounded)),
       ]),
       body: SafeArea(
           child: switch (state) {
@@ -47,8 +47,8 @@ class RoleScreen extends ConsumerWidget {
                     label: 'Tôi là Bác',
                     kind: AppButtonKind.secondary,
                     icon: data.role == UserRole.elder
-                        ? Icons.radio_button_checked
-                        : Icons.radio_button_unchecked,
+                        ? Icons.radio_button_checked_rounded
+                        : Icons.radio_button_unchecked_rounded,
                     onPressed:
                         data.busy ? null : () => vm.select(UserRole.elder),
                   )),
@@ -63,8 +63,8 @@ class RoleScreen extends ConsumerWidget {
                     label: 'Tôi là con cháu',
                     kind: AppButtonKind.secondary,
                     icon: data.role == UserRole.caregiver
-                        ? Icons.radio_button_checked
-                        : Icons.radio_button_unchecked,
+                        ? Icons.radio_button_checked_rounded
+                        : Icons.radio_button_unchecked_rounded,
                     onPressed:
                         data.busy ? null : () => vm.select(UserRole.caregiver),
                   )),
@@ -77,7 +77,7 @@ class RoleScreen extends ConsumerWidget {
               const SizedBox(height: AppSpacing.xl),
               AppButton(
                   label: 'Tiếp tục',
-                  icon: Icons.arrow_forward,
+                  icon: Icons.arrow_forward_rounded,
                   busy: data.busy,
                   onPressed: data.role == null ? null : vm.submit),
             ]),

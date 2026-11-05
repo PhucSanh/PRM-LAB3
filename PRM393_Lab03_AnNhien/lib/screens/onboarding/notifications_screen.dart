@@ -59,7 +59,8 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
       _ => false,
     };
     return Scaffold(
-      appBar: AppBackBar(
+      appBar: AppBackBar.adaptive(
+        context,
         step: 'Bước 2/2',
         onBack: denied ? vm.showReminderPrompt : () => context.go('/setup'),
       ),
@@ -213,7 +214,7 @@ class _RemindersOff extends StatelessWidget {
       body: [
         const Center(
           child:
-              IconCircle(icon: Icons.notifications_off_outlined, danger: true),
+              IconCircle(icon: Icons.notifications_off_rounded, danger: true),
         ),
         const _Heading('Nhắc việc đang tắt'),
         Text('Đến giờ điện thoại sẽ không đổ chuông.',

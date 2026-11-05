@@ -134,7 +134,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
         if (!didPop) _leave();
       },
       child: Scaffold(
-        appBar: AppBackBar(onBack: _leave),
+        appBar: AppBackBar.adaptive(context, onBack: _leave),
         body: SafeArea(
           top: false,
           child: switch (state) {
@@ -241,6 +241,14 @@ class _ProfileForm extends ConsumerWidget {
             // Khu demo Firebase của Hiếu (F10) – giữ ở cuối N06.
             FirebaseDemoEntry(
                 onOpen: () => context.push('/settings/firebase-demo')),
+            const SizedBox(height: AppSpacing.betweenTargets),
+            if (form.saveError != null) FieldMessage.error(form.saveError!),
+            AppButton(
+              label: 'Hủy',
+              icon: AppIcons.x,
+              kind: AppButtonKind.secondary,
+              onPressed: form.saving ? null : onCancel,
+            ),
           ]),
         ),
       ),
@@ -255,22 +263,11 @@ class _ProfileForm extends ConsumerWidget {
               AppSpacing.screen, AppSpacing.md),
           child:
               Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-            if (form.saveError != null) ...[
-              FieldMessage.error(form.saveError!),
-              const SizedBox(height: AppSpacing.sm),
-            ],
             AppButton(
               label: 'Lưu thông tin',
               icon: AppIcons.save,
               busy: form.saving,
               onPressed: onSave,
-            ),
-            const SizedBox(height: AppSpacing.betweenTargets),
-            AppButton(
-              label: 'Hủy',
-              icon: AppIcons.x,
-              kind: AppButtonKind.secondary,
-              onPressed: form.saving ? null : onCancel,
             ),
           ]),
         ),

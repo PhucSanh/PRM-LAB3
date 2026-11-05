@@ -32,7 +32,8 @@ ScaffoldFeatureController<SnackBar, SnackBarClosedReason> showUndoSnackbar(
           messenger.hideCurrentSnackBar(reason: SnackBarClosedReason.action);
           onUndo();
         },
-        onClose: () => messenger.hideCurrentSnackBar(reason: SnackBarClosedReason.dismiss),
+        onClose: () =>
+            messenger.hideCurrentSnackBar(reason: SnackBarClosedReason.dismiss),
       ),
     ),
   );
@@ -60,38 +61,46 @@ class _UndoSnackbarContent extends StatelessWidget {
     final theme = Theme.of(context);
     // Chữ sáng trên nền tối của snackbar (= màu `surface` trên nền `onSurface`).
     final fg = theme.colorScheme.surface;
-    final base = theme.snackBarTheme.contentTextStyle ?? theme.textTheme.bodyMedium;
+    final base =
+        theme.snackBarTheme.contentTextStyle ?? theme.textTheme.bodyMedium;
     return Semantics(
       liveRegion: true,
-      child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, mainAxisSize: MainAxisSize.min, children: [
-        Text(title, style: base?.copyWith(color: fg, fontWeight: FontWeight.w700)),
-        if (subtitle != null) Text(subtitle!, style: base?.copyWith(color: fg)),
-        const SizedBox(height: AppSpacing.md),
-        Wrap(
-          alignment: WrapAlignment.end,
-          spacing: AppSpacing.betweenTargets,
-          runSpacing: AppSpacing.sm,
+      child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          mainAxisSize: MainAxisSize.min,
           children: [
-            TextButton.icon(
-              onPressed: onClose,
-              style: TextButton.styleFrom(foregroundColor: fg),
-              icon: const Icon(AppIcons.x, size: AppSizes.iconInChip),
-              label: Text(closeLabel),
+            Text(title,
+                style: base?.copyWith(color: fg, fontWeight: FontWeight.w700)),
+            if (subtitle != null)
+              Text(subtitle!, style: base?.copyWith(color: fg)),
+            const SizedBox(height: AppSpacing.md),
+            Wrap(
+              alignment: WrapAlignment.end,
+              spacing: AppSpacing.betweenTargets,
+              runSpacing: AppSpacing.sm,
+              children: [
+                TextButton.icon(
+                  onPressed: onClose,
+                  style: TextButton.styleFrom(foregroundColor: fg),
+                  icon: const Icon(AppIcons.x, size: AppSizes.iconInChip),
+                  label: Text(closeLabel),
+                ),
+                OutlinedButton.icon(
+                  onPressed: onUndo,
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: fg,
+                    backgroundColor: theme.snackBarTheme.backgroundColor ??
+                        theme.colorScheme.onSurface,
+                    side: BorderSide(color: fg, width: AppSizes.border),
+                  ),
+                  // undo-2 (DESIGN.md › Từ điển icon › Hoàn tác). TODO(F0): chuyển vào AppIcons.undo.
+                  icon:
+                      const Icon(Icons.undo_rounded, size: AppSizes.iconInChip),
+                  label: Text(undoLabel),
+                ),
+              ],
             ),
-            OutlinedButton.icon(
-              onPressed: onUndo,
-              style: OutlinedButton.styleFrom(
-                foregroundColor: fg,
-                backgroundColor: theme.snackBarTheme.backgroundColor ?? theme.colorScheme.onSurface,
-                side: BorderSide(color: fg, width: AppSizes.border),
-              ),
-              // undo-2 (DESIGN.md › Từ điển icon › Hoàn tác). TODO(F0): chuyển vào AppIcons.undo.
-              icon: const Icon(Icons.undo, size: AppSizes.iconInChip),
-              label: Text(undoLabel),
-            ),
-          ],
-        ),
-      ]),
+          ]),
     );
   }
 }

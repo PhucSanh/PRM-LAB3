@@ -36,7 +36,7 @@ class SettingsScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final state = ref.watch(settingsViewModelProvider);
     return Scaffold(
-      appBar: const AppBackBar(),
+      appBar: AppBackBar.adaptive(context),
       body: SafeArea(
         top: false,
         child: switch (state) {
@@ -247,7 +247,7 @@ class _FontPreview extends StatelessWidget {
               child: Text(
                 sample,
                 style: theme.textTheme.bodyLarge?.copyWith(
-                    color: scheme.onSurface, fontWeight: FontWeight.w500),
+                    color: scheme.onSurface, fontWeight: FontWeight.w600),
               ),
             ),
           ]),

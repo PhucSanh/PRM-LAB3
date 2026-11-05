@@ -1,3 +1,4 @@
+import 'calm_feature_providers.dart';
 import 'today_view_model.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../services/caregiver_suggestion_service.dart';
@@ -34,6 +35,7 @@ class SuggestionDemoViewModel extends Notifier<SuggestionDemoState> {
             .resolve(id, selected, times: times);
         if (ref.mounted && selected.isNotEmpty) {
           ref.invalidate(todayViewModelProvider);
+      ref.invalidate(calendarTasksProvider);
         }
         try {
           await ref.read(analyticsServiceProvider).logEvent(

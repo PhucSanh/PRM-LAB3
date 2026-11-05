@@ -9,7 +9,7 @@ class ProfileDemoEntryScreen extends StatelessWidget {
   const ProfileDemoEntryScreen({super.key});
   @override
   Widget build(BuildContext context) => Scaffold(
-      appBar: const AppBackBar(),
+      appBar: AppBackBar.adaptive(context),
       body: SafeArea(
           child: ListView(
               padding: const EdgeInsets.all(AppSpacing.screen),

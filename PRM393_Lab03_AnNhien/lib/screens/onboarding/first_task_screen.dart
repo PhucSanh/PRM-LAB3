@@ -19,7 +19,7 @@ import '../../widgets/time_field.dart';
 /// N04 Chọn việc đầu tiên (`38:2`) → N05 Xem lại (`38:108`) → N18 Đã lưu
 /// (`47:170`) – chủ: Hương (F2). Cùng route `/setup/first-task`, vẽ theo
 /// `FirstTaskData.step`. Loading / Empty / Error (+ Thử lại) khi nạp gợi ý.
-/// Xong (N18 hoặc "Để sau" ở N04) → `/today` (N19 là state S03 của Khang).
+/// Xong (N18 hoặc "Để sau" ở N04) → `/calendar` theo IA mới; link `/today` vẫn được giữ.
 class FirstTaskScreen extends ConsumerWidget {
   const FirstTaskScreen({super.key});
 
@@ -44,7 +44,8 @@ class FirstTaskScreen extends ConsumerWidget {
       // N18 là màn kết quả (đã lưu), không có Quay lại – theo Figma `47:170`.
       appBar: step == FirstTaskStep.saved
           ? null
-          : AppBackBar(
+          : AppBackBar.adaptive(
+              context,
               onBack: step == FirstTaskStep.time
                   ? vm.backToPick
                   : () => context.go('/setup/notifications'),
@@ -57,11 +58,11 @@ class FirstTaskScreen extends ConsumerWidget {
           UiEmpty() => EmptyView(
               icon: AppIcons.list,
               title: 'Chưa có việc gợi ý',
-              message: 'Bác có thể thêm việc sau ở Hôm nay.',
+              message: 'Bác có thể thêm việc sau trong Lịch.',
               action: AppButton(
-                label: 'Về Hôm nay',
+                label: 'Về Lịch',
                 icon: AppIcons.arrowRight,
-                onPressed: () => finishTo('/today'),
+                onPressed: () => finishTo('/calendar'),
               ),
             ),
           UiData(:final data) => switch (data.step) {
@@ -69,13 +70,13 @@ class FirstTaskScreen extends ConsumerWidget {
                   data: data,
                   onPick: vm.pick,
                   onNext: vm.confirmPick,
-                  onLater: () => finishTo('/today'),
+                  onLater: () => finishTo('/calendar'),
                 ),
               FirstTaskStep.time =>
                 _Review(data: data, onTime: vm.setTime, onSave: save),
               FirstTaskStep.saved => _Saved(
                   data: data,
-                  onSchedule: () => finishTo('/today'),
+                  onSchedule: () => finishTo('/calendar'),
                   onAddMore: () => finishTo('/today/add'),
                 ),
             },
@@ -228,7 +229,7 @@ class _Review extends StatelessWidget {
           dialogTitle: 'Bác muốn làm việc này lúc mấy giờ?',
           onChanged: onTime,
         ),
-        const _InfoLine(Icons.event_outlined, 'Ngày bắt đầu', 'Hôm nay'),
+        const _InfoLine(Icons.event_rounded, 'Ngày bắt đầu', 'Hôm nay'),
         const _InfoLine(AppIcons.repeat, 'Nhịp nhắc', 'Mỗi ngày'),
         const FieldMessage.hint('Bác bấm "Lưu việc" để thêm vào lịch.'),
       ],
@@ -304,7 +305,7 @@ class _Saved extends StatelessWidget {
         ),
         AppButton(
           label: 'Thêm việc khác',
-          icon: Icons.add,
+          icon: Icons.add_rounded,
           kind: AppButtonKind.secondary,
           onPressed: data.saving ? null : onAddMore,
         ),

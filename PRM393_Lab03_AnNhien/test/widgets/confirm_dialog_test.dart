@@ -17,46 +17,90 @@ final _dialogs = <String, Future<String?> Function(BuildContext)>{
           ConfirmDetail(icon: AppIcons.clock, text: '9:30 sáng'),
         ],
         options: const [
-          ConfirmOption(label: 'Đúng, đã xong', icon: AppIcons.checkCircle, value: 'done', kind: AppButtonKind.primary),
-          ConfirmOption(label: 'Chưa, để sau', icon: Icons.circle_outlined, value: 'cancel'),
+          ConfirmOption(
+              label: 'Đúng, đã xong',
+              icon: AppIcons.checkCircle,
+              value: 'done',
+              kind: AppButtonKind.primary),
+          ConfirmOption(
+              label: 'Chưa, để sau',
+              icon: Icons.circle_rounded,
+              value: 'cancel'),
         ],
       ),
   'DLG-Later': (c) => showConfirmDialog<String>(
         c,
-        icon: Icons.alarm_add_outlined,
+        icon: Icons.alarm_add_rounded,
         title: 'Dời việc này đến lúc nào?',
-        details: const [ConfirmDetail(icon: AppIcons.clock, text: 'Đi bộ, đang hẹn 9:30 sáng')],
+        details: const [
+          ConfirmDetail(icon: AppIcons.clock, text: 'Đi bộ, đang hẹn 9:30 sáng')
+        ],
         options: const [
-          ConfirmOption(label: '30 phút nữa', icon: Icons.alarm_add_outlined, value: '30m'),
-          ConfirmOption(label: 'Chiều nay, 4 giờ', icon: Icons.alarm_add_outlined, value: '16h'),
-          ConfirmOption(label: 'Ngày mai, cùng giờ', icon: Icons.alarm_add_outlined, value: 'tomorrow'),
-          ConfirmOption(label: 'Không dời nữa', icon: AppIcons.x, value: 'cancel', kind: AppButtonKind.text),
+          ConfirmOption(
+              label: '30 phút nữa',
+              icon: Icons.alarm_add_rounded,
+              value: '30m'),
+          ConfirmOption(
+              label: 'Chiều nay, 4 giờ',
+              icon: Icons.alarm_add_rounded,
+              value: '16h'),
+          ConfirmOption(
+              label: 'Ngày mai, cùng giờ',
+              icon: Icons.alarm_add_rounded,
+              value: 'tomorrow'),
+          ConfirmOption(
+              label: 'Không dời nữa',
+              icon: AppIcons.x,
+              value: 'cancel',
+              kind: AppButtonKind.text),
         ],
       ),
   'DLG-Skip': (c) => showConfirmDialog<String>(
         c,
-        icon: Icons.skip_next_outlined,
+        icon: Icons.skip_next_rounded,
         title: 'Bỏ qua đi bộ hôm nay?',
         message: 'Mai vẫn nhắc như thường.',
-        details: const [ConfirmDetail(icon: Icons.help_outline, text: 'Vì sao vậy Bác?')],
+        details: const [
+          ConfirmDetail(
+              icon: Icons.help_outline_rounded, text: 'Vì sao vậy Bác?')
+        ],
         options: const [
-          ConfirmOption(label: 'Trời mưa', icon: Icons.umbrella_outlined, value: 'rain'),
-          ConfirmOption(label: 'Thấy mệt', icon: Icons.bed_outlined, value: 'tired'),
-          ConfirmOption(label: 'Bận việc nhà', icon: Icons.local_laundry_service_outlined, value: 'busy'),
-          ConfirmOption(label: 'Lý do khác', icon: Icons.help_outline, value: 'other'),
-          ConfirmOption(label: 'Không bỏ qua nữa', icon: AppIcons.x, value: 'cancel', kind: AppButtonKind.text),
+          ConfirmOption(
+              label: 'Trời mưa', icon: Icons.umbrella_rounded, value: 'rain'),
+          ConfirmOption(
+              label: 'Thấy mệt', icon: Icons.bed_rounded, value: 'tired'),
+          ConfirmOption(
+              label: 'Bận việc nhà',
+              icon: Icons.local_laundry_service_rounded,
+              value: 'busy'),
+          ConfirmOption(
+              label: 'Lý do khác',
+              icon: Icons.help_outline_rounded,
+              value: 'other'),
+          ConfirmOption(
+              label: 'Không bỏ qua nữa',
+              icon: AppIcons.x,
+              value: 'cancel',
+              kind: AppButtonKind.text),
         ],
       ),
   'DLG-Delete': (c) => showConfirmDialog<String>(
         c,
-        icon: Icons.delete_outline,
+        icon: Icons.delete_outline_rounded,
         danger: true,
         title: 'Xóa việc “Đi bộ”?',
         message: 'Chỉ xóa lần này. Ngày khác vẫn giữ.',
         options: const [
-          ConfirmOption(label: 'Không xóa, giữ lại', icon: AppIcons.x, value: 'cancel', kind: AppButtonKind.primary),
           ConfirmOption(
-              label: 'Xóa khỏi lịch', icon: Icons.delete_outline, value: 'delete', kind: AppButtonKind.dangerOutline),
+              label: 'Không xóa, giữ lại',
+              icon: AppIcons.x,
+              value: 'cancel',
+              kind: AppButtonKind.primary),
+          ConfirmOption(
+              label: 'Xóa khỏi lịch',
+              icon: Icons.delete_outline_rounded,
+              value: 'delete',
+              kind: AppButtonKind.dangerOutline),
         ],
       ),
   'N13': (c) => showConfirmDialog<String>(
@@ -64,21 +108,38 @@ final _dialogs = <String, Future<String?> Function(BuildContext)>{
         icon: AppIcons.repeat,
         title: 'Thay đổi lần nào?',
         message: 'Đi bộ quanh công viên, mỗi ngày',
-        details: const [ConfirmDetail(icon: Icons.info_outline, text: 'Lịch sử được giữ lại')],
+        details: const [
+          ConfirmDetail(
+              icon: Icons.info_outline_rounded, text: 'Lịch sử được giữ lại')
+        ],
         options: const [
-          ConfirmOption(label: 'Chỉ lần này', icon: Icons.event_outlined, value: 'once', kind: AppButtonKind.primary),
-          ConfirmOption(label: 'Lần này và các lần sau', icon: Icons.date_range_outlined, value: 'series'),
+          ConfirmOption(
+              label: 'Chỉ lần này',
+              icon: Icons.event_rounded,
+              value: 'once',
+              kind: AppButtonKind.primary),
+          ConfirmOption(
+              label: 'Lần này và các lần sau',
+              icon: Icons.date_range_rounded,
+              value: 'series'),
           ConfirmOption(label: 'Giữ nguyên', icon: AppIcons.x, value: 'cancel'),
         ],
       ),
   'N14': (c) => showConfirmDialog<String>(
         c,
-        icon: Icons.info_outline,
+        icon: Icons.info_outline_rounded,
         title: 'Chưa lưu thay đổi',
         message: 'Nếu rời khỏi đây, phần vừa chỉnh sẽ không được lưu.',
         options: const [
-          ConfirmOption(label: 'Tiếp tục chỉnh', icon: AppIcons.pencil, value: 'cancel', kind: AppButtonKind.primary),
-          ConfirmOption(label: 'Bỏ thay đổi', icon: Icons.cancel_presentation_outlined, value: 'discard'),
+          ConfirmOption(
+              label: 'Tiếp tục chỉnh',
+              icon: AppIcons.pencil,
+              value: 'cancel',
+              kind: AppButtonKind.primary),
+          ConfirmOption(
+              label: 'Bỏ thay đổi',
+              icon: Icons.cancel_presentation_rounded,
+              value: 'discard'),
         ],
       ),
 };
@@ -96,9 +157,12 @@ const _pick = {
 void main() {
   for (final MapEntry(key: id, value: open) in _dialogs.entries) {
     for (final scale in [1.3, 2.0]) {
-      testWidgets('$id · 360 dp ×$scale: vẽ không tràn, bấm trả đúng giá trị', (tester) async {
+      testWidgets('$id · 360 dp ×$scale: vẽ không tràn, bấm trả đúng giá trị',
+          (tester) async {
         String? result = 'chưa đóng';
-        await pumpHarness(tester, launcher('Mở', (c) async => result = await open(c)), scale: scale);
+        await pumpHarness(
+            tester, launcher('Mở', (c) async => result = await open(c)),
+            scale: scale);
         await tester.tap(find.text('Mở'));
         await tester.pumpAndSettle();
 
@@ -116,10 +180,12 @@ void main() {
     }
   }
 
-  testWidgets('tiêu đề là header cho TalkBack; chạm ra ngoài trả null', (tester) async {
+  testWidgets('tiêu đề là header cho TalkBack; chạm ra ngoài trả null',
+      (tester) async {
     final semantics = tester.ensureSemantics();
     String? result = 'chưa đóng';
-    await pumpHarness(tester, launcher('Mở', (c) async => result = await _dialogs['DLG-Done']!(c)));
+    await pumpHarness(tester,
+        launcher('Mở', (c) async => result = await _dialogs['DLG-Done']!(c)));
     await tester.tap(find.text('Mở'));
     await tester.pumpAndSettle();
 

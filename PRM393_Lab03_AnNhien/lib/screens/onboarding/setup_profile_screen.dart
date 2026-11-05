@@ -70,8 +70,8 @@ class _SetupProfileScreenState extends ConsumerState<SetupProfileScreen> {
     });
 
     return Scaffold(
-      appBar:
-          AppBackBar(step: 'Bước 1/2', onBack: () => context.go('/welcome')),
+      appBar: AppBackBar.adaptive(context,
+          step: 'Bước 1/2', onBack: () => context.go('/welcome')),
       body: SafeArea(
         top: false,
         child: switch (state) {
@@ -247,7 +247,8 @@ class _Details extends ConsumerWidget {
         const _Heading('Giới thiệu về Bác'),
         _NameBox(label: 'Bác là', name: data.name),
         Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-          const FieldLabel('Bác muốn được gọi là', icon: Icons.favorite_border),
+          const FieldLabel('Bác muốn được gọi là',
+              icon: Icons.favorite_border_rounded),
           const SizedBox(height: AppSpacing.md),
           ChoiceGroup<Honorific>(
             layout: ChoiceLayout.segmented,
@@ -261,10 +262,10 @@ class _Details extends ConsumerWidget {
         ]),
         TimeField(
           label: 'Bác thức dậy lúc',
-          icon: Icons.alarm,
+          icon: Icons.alarm_rounded,
           value: data.wakeTime,
           dialogTitle: 'Bác thường thức dậy lúc mấy giờ?',
-          dialogIcon: Icons.alarm,
+          dialogIcon: Icons.alarm_rounded,
           onChanged: vm.setWakeTime,
         ),
       ],

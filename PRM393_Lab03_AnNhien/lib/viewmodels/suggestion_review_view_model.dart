@@ -1,3 +1,4 @@
+import 'calm_feature_providers.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../models/suggestion.dart';
@@ -325,6 +326,7 @@ class SuggestionReviewViewModel extends Notifier<UiState<SuggestionReview>> {
       return false;
     }
     if (!ref.mounted) return false;
+    ref.invalidate(calendarTasksProvider);
     final next = [
       for (var i = 0; i < s.items.length; i++)
         indexes.contains(i)

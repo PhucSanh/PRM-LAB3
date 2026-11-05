@@ -91,7 +91,8 @@ class App {
     addTearDown(tester.view.reset);
     final router = GoRouter(initialLocation: at, routes: [
       StatefulShellRoute.indexedStack(
-        builder: (_, __, shell) => AppShell(navigationShell: shell),
+        builder: (_, state, shell) => AppShell(
+            navigationShell: shell, legacyToday: state.uri.path == '/today'),
         branches: [
           StatefulShellBranch(routes: [
             GoRoute(
@@ -108,9 +109,6 @@ class App {
           ]),
           StatefulShellBranch(routes: [
             GoRoute(path: '/week', builder: (_, __) => const Text('S07'))
-          ]),
-          StatefulShellBranch(routes: [
-            GoRoute(path: '/habits', builder: (_, __) => const Text('S08'))
           ]),
           StatefulShellBranch(routes: [
             GoRoute(path: '/family', builder: (_, __) => const Text('S09'))
@@ -298,7 +296,7 @@ void main() {
       final app = App(seeded());
       await app.pump(tester, at: '/week');
       expect(popup, findsNothing);
-      await tap(tester, find.bySemanticsLabel('Hôm nay'));
+      await tap(tester, find.bySemanticsLabel('Trang chủ'));
       expect(popup, findsOneWidget);
       await app.close(tester);
     });

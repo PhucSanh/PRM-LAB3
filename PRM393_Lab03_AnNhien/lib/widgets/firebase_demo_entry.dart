@@ -9,7 +9,7 @@ class FirebaseDemoEntry extends StatelessWidget {
   Widget build(BuildContext context) => AppButton(
       wrapLabel: true,
       label: 'Khu thử tính năng',
-      icon: Icons.science_outlined,
+      icon: Icons.science_rounded,
       kind: AppButtonKind.secondary,
       onPressed: onOpen);
 }

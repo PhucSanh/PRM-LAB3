@@ -5,6 +5,7 @@ import '../models/task_item.dart';
 import '../theme/app_spacing.dart';
 import 'app_back_bar.dart';
 import 'app_button.dart';
+import 'botanical_scene.dart';
 
 /// Bố cục F13/F14 dùng token và thanh/nút F0; footer cuộn được khi chữ lớn.
 class CaregiverPage extends StatelessWidget {
@@ -16,8 +17,10 @@ class CaregiverPage extends StatelessWidget {
       this.titleAction,
       this.footer,
       this.onBack,
-      this.scrollController});
+      this.scrollController,
+      this.root = false});
   final String title;
+  final bool root;
   final Widget? titleAction;
   final List<Widget> children;
   final String? step;
@@ -26,7 +29,9 @@ class CaregiverPage extends StatelessWidget {
   final ScrollController? scrollController;
   @override
   Widget build(BuildContext context) => Scaffold(
-        appBar: AppBackBar(step: step, onBack: onBack),
+        appBar: root
+            ? null
+            : AppBackBar.adaptive(context, step: step, onBack: onBack),
         body: SafeArea(
             child: ListView(
                 controller: scrollController,
@@ -41,6 +46,10 @@ class CaregiverPage extends StatelessWidget {
                 if (titleAction != null) titleAction!,
               ]),
               const SizedBox(height: AppSpacing.base),
+              if (root) ...[
+                const BotanicalScene(height: 140, branch: false),
+                const SizedBox(height: AppSpacing.lg),
+              ],
               for (final child in children) ...[
                 child,
                 const SizedBox(height: AppSpacing.base)
@@ -110,7 +119,7 @@ class CalendarDateField extends StatelessWidget {
   @override
   Widget build(BuildContext context) => AppButton(
       label: '$label: ${value.day}/${value.month}/${value.year}',
-      icon: Icons.calendar_month,
+      icon: Icons.calendar_month_rounded,
       kind: AppButtonKind.secondary,
       wrapLabel: true,
       onPressed: () async {

@@ -9,6 +9,7 @@ import '../../theme/app_spacing.dart';
 import '../../viewmodels/suggestion_review_view_model.dart';
 import '../../viewmodels/ui_state.dart';
 import '../../widgets/app_back_bar.dart';
+import '../../widgets/velora_parts.dart';
 import '../../widgets/app_button.dart';
 import '../../widgets/choice_group.dart';
 import '../../widgets/form_parts.dart';
@@ -53,7 +54,7 @@ class SuggestionReviewScreen extends ConsumerWidget {
         fromFamily ? (result ? 'Quay lại Gia đình' : 'Gia đình') : 'Quay lại';
 
     return Scaffold(
-      appBar: AppBackBar(backLabel: backLabel, onBack: leave),
+      appBar: AppBackBar.adaptive(context, backLabel: backLabel, onBack: leave),
       body: SafeArea(
         child: switch (state) {
           UiLoading() => const LoadingView(message: 'Đang mở gợi ý…'),
@@ -91,8 +92,8 @@ class SuggestionReviewScreen extends ConsumerWidget {
   }
 }
 
-/// Nội dung cuộn + thanh đáy ghim. Thanh đáy = lỗi (cuộn) · nút chính (luôn thấy) · nút phụ (cuộn khi
-/// chữ lớn). Bottom nav do shell vẽ.
+/// Nội dung, lỗi và hành động phụ cuộn cùng nhau; chỉ ghim CTA chính để
+/// chữ lớn vẫn còn không gian đọc và thao tác. Bottom nav do shell vẽ.
 class _Layout extends StatelessWidget {
   const _Layout(
       {required this.body,
@@ -112,73 +113,33 @@ class _Layout extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    return LayoutBuilder(
-      builder: (context, constraints) => Column(children: [
-        Expanded(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.all(AppSpacing.screen),
-            child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  for (final (i, child) in body.indexed) ...[
-                    if (i > 0)
-                      const SizedBox(height: AppSpacing.betweenTargets),
-                    child,
-                  ],
-                ]),
-          ),
+    return Column(children: [
+      Expanded(
+        child: VeloraDetailBody(children: [
+          for (final (i, child) in [...body, ...secondary].indexed) ...[
+            if (i > 0) const SizedBox(height: AppSpacing.betweenTargets),
+            child,
+          ],
+          if (error != null) ...[
+            const SizedBox(height: AppSpacing.sm),
+            FieldMessage.error(error!),
+            if (errorHint != null) FieldMessage.hint(errorHint!),
+          ],
+        ]),
+      ),
+      DecoratedBox(
+        decoration: BoxDecoration(
+          color: theme.scaffoldBackgroundColor,
+          border:
+              Border(top: BorderSide(color: theme.colorScheme.outlineVariant)),
         ),
-        DecoratedBox(
-          decoration: BoxDecoration(
-            color: theme.scaffoldBackgroundColor,
-            border: Border(
-                top: BorderSide(color: theme.colorScheme.outlineVariant)),
-          ),
-          child: ConstrainedBox(
-            constraints: BoxConstraints(maxHeight: constraints.maxHeight * 0.6),
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(AppSpacing.screen,
-                  AppSpacing.md, AppSpacing.screen, AppSpacing.md),
-              child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    if (error != null) ...[
-                      Flexible(
-                          child: SingleChildScrollView(
-                              child: Column(
-                                  crossAxisAlignment:
-                                      CrossAxisAlignment.stretch,
-                                  children: [
-                            FieldMessage.error(error!),
-                            if (errorHint != null) ...[
-                              const SizedBox(height: AppSpacing.xs),
-                              FieldMessage.hint(errorHint!),
-                            ],
-                          ]))),
-                      const SizedBox(height: AppSpacing.sm),
-                    ],
-                    primary,
-                    if (secondary.isNotEmpty)
-                      Flexible(
-                        child: SingleChildScrollView(
-                          child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.stretch,
-                              children: [
-                                for (final child in secondary) ...[
-                                  const SizedBox(
-                                      height: AppSpacing.betweenTargets),
-                                  child,
-                                ],
-                              ]),
-                        ),
-                      ),
-                  ]),
-            ),
-          ),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(
+              horizontal: AppSpacing.screen, vertical: AppSpacing.md),
+          child: primary,
         ),
-      ]),
-    );
+      ),
+    ]);
   }
 }
 

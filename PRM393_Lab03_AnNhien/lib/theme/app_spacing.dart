@@ -14,7 +14,8 @@ abstract final class AppSpacing {
   /// Khoảng cách tối thiểu giữa 2 nút kề nhau (≈ 3.17 mm, slide Canva). rule.md R-TAP-03.
   static const double betweenTargets = 20;
 
-  static const EdgeInsets screenPadding = EdgeInsets.symmetric(horizontal: screen);
+  static const EdgeInsets screenPadding =
+      EdgeInsets.symmetric(horizontal: screen);
 }
 
 /// Bo góc (DESIGN.md › rounded).
@@ -24,24 +25,26 @@ abstract final class AppRadius {
   static const double button = 20;
   static const double lg = 16;
   static const double xl = 24;
-  static const double full = 999; // chip trạng thái, avatar (Bảng 1: StadiumBorder)
+  static const double full =
+      999; // chip trạng thái, avatar (Bảng 1: StadiumBorder)
 
   static const BorderRadius smAll = BorderRadius.all(Radius.circular(sm));
   static const BorderRadius mdAll = BorderRadius.all(Radius.circular(md));
-  static const BorderRadius buttonAll = BorderRadius.all(Radius.circular(button));
+  static const BorderRadius buttonAll =
+      BorderRadius.all(Radius.circular(button));
   static const BorderRadius cardAll = BorderRadius.all(Radius.circular(xl));
   static const BorderRadius dialogAll = BorderRadius.all(Radius.circular(xl));
 }
 
 /// Kích thước (Figma đã sửa theo Canva, rule.md R-TAP-01/02; DESIGN.md › components).
 abstract final class AppSizes {
-  /// Nút, ô nhập, mục danh sách: ≥ 72 dp (≈ 11.43 mm).
-  static const double minTarget = 72;
+  /// Reference-first: primary targets ≥56dp, growing with scaled labels.
+  static const double minTarget = 56;
 
   /// Nút micro lớn ở luồng giọng nói (V01, V02): 152 dp (≈ 24 mm).
   static const double micButton = 152;
 
-  static const double icon = 32;
+  static const double icon = 24;
   static const double iconInChip = 24;
 
   /// Ô icon thói quen 48 × 48 (DESIGN.md › habit-icon-*).
@@ -60,11 +63,11 @@ abstract final class AppSizes {
   static const double logo = 96;
 
   /// Thanh "Quay lại": cao 88 (chứa nút 72 + lề), rộng phần nút 180 để đủ chữ "Quay lại" ở cỡ chữ lớn.
-  static const double appBar = 88;
+  static const double appBar = 72;
   static const double backButtonWidth = 180;
 
-  /// Bottom nav: cao 96 (vùng chạm 72 + nhãn 20 sp).
-  static const double navBar = 96;
+  /// Navigation grows to fit the visible labels and safe area.
+  static const double navBar = 80;
 
   /// Vòng xoay trong nút đang bận và nét vòng xoay.
   static const double spinnerInButton = 28;

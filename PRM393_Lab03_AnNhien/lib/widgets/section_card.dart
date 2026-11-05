@@ -16,13 +16,12 @@ class SectionCard extends StatelessWidget {
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
     return DecoratedBox(
-      decoration: BoxDecoration(
-        color: scheme.surface,
+      decoration: const BoxDecoration(
+        color: Colors.transparent,
         borderRadius: AppRadius.cardAll,
-        border: Border.all(color: scheme.outlineVariant),
       ),
       child: Padding(
-        padding: const EdgeInsets.all(AppSpacing.screen),
+        padding: const EdgeInsets.symmetric(vertical: AppSpacing.base),
         child:
             Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
           if (title != null) ...[

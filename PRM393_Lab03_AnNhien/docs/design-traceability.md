@@ -379,3 +379,11 @@ Các mục dưới cập nhật trạng thái code local, không phải bằng c
 | C10/C11/C12 | 75:2 và handoff | /caregiver/task/:id + scope/stop dialog | implemented; lịch sử và undo |
 
 Điều chỉnh responsive local cần Sanh đối chiếu/cập nhật Figma khi chốt UI: ô mã có nhãn thay sáu ô riêng; tháng hiện danh sách ngày có số việc để giữ vùng chạm; nút chế độ wrap khi chữ lớn; bốn thẻ thói quen dùng SVG gốc và widget F0. Chưa đánh dấu design parity done. Không sửa các frame Figma trong phiên này.
+
+## Cập nhật TYPE-01 — 05/11/2026
+
+| ID | Phạm vi | Điều chỉnh | Căn cứ / kiểm chứng | Trạng thái |
+|---|---|---|---|---|
+| DT-34 | Typography toàn app và shared layout, không sửa file dashboard | TYPE-01 v1.1.0: elderly body 24/600, secondary 22/600, nút 22/700, tab 20/700, sàn 20/600; caregiver body 20/600, sàn 18/600. Màn chưa có role dùng elderly. Nhãn wrap; back bar đo chiều cao; time grid thích ứng; lịch caregiver cuộn ngang; chỉ ghim CTA chính trên profile/review. Điều hướng vẫn giữ nguyên cho milestone này. | Người dùng duyệt spec chữ lớn/đậm và yêu cầu code; 701 tests + analyze pass, 4 goldens được xem và so sánh lại. Chi tiết tại `typography-v1.1-verification.md`. | implemented / widget+golden QA; device accessibility và full redesign chưa nghiệm thu |
+
+| DT-VELORA-REF | Yêu cầu người dùng mới nhất: clone anatomy intro/home trước, bỏ font quá lớn/đậm của lượt trước | `/intro` và main `/calendar`; welcome pager, greeting/feature/categories/task cards, 5 đích nav của Bác; serif Regular + sans Regular; primary target 56dp | `docs/AnNhien_VELORA_Visual_Replication_Spec_v2/docs/uiux/15_ACCESSIBLE_TYPOGRAPHY_OVERRIDE.md` và `16_REFERENCE_FIRST_LAYOUT.md` thay bảng chữ 24/600 cũ; không sửa `/today` source/backend |

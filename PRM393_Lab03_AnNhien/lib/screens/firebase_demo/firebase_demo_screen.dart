@@ -16,7 +16,7 @@ class FirebaseDemoScreen extends ConsumerWidget {
     final state = ref.watch(firebaseDemoViewModelProvider);
     final vm = ref.read(firebaseDemoViewModelProvider.notifier);
     return Scaffold(
-        appBar: const AppBackBar(),
+        appBar: AppBackBar.adaptive(context),
         body: SafeArea(
             child: ListView(
                 padding: const EdgeInsets.all(AppSpacing.screen),
@@ -27,14 +27,14 @@ class FirebaseDemoScreen extends ConsumerWidget {
               AppButton(
                   wrapLabel: true,
                   label: 'Xem thông báo',
-                  icon: Icons.notifications_outlined,
+                  icon: Icons.notifications_rounded,
                   kind: AppButtonKind.secondary,
                   onPressed: () => context.push('/inbox')),
               const SizedBox(height: AppSpacing.base),
               switch (state) {
                 UiLoading() => const LoadingView(),
                 UiEmpty() => const EmptyView(
-                    icon: Icons.settings_outlined, title: 'Chưa có cài đặt'),
+                    icon: Icons.settings_rounded, title: 'Chưa có cài đặt'),
                 UiError(:final message) =>
                   ErrorView(message: message, onRetry: vm.refresh),
                 UiData(:final data) => Column(
@@ -47,14 +47,14 @@ class FirebaseDemoScreen extends ConsumerWidget {
                         AppButton(
                             wrapLabel: true,
                             label: 'Tải lại cài đặt',
-                            icon: Icons.refresh,
+                            icon: Icons.refresh_rounded,
                             kind: AppButtonKind.secondary,
                             onPressed: data.busy ? null : vm.refresh),
                         const SizedBox(height: AppSpacing.betweenTargets),
                         AppButton(
                             wrapLabel: true,
                             label: 'Tạo tệp thử',
-                            icon: Icons.upload_file,
+                            icon: Icons.upload_file_rounded,
                             busy: data.busy,
                             onPressed: vm.export),
                         if (data.progress != null) ...[
@@ -77,7 +77,7 @@ class FirebaseDemoScreen extends ConsumerWidget {
                         AppButton(
                             wrapLabel: true,
                             label: 'Thử lỗi ứng dụng',
-                            icon: Icons.bug_report_outlined,
+                            icon: Icons.bug_report_rounded,
                             kind: AppButtonKind.danger,
                             onPressed: data.busy
                                 ? null
@@ -92,7 +92,7 @@ class FirebaseDemoScreen extends ConsumerWidget {
                                                 actions: [
                                                   TextButton.icon(
                                                       icon: const Icon(
-                                                          Icons.close),
+                                                          Icons.close_rounded),
                                                       label:
                                                           const Text('Ở lại'),
                                                       onPressed: () =>

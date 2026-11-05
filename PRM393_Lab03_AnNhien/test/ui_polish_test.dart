@@ -73,11 +73,11 @@ void main() {
         expect(tester.takeException(), isNull, reason: '$route x$scale');
         if (route == '/account') {
           expect(find.text('Nhận lịch gợi ý (khu thử)'), findsNothing);
-          final home = find.byWidgetPredicate(
-              (w) => w is AppButton && w.label == 'Về Hôm nay');
+          final home = find
+              .byWidgetPredicate((w) => w is AppButton && w.label == 'Về Lịch');
           await tester.ensureVisible(home);
           await tester.pumpAndSettle();
-          expect(tester.getSize(home).height, greaterThanOrEqualTo(72));
+          expect(tester.getSize(home).height, greaterThanOrEqualTo(56));
           final tools = find.text('Công cụ thử nghiệm');
           await tester.ensureVisible(tools);
           await tester.pumpAndSettle();

@@ -46,11 +46,11 @@ class _InboxScreenState extends ConsumerState<InboxScreen> {
     final vm = ref.read(inboxViewModelProvider.notifier);
     final theme = Theme.of(context);
     return Scaffold(
-      appBar: AppBackBar(onBack: () {
+      appBar: AppBackBar.adaptive(context, onBack: () {
         if (context.canPop()) {
           context.pop();
         } else {
-          context.go('/today');
+          context.go('/calendar');
         }
       }),
       body: SafeArea(

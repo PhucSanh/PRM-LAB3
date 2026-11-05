@@ -36,7 +36,7 @@ class SessionScreen extends ConsumerWidget {
           padding: const EdgeInsets.all(AppSpacing.screen),
           child: AppButton(
               label: 'Tài khoản',
-              icon: Icons.account_circle_outlined,
+              icon: Icons.account_circle_rounded,
               kind: AppButtonKind.secondary,
               onPressed: () => context.go('/account')),
         ),

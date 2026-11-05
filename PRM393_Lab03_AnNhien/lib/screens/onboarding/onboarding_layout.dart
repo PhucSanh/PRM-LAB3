@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../theme/app_spacing.dart';
+import '../../widgets/botanical_scene.dart';
 
 /// Khung chung các màn onboarding F2 (S02, S13, N01–N03, N04–N18): nội dung
 /// cuộn được + thanh nút ghim ở đáy (luôn thấy khi chữ ×2.0; bàn phím mở thì
@@ -30,6 +31,8 @@ class OnboardingLayout extends StatelessWidget {
     final content = Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
+        const BotanicalScene(height: 100, branch: false),
+        SizedBox(height: gap),
         for (final (i, child) in body.indexed) ...[
           if (i > 0) SizedBox(height: gap),
           child,

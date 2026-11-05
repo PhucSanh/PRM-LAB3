@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 
 import '../theme/app_icons.dart';
 import '../theme/app_spacing.dart';
@@ -7,55 +8,177 @@ import '../theme/app_spacing.dart';
 /// Ba biến thể: chỉ Quay lại · Quay lại + "Bước x/y" ([step]) · Quay lại + nút bên phải ([trailing]).
 /// Nút quay lại luôn có chữ (rule.md R-NAV-02), vùng chạm 72 dp.
 class AppBackBar extends StatelessWidget implements PreferredSizeWidget {
-  const AppBackBar({super.key, this.backLabel = 'Quay lại', this.step, this.trailing, this.onBack});
+  const AppBackBar({
+    super.key,
+    this.backLabel = 'Quay lại',
+    this.step,
+    this.trailing,
+    this.onBack,
+    double height = AppSizes.appBar,
+    bool stacked = false,
+  })  : _height = height,
+        _stacked = stacked;
+
+  /// Resolve preferred height before Scaffold lays out its app bar.
+  /// Never shrink Back/step labels when the system text size increases.
+  factory AppBackBar.adaptive(
+    BuildContext context, {
+    Key? key,
+    String backLabel = 'Quay lại',
+    String? step,
+    Widget? trailing,
+    VoidCallback? onBack,
+  }) {
+    final theme = Theme.of(context);
+    final scaler = MediaQuery.textScalerOf(context);
+    final width = MediaQuery.sizeOf(context).width - 2 * AppSpacing.base;
+    final hasEnd = step != null || trailing != null;
+    double naturalWidth(String label, TextStyle? style) {
+      final painter = TextPainter(
+        text: TextSpan(text: label, style: style),
+        textDirection: Directionality.of(context),
+        textScaler: scaler,
+      )..layout();
+      final width = painter.width;
+      painter.dispose();
+      return width;
+    }
+
+    final backNaturalWidth =
+        naturalWidth(backLabel, theme.textTheme.labelLarge) +
+            AppSizes.icon +
+            AppSpacing.sm +
+            2 * AppSpacing.base;
+    final endNaturalWidth = step != null
+        ? naturalWidth(step, theme.textTheme.labelMedium)
+        : naturalWidth(trailing is AppBarEditButton ? trailing.label : 'Sửa',
+                theme.textTheme.labelLarge) +
+            AppSizes.iconInChip +
+            AppSpacing.sm +
+            2 * AppSpacing.base;
+    final stacked =
+        hasEnd && backNaturalWidth + endNaturalWidth + AppSpacing.sm > width;
+    final backWidth = hasEnd && !stacked ? width / 2 : width;
+    double measure(String label, TextStyle? style, double maxWidth) {
+      final painter = TextPainter(
+        text: TextSpan(text: label, style: style),
+        textDirection: Directionality.of(context),
+        textScaler: scaler,
+      )..layout(maxWidth: maxWidth.clamp(1, double.infinity));
+      final height = painter.height;
+      painter.dispose();
+      return height;
+    }
+
+    final backHeight = measure(backLabel, theme.textTheme.labelLarge,
+            backWidth - AppSizes.icon - AppSpacing.sm - 2 * AppSpacing.base) +
+        2 * AppSpacing.md;
+    final endHeight = step != null
+        ? measure(
+            step, theme.textTheme.labelMedium, stacked ? width : width / 2)
+        : scaler.scale(theme.textTheme.labelLarge!.fontSize!) *
+                theme.textTheme.labelLarge!.height! +
+            2 * AppSpacing.md;
+    final firstHeight = backHeight.clamp(AppSizes.minTarget, double.infinity);
+    final height = stacked
+        ? firstHeight + endHeight.clamp(AppSizes.minTarget, double.infinity)
+        : firstHeight.clamp(hasEnd ? endHeight : 0, double.infinity);
+    return AppBackBar(
+      key: key,
+      backLabel: backLabel,
+      step: step,
+      trailing: trailing,
+      onBack: onBack,
+      height: height + 2 * AppSpacing.sm,
+      stacked: stacked,
+    );
+  }
+
+  AppBackBar adapt(BuildContext context) => AppBackBar.adaptive(context,
+      key: key,
+      backLabel: backLabel,
+      step: step,
+      trailing: trailing,
+      onBack: onBack);
 
   final String backLabel;
   final String? step;
-
-  /// Nút bên phải, vd. [AppBarEditButton] ở S04. Không dùng cùng [step].
   final Widget? trailing;
   final VoidCallback? onBack;
+  final double _height;
+  final bool _stacked;
 
   @override
-  Size get preferredSize => const Size.fromHeight(AppSizes.appBar);
+  Size get preferredSize => Size.fromHeight(_height);
 
   @override
   Widget build(BuildContext context) {
-    assert(step == null || trailing == null, 'AppBackBar: chỉ dùng step hoặc trailing, không dùng cả hai');
+    assert(step == null || trailing == null,
+        'AppBackBar: chỉ dùng step hoặc trailing, không dùng cả hai');
     final theme = Theme.of(context);
-    return AppBar(
-      automaticallyImplyLeading: false,
-      leadingWidth: AppSizes.backButtonWidth,
-      leading: Padding(
-        padding: const EdgeInsets.only(left: AppSpacing.sm),
-        child: TextButton.icon(
-          onPressed: onBack ?? () => Navigator.of(context).maybePop(),
-          icon: const Icon(AppIcons.chevronLeft, size: AppSizes.icon),
-          label: Text(backLabel, overflow: TextOverflow.ellipsis),
+    final back = TextButton(
+      onPressed: onBack ??
+          () {
+            final router = GoRouter.maybeOf(context);
+            if (router != null && !router.canPop()) {
+              router.go('/calendar');
+            } else {
+              Navigator.of(context).maybePop();
+            }
+          },
+      child: Row(mainAxisSize: MainAxisSize.min, children: [
+        const Icon(AppIcons.chevronLeft, size: AppSizes.icon),
+        const SizedBox(width: AppSpacing.sm),
+        Flexible(child: Text(backLabel)),
+      ]),
+    );
+    final end = trailing ??
+        (step == null
+            ? null
+            : Text(step!,
+                style: theme.textTheme.labelMedium
+                    ?.copyWith(color: theme.colorScheme.onSurfaceVariant)));
+    return Material(
+      color: theme.scaffoldBackgroundColor,
+      child: SafeArea(
+        bottom: false,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(
+              horizontal: AppSpacing.base, vertical: AppSpacing.sm),
+          child: _stacked
+              ? Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                      Align(
+                          alignment: AlignmentDirectional.centerStart,
+                          child: back),
+                      if (end != null)
+                        Expanded(
+                            child: Align(
+                                alignment: AlignmentDirectional.centerEnd,
+                                child: end)),
+                    ])
+              : Row(children: [
+                  Expanded(
+                      child: Align(
+                          alignment: AlignmentDirectional.centerStart,
+                          child: back)),
+                  if (end != null)
+                    Expanded(
+                        child: Align(
+                            alignment: AlignmentDirectional.centerEnd,
+                            child: end)),
+                ]),
         ),
       ),
-      // "Bước x/y" / [trailing] đặt ở ô `title` (co giãn theo chỗ còn lại) thay vì `actions` (rộng cố định):
-      // chữ phóng to ×2.0 ở 360 dp thì thu nhỏ vừa chỗ, không tràn.
-      title: step == null && trailing == null
-          ? null
-          : Align(
-              alignment: AlignmentDirectional.centerEnd,
-              child: FittedBox(
-                fit: BoxFit.scaleDown,
-                child: trailing ??
-                    Text(step!,
-                        style: theme.textTheme.labelMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
-              ),
-            ),
-      titleSpacing: AppSpacing.sm,
-      actions: const [SizedBox(width: AppSpacing.screen)],
     );
   }
 }
 
 /// Nút "Sửa" viền bo tròn đặt ở [AppBackBar.trailing] (S04, flutter-handoff.md › Bảng 2 › Back+Action).
 class AppBarEditButton extends StatelessWidget {
-  const AppBarEditButton({super.key, required this.onPressed, this.label = 'Sửa'});
+  const AppBarEditButton(
+      {super.key, required this.onPressed, this.label = 'Sửa'});
 
   final VoidCallback? onPressed;
   final String label;
