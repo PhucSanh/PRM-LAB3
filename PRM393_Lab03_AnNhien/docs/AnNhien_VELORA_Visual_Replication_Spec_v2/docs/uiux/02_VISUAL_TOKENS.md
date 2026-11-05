@@ -1,6 +1,6 @@
 # 02 — Visual foundations & token contract
 
-**LATEST USER OVERRIDE — reference first:** Người dùng bác bỏ giao diện chữ quá lớn/đậm và yêu cầu clone bố cục VELORA trước, rồi chọn chữ rõ cho người lớn tuổi. Áp dụng 15 và 16: serif Regular chỉ cho heading ngắn; sans Regular cho body; không áp bảng 24/600 và 30/700 cũ. Trang mở đầu và main page phải theo reference.
+**LATEST USER OVERRIDE — reference first:** Người dùng bác bỏ giao diện chữ quá lớn/đậm và yêu cầu clone bố cục VELORA trước, rồi chọn chữ rõ cho người lớn tuổi. Áp dụng 15 và 16: heading chức năng dùng Be Vietnam Pro SemiBold 600; serif chỉ dành cho wordmark intro; không áp bảng 24/600 và 30/700 cũ. Trang mở đầu và main page phải theo reference.
 
 
 **Priority override (v2):** Dùng `14_VELORA_VISUAL_REPLICATION.md` và ảnh VELORA làm visual target. Bảng màu và typography bên dưới là baseline cũ; nơi xung đột, dùng visual token v2 sau khi kiểm thử tương phản. Pixel-perfect tuyệt đối không thể xác nhận từ một ảnh render AI, nhưng yêu cầu visual fidelity tối đa trong giới hạn sản phẩm An Nhiên.
@@ -35,7 +35,7 @@ Khuyến nghị map sang Material 3 `ColorScheme`; màu trạng thái tính năn
 | Role | Elderly | Caregiver | Weight | Line height | Dùng cho |
 |---|---:|---:|---|---:|---|
 | Display | 34–38 | 32–36 | 400 serif | 1.20 | Wordmark |
-| Page title | 30 | 28 | 400 serif | 1.25 | Heading ngắn |
+| Page title | 30 | 28 | 600 sans | 1.25 | Heading ngắn |
 | Section title | 20 | 20 | 600 sans | 1.35 | Section |
 | Card/task title | 20 | 18 | 600 sans | 1.35 | Actual item |
 | Body primary | 18 | 17 | 400 sans | 1.50 | Nội dung |

@@ -163,6 +163,6 @@ class VeloraCategoryTile extends StatelessWidget {
                                 color: Theme.of(context).colorScheme.primary)),
                         const SizedBox(height: 12),
                         Text(label,
-                            style: Theme.of(context).textTheme.bodyMedium),
+                            style: Theme.of(context).textTheme.titleSmall),
                       ])))));
 }

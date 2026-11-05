@@ -1,3 +1,5 @@
+> **YÊU CẦU MỚI NHẤT — tiêu đề khó đọc:** người dùng xác nhận “Bác Lan”, “Thư giãn…” vẫn quá mảnh. Heading chức năng toàn app (display/headline: greeting, feature, detail, page) đổi sang **Be Vietnam Pro SemiBold 600**, giữ size hiện tại. Nhãn ô thói quen dùng **18sp/600** thay 16/400. Serif chỉ còn ở wordmark intro đã chỉnh riêng. Quy tắc này thay mọi yêu cầu serif Regular cho functional headings bên dưới; không quay lại font Display có hairline mảnh. Body/metadata và bố cục giữ nguyên.
+
 # 15 — Typography theo yêu cầu mới nhất: rõ nhưng thanh thoát
 
 **Thay hoàn toàn bản typography override trước đó.** Người dùng phản hồi font quá nặng và yêu cầu dựng sát VELORA trước, sau đó chỉnh font/size cho người lớn tuổi. Không quay lại blanket body 24/600 và serif 700. User request > 15/16 > 14 > các baseline cũ. `CLAUDE.md` và tài liệu Lab 2 giữ làm lịch sử; các chỉ số cũ xung đột không được dùng để dựng lại UI nặng chữ.

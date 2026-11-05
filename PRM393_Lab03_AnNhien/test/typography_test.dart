@@ -102,15 +102,10 @@ void main() {
               final style = renderedStyle(tester, label);
               expect(style.fontSize, size, reason: label);
               expect(style.fontWeight, weight, reason: label);
-              expect(
-                  style.fontFamily,
-                  label == 'Lịch của Bác'
-                      ? 'NotoSerifDisplay'
-                      : AppTheme.fontFamily,
-                  reason: label);
+              expect(style.fontFamily, AppTheme.fontFamily, reason: label);
             }
 
-            check('Lịch của Bác', caregiver ? 28 : 30, FontWeight.w400);
+            check('Lịch của Bác', caregiver ? 28 : 30, FontWeight.w600);
             check('Đi bộ cùng gia đình', caregiver ? 18 : 20, FontWeight.w600);
             check('Giữ nhịp sinh hoạt mỗi ngày.', caregiver ? 17 : 18,
                 FontWeight.w400);

@@ -1,4 +1,6 @@
-# 16 — Reference-first layout: latest user request
+# 16 — Reference-first layout
+
+> Latest readability override: greeting name, feature/detail/page headings use Be Vietnam Pro SemiBold 600. Only the intro wordmark stays serif. Category labels use 18sp/600. This supersedes the older serif-heading descriptions below.
 
 Yêu cầu trực tiếp mới nhất: màn mở app giống panel 01 VELORA; main page giống panel 02; các màn còn lại đồng nhất theo đó. Ưu tiên yêu cầu này khi khác IA/typography của bản v2 cũ. Không tuyên bố literal pixel-perfect từ ảnh AI nếu chưa có source thiết kế.
 

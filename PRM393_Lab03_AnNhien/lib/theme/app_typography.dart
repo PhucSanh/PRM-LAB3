@@ -31,17 +31,17 @@ abstract final class AppTypography {
 
   static const elderly = TextTheme(
     displayLarge:
-        TextStyle(fontSize: 38, fontWeight: FontWeight.w400, height: 1.2),
+        TextStyle(fontSize: 38, fontWeight: FontWeight.w600, height: 1.2),
     displayMedium:
-        TextStyle(fontSize: 36, fontWeight: FontWeight.w400, height: 1.2),
+        TextStyle(fontSize: 36, fontWeight: FontWeight.w600, height: 1.2),
     displaySmall:
-        TextStyle(fontSize: 34, fontWeight: FontWeight.w400, height: 1.2),
+        TextStyle(fontSize: 34, fontWeight: FontWeight.w600, height: 1.2),
     headlineLarge:
-        TextStyle(fontSize: 32, fontWeight: FontWeight.w400, height: 1.2),
+        TextStyle(fontSize: 32, fontWeight: FontWeight.w600, height: 1.2),
     headlineMedium:
-        TextStyle(fontSize: 30, fontWeight: FontWeight.w400, height: 1.25),
+        TextStyle(fontSize: 30, fontWeight: FontWeight.w600, height: 1.25),
     headlineSmall:
-        TextStyle(fontSize: 26, fontWeight: FontWeight.w400, height: 1.25),
+        TextStyle(fontSize: 26, fontWeight: FontWeight.w600, height: 1.25),
     titleLarge:
         TextStyle(fontSize: 20, fontWeight: FontWeight.w600, height: 1.35),
     titleMedium:
@@ -63,17 +63,17 @@ abstract final class AppTypography {
   );
   static const caregiver = TextTheme(
     displayLarge:
-        TextStyle(fontSize: 36, fontWeight: FontWeight.w400, height: 1.2),
+        TextStyle(fontSize: 36, fontWeight: FontWeight.w600, height: 1.2),
     displayMedium:
-        TextStyle(fontSize: 34, fontWeight: FontWeight.w400, height: 1.2),
+        TextStyle(fontSize: 34, fontWeight: FontWeight.w600, height: 1.2),
     displaySmall:
-        TextStyle(fontSize: 32, fontWeight: FontWeight.w400, height: 1.2),
+        TextStyle(fontSize: 32, fontWeight: FontWeight.w600, height: 1.2),
     headlineLarge:
-        TextStyle(fontSize: 30, fontWeight: FontWeight.w400, height: 1.2),
+        TextStyle(fontSize: 30, fontWeight: FontWeight.w600, height: 1.2),
     headlineMedium:
-        TextStyle(fontSize: 28, fontWeight: FontWeight.w400, height: 1.25),
+        TextStyle(fontSize: 28, fontWeight: FontWeight.w600, height: 1.25),
     headlineSmall:
-        TextStyle(fontSize: 24, fontWeight: FontWeight.w400, height: 1.25),
+        TextStyle(fontSize: 24, fontWeight: FontWeight.w600, height: 1.25),
     titleLarge:
         TextStyle(fontSize: 20, fontWeight: FontWeight.w600, height: 1.35),
     titleMedium:

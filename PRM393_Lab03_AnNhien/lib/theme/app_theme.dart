@@ -88,22 +88,12 @@ abstract final class AppTheme {
   static ThemeData _build(ColorScheme scheme,
       {required Color background, required bool caregiver}) {
     final typography = caregiver ? AppTypography.caregiver : textTheme;
-    final sans = typography.apply(
+    // Functional headings must be easy to read: a consistent SemiBold sans.
+    // Serif is reserved for the explicit An Nhiên intro wordmark.
+    final text = typography.apply(
       fontFamily: fontFamily,
       bodyColor: scheme.onSurface,
       displayColor: scheme.onSurface,
-    );
-    final text = sans.copyWith(
-      displayLarge: sans.displayLarge?.copyWith(fontFamily: 'NotoSerifDisplay'),
-      displayMedium:
-          sans.displayMedium?.copyWith(fontFamily: 'NotoSerifDisplay'),
-      displaySmall: sans.displaySmall?.copyWith(fontFamily: 'NotoSerifDisplay'),
-      headlineLarge:
-          sans.headlineLarge?.copyWith(fontFamily: 'NotoSerifDisplay'),
-      headlineMedium:
-          sans.headlineMedium?.copyWith(fontFamily: 'NotoSerifDisplay'),
-      headlineSmall:
-          sans.headlineSmall?.copyWith(fontFamily: 'NotoSerifDisplay'),
     );
     // A 56dp button is a pill. Keep the corner radius bounded when a large
     // multi-line label makes the button taller, so the endcaps cannot clip text.

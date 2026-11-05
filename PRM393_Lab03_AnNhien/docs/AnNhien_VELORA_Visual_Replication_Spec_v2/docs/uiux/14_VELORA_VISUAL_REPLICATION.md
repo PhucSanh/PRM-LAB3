@@ -1,6 +1,6 @@
 # 14 — VELORA VISUAL REPLICATION CONTRACT (APPROVED REFERENCE)
 
-**LATEST USER OVERRIDE — reference first:** Người dùng bác bỏ giao diện chữ quá lớn/đậm và yêu cầu clone bố cục VELORA trước, rồi chọn chữ rõ cho người lớn tuổi. Áp dụng 15 và 16: serif Regular chỉ cho heading ngắn; sans Regular cho body; không áp bảng 24/600 và 30/700 cũ. Trang mở đầu và main page phải theo reference.
+**LATEST USER OVERRIDE — reference first:** Người dùng bác bỏ giao diện chữ quá lớn/đậm và yêu cầu clone bố cục VELORA trước, rồi chọn chữ rõ cho người lớn tuổi. Áp dụng 15 và 16: heading chức năng dùng Be Vietnam Pro SemiBold 600; serif chỉ dành cho wordmark intro; không áp bảng 24/600 và 30/700 cũ. Trang mở đầu và main page phải theo reference.
 
 
 **Status: MANDATORY / supersedes generic aesthetics in v1.** **Reference:** [https://mygifai.com/inspiration/insp_mp45kj70dawpsw](https://mygifai.com/inspiration/insp_mp45kj70dawpsw). **Reference image:** [https://pic.mygifai.com/inspirations/1778682388994-xnbt7d36eo.jpg](https://pic.mygifai.com/inspirations/1778682388994-xnbt7d36eo.jpg). **Source image is third-party design inspiration, not a production asset.** This document refers to a *four-phone AI mockup*, NOT source Figma files or precise design tokens. All numeric measurements below are implementation targets/inferences, NOT measured ground truth. Do not claim literal pixel-perfect identity without comparison screenshots and/or design source.

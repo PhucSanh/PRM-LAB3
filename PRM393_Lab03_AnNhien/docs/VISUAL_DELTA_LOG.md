@@ -1,3 +1,5 @@
+> **Heading hiện hành:** phản hồi “Bác Lan”, “Thư giãn…” quá mảnh đã được xử lý bằng **Be Vietnam Pro SemiBold 600** cho display/headline toàn app, giữ size/layout. Nhãn thói quen **18sp/600**. Serif chỉ giữ ở wordmark intro; các mô tả serif-heading cũ phía dưới là lịch sử. Golden home/detail hiện tại đã cập nhật; Android screenshots cũ không thể hiện lần sửa này.
+
 > **Intro mới nhất:** người dùng yêu cầu chữ lớn/đậm hơn trên ảnh intro. Đã cập nhật wordmark Noto Serif 38/tracking 1.5, tagline 16/600, description 20/600 và CTA 20/600 với target 64dp. Các giá trị intro này thay các mô tả Regular ở dưới; typography ngoài intro giữ nguyên. Xem golden welcome mới; Android screenshots cũ là trước chỉnh sửa này.
 
 # VELORA reference-first — bản hiện hành
@@ -55,3 +57,7 @@ Không gọi bản này là đo pixel-perfect từ Figma: nguồn là ảnh mock
 - 36 ảnh VELORA ở 6 màn ×2 kích thước ×3 mức scale, 8 route snapshots và 4 typography snapshots; xem trực tiếp trước khi chốt.
 - Đã kiểm tra intro paging, 5 đích điều hướng thật, quay lại từ account và intro CTA không vượt auth guard.
 - `git diff --check`: sạch. Không có thay đổi ở `/today` source, services, models, Firebase hay Android integration.
+
+## Heading readability verification
+
+Be Vietnam Pro SemiBold 600 now applies to functional display/headline roles; habit tiles use titleSmall 18/600. Reviewed actual-font home screenshot: greeting name and featured title no longer use thin serif. Golden/style checks: 145 passed. Full regression log: 777 passed. Analyze: no issues. Debug APK built successfully; adb currently lists no devices, so this APK has not been installed by this run.

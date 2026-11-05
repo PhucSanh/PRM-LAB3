@@ -1,6 +1,6 @@
 # CODEX START HERE — AN NHIÊN CALM & PREMIUM
 
-**LATEST USER OVERRIDE — reference first:** Người dùng bác bỏ giao diện chữ quá lớn/đậm và yêu cầu clone bố cục VELORA trước, rồi chọn chữ rõ cho người lớn tuổi. Áp dụng 15 và 16: serif Regular chỉ cho heading ngắn; sans Regular cho body; không áp bảng 24/600 và 30/700 cũ. Trang mở đầu và main page phải theo reference.
+**LATEST USER OVERRIDE — reference first:** Người dùng bác bỏ giao diện chữ quá lớn/đậm và yêu cầu clone bố cục VELORA trước, rồi chọn chữ rõ cho người lớn tuổi. Áp dụng 15 và 16: heading chức năng dùng Be Vietnam Pro SemiBold 600; serif chỉ dành cho wordmark intro; không áp bảng 24/600 và 30/700 cũ. Trang mở đầu và main page phải theo reference.
 
 
 ## SOURCE OF TRUTH — MẪU VELORA
