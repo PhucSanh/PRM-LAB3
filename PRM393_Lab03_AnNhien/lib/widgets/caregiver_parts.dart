@@ -60,9 +60,6 @@ class CaregiverPage extends StatelessWidget {
             : DecoratedBox(
                 decoration: BoxDecoration(
                   color: Theme.of(context).colorScheme.surface,
-                  border: Border(
-                      top: BorderSide(
-                          color: Theme.of(context).colorScheme.outlineVariant)),
                 ),
                 child: SafeArea(
                     top: false,

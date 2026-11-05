@@ -49,7 +49,7 @@ class AppTextField extends StatelessWidget {
     final scheme = theme.colorScheme;
     final hasError = errorText != null;
     OutlineInputBorder border(Color color, double width) => OutlineInputBorder(
-          borderRadius: AppRadius.mdAll,
+          borderRadius: AppRadius.inputAll,
           borderSide: BorderSide(color: color, width: width),
         );
 
@@ -73,9 +73,12 @@ class AppTextField extends StatelessWidget {
               style: theme.textTheme.bodyLarge
                   ?.copyWith(fontWeight: FontWeight.w400),
               decoration: InputDecoration(
-                fillColor: hasError ? scheme.errorContainer : scheme.surface,
+                fillColor: hasError
+                    ? scheme.errorContainer
+                    : scheme.secondaryContainer,
                 enabledBorder: border(
-                    hasError ? scheme.error : scheme.outline, AppSizes.border),
+                    hasError ? scheme.error : scheme.outlineVariant,
+                    hasError ? AppSizes.border : 1),
                 // Viền dày gấp đôi khi đang gõ: dấu hiệu tiêu điểm không chỉ bằng màu.
                 focusedBorder: border(hasError ? scheme.error : scheme.primary,
                     2 * AppSizes.border),

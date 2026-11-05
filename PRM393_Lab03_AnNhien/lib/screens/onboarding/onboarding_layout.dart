@@ -58,8 +58,6 @@ class OnboardingLayout extends StatelessWidget {
       DecoratedBox(
         decoration: BoxDecoration(
           color: theme.scaffoldBackgroundColor,
-          border:
-              Border(top: BorderSide(color: theme.colorScheme.outlineVariant)),
         ),
         child: Padding(
           padding: const EdgeInsets.fromLTRB(AppSpacing.screen, AppSpacing.md,

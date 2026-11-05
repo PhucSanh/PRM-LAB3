@@ -83,7 +83,6 @@ class HabitBadge extends StatelessWidget {
         decoration: BoxDecoration(
           color: colors.bg,
           borderRadius: BorderRadius.circular(size * 0.3),
-          border: Border.all(color: colors.fg.withValues(alpha: 0.16)),
         ),
         child: Icon(
           icon ?? HabitStyle.iconOf(habitKey),
@@ -207,7 +206,7 @@ class HabitAccentCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     return Material(
-      color: selected ? scheme.primaryContainer : scheme.surface,
+      color: selected ? scheme.primaryContainer : scheme.secondaryContainer,
       shape: RoundedRectangleBorder(
         borderRadius: AppRadius.cardAll,
         side: selected

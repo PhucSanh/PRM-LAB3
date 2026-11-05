@@ -155,9 +155,8 @@ class _ReminderPreview extends StatelessWidget {
       excludeSemantics: true,
       child: DecoratedBox(
         decoration: BoxDecoration(
-          color: scheme.surface,
+          color: scheme.secondaryContainer,
           borderRadius: AppRadius.cardAll,
-          border: Border.all(color: scheme.outlineVariant),
         ),
         child: Padding(
           padding: const EdgeInsets.all(AppSpacing.screen),

@@ -128,8 +128,6 @@ class _PinnedFooterLayout extends StatelessWidget {
         DecoratedBox(
           decoration: BoxDecoration(
             color: theme.scaffoldBackgroundColor,
-            border: Border(
-                top: BorderSide(color: theme.colorScheme.outlineVariant)),
           ),
           child: ConstrainedBox(
             constraints:

@@ -113,7 +113,7 @@ class _ChoiceTile<T> extends StatelessWidget {
       style: (option.previewScale != null
               ? theme.textTheme.bodyMedium
               : theme.textTheme.titleMedium)
-          ?.copyWith(color: fg, fontWeight: FontWeight.w700),
+          ?.copyWith(color: fg, fontWeight: FontWeight.w600),
       textAlign: segmented ? TextAlign.center : TextAlign.start,
     );
     if (option.previewScale != null) {

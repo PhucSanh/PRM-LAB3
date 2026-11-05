@@ -130,8 +130,6 @@ class _Layout extends StatelessWidget {
       DecoratedBox(
         decoration: BoxDecoration(
           color: theme.scaffoldBackgroundColor,
-          border:
-              Border(top: BorderSide(color: theme.colorScheme.outlineVariant)),
         ),
         child: Padding(
           padding: const EdgeInsets.symmetric(
@@ -161,9 +159,8 @@ class _Quote extends StatelessWidget {
     final scheme = theme.colorScheme;
     return DecoratedBox(
       decoration: BoxDecoration(
-        color: scheme.surface,
+        color: scheme.secondaryContainer,
         borderRadius: AppRadius.cardAll,
-        border: Border.all(color: scheme.outlineVariant),
       ),
       child: Padding(
         padding: const EdgeInsets.all(AppSpacing.base),

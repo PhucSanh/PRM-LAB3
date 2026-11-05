@@ -102,8 +102,8 @@ abstract final class AppTheme {
     );
     const buttonSize = Size(AppSizes.minTarget, AppSizes.minTarget);
     final inputBorder = OutlineInputBorder(
-      borderRadius: AppRadius.mdAll,
-      borderSide: BorderSide(color: scheme.outline, width: AppSizes.border),
+      borderRadius: AppRadius.inputAll,
+      borderSide: BorderSide(color: scheme.outlineVariant),
     );
 
     return ThemeData(
@@ -169,7 +169,7 @@ abstract final class AppTheme {
         selectionHandleColor: scheme.primary,
       ),
       cardTheme: CardThemeData(
-        color: scheme.surface,
+        color: scheme.secondaryContainer,
         elevation: 0,
         margin: EdgeInsets.zero,
         shape: RoundedRectangleBorder(
@@ -181,7 +181,7 @@ abstract final class AppTheme {
       ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
-        fillColor: scheme.surface,
+        fillColor: scheme.secondaryContainer,
         // 22 trên + 22 dưới + 1 dòng body-lg (24 × 1.5) ≈ 80 ≥ minTarget.
         contentPadding: const EdgeInsets.symmetric(
             horizontal: AppSpacing.base, vertical: 22),

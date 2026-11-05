@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../theme/app_spacing.dart';
+import 'app_surface.dart';
 
 /// Khung thẻ trắng, viền nhạt, bo 16 (Figma S10 `1:2340` "Card Cỡ chữ", `1:2374` "Card 3 công tắc").
 /// Tuỳ chọn đầu thẻ: icon 32 màu `primary` + tiêu đề (đọc là heading). Nội dung tự cao theo chữ.
@@ -15,32 +16,24 @@ class SectionCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
-    return DecoratedBox(
-      decoration: const BoxDecoration(
-        color: Colors.transparent,
-        borderRadius: AppRadius.cardAll,
-      ),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: AppSpacing.base),
-        child:
-            Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-          if (title != null) ...[
-            Row(children: [
-              if (icon != null) ...[
-                Icon(icon, size: AppSizes.icon, color: scheme.primary),
-                const SizedBox(width: AppSpacing.md),
-              ],
-              Expanded(
-                child: Semantics(
-                    header: true,
-                    child: Text(title!, style: theme.textTheme.titleLarge)),
-              ),
-            ]),
-            const SizedBox(height: AppSpacing.base),
-          ],
-          child,
-        ]),
-      ),
+    return AppSurface(
+      child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+        if (title != null) ...[
+          Row(children: [
+            if (icon != null) ...[
+              Icon(icon, size: AppSizes.icon, color: scheme.primary),
+              const SizedBox(width: AppSpacing.md),
+            ],
+            Expanded(
+              child: Semantics(
+                  header: true,
+                  child: Text(title!, style: theme.textTheme.titleLarge)),
+            ),
+          ]),
+          const SizedBox(height: AppSpacing.base),
+        ],
+        child,
+      ]),
     );
   }
 }

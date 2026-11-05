@@ -7,6 +7,7 @@ import '../../theme/app_colors.dart';
 import '../../theme/app_spacing.dart';
 import '../../viewmodels/task_form_view_model.dart';
 import '../../widgets/app_button.dart';
+import '../../widgets/calm_parts.dart';
 import '../../widgets/app_back_bar.dart';
 import '../../widgets/botanical_scene.dart';
 import '../../widgets/app_text_field.dart';
@@ -124,12 +125,12 @@ class _ActivityChoice extends StatelessWidget {
       label: activity.name,
       excludeSemantics: true,
       child: Material(
-          color: selected ? scheme.primaryContainer : scheme.surface,
+          color: selected ? scheme.primaryContainer : scheme.secondaryContainer,
           shape: RoundedRectangleBorder(
               borderRadius: AppRadius.cardAll,
-              side: BorderSide(
-                  color: selected ? scheme.primary : scheme.outline,
-                  width: AppSizes.border)),
+              side: selected
+                  ? BorderSide(color: scheme.primary, width: 1.5)
+                  : BorderSide.none),
           child: InkWell(
             onTap: onTap,
             child: ConstrainedBox(
@@ -141,10 +142,11 @@ class _ActivityChoice extends StatelessWidget {
                           width: 64,
                           height: 64,
                           decoration: BoxDecoration(
-                              color: HabitPalette.of(activity.key).accent,
+                              color: HabitPalette.of(activity.key).bg,
                               borderRadius: AppRadius.mdAll),
                           child: Icon(activity.icon,
-                              color: Colors.white, size: AppSizes.icon)),
+                              color: HabitPalette.of(activity.key).fg,
+                              size: AppSizes.icon)),
                       const SizedBox(width: AppSpacing.base),
                       Expanded(
                           child: Text(activity.name,
@@ -435,10 +437,11 @@ class _ActivitySummary extends StatelessWidget {
                 width: 64,
                 height: 64,
                 decoration: BoxDecoration(
-                    color: HabitPalette.of(activity.key).accent,
+                    color: HabitPalette.of(activity.key).bg,
                     borderRadius: AppRadius.mdAll),
                 child: Icon(activity.icon,
-                    color: Colors.white, size: AppSizes.icon)),
+                    color: HabitPalette.of(activity.key).fg,
+                    size: AppSizes.icon)),
             const SizedBox(width: AppSpacing.base),
             Expanded(
                 child: Text(activity.name,
@@ -479,9 +482,8 @@ class _TaskDateScreenState extends State<TaskDateScreen> {
   DateTime selected = DateTime.now();
   @override
   Widget build(BuildContext context) => Scaffold(
-      appBar: AppBar(
-          leading: BackButton(onPressed: context.pop),
-          title: const Text('Thêm việc')),
+      appBar:
+          AppBackBar.adaptive(context, step: 'Thêm việc', onBack: context.pop),
       bottomNavigationBar: SafeArea(
           child: Padding(
               padding: const EdgeInsets.all(AppSpacing.screen),
@@ -498,8 +500,8 @@ class _TaskDateScreenState extends State<TaskDateScreen> {
                     onPressed: context.pop)
               ]))),
       body: ListView(padding: AppSpacing.screenPadding, children: [
-        const _SectionTitle(
-            icon: Icons.calendar_month_rounded, text: 'Chọn ngày'),
+        const CalmPageHeader(title: 'Chọn ngày', actions: false),
+        const SizedBox(height: AppSpacing.base),
         Text('Chọn ngày, rồi bấm Xong để xác nhận.',
             style: Theme.of(context).textTheme.bodyLarge),
         CalendarDatePicker(
@@ -533,9 +535,8 @@ class _TaskRepeatScreenState extends ConsumerState<TaskRepeatScreen> {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-      appBar: AppBar(
-          leading: BackButton(onPressed: context.pop),
-          title: const Text('Thêm việc')),
+      appBar:
+          AppBackBar.adaptive(context, step: 'Thêm việc', onBack: context.pop),
       bottomNavigationBar: SafeArea(
           child: Padding(
               padding: const EdgeInsets.all(AppSpacing.screen),
@@ -553,12 +554,11 @@ class _TaskRepeatScreenState extends ConsumerState<TaskRepeatScreen> {
                     onPressed: context.pop)
               ]))),
       body: ListView(padding: AppSpacing.screenPadding, children: [
-        const _SectionTitle(icon: Icons.repeat_rounded, text: 'Lặp lại'),
-        Text('Chọn những ngày Bác muốn làm việc này.',
-            style: Theme.of(context).textTheme.bodyLarge),
+        const CalmPageHeader(
+            title: 'Chọn ngày trong tuần',
+            subtitle: 'Chọn những ngày Bác muốn làm việc này.',
+            actions: false),
         const SizedBox(height: AppSpacing.lg),
-        Text('Chọn ngày trong tuần',
-            style: Theme.of(context).textTheme.titleLarge),
         const SizedBox(height: AppSpacing.sm),
         for (final day in const [
           (DateTime.monday, 'Thứ Hai'),
@@ -570,6 +570,11 @@ class _TaskRepeatScreenState extends ConsumerState<TaskRepeatScreen> {
           (DateTime.sunday, 'Chủ Nhật')
         ]) ...[
           CheckboxListTile(
+              shape:
+                  const RoundedRectangleBorder(borderRadius: AppRadius.cardAll),
+              tileColor: selected.contains(day.$1)
+                  ? Theme.of(context).colorScheme.primaryContainer
+                  : Theme.of(context).colorScheme.secondaryContainer,
               value: selected.contains(day.$1),
               onChanged: (checked) => setState(() => checked == true
                   ? selected.add(day.$1)
