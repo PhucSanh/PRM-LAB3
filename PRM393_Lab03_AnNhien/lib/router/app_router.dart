@@ -1,7 +1,16 @@
-import '../screens/firebase_demo/profile_demo_entry_screen.dart';
+import '../services/local_reminder_service.dart';
+import '../viewmodels/caregiver_schedule_view_model.dart';
+import '../screens/firebase_demo/suggestion_demo_screen.dart';
+import '../screens/caregiver/pairing_screen.dart';
+import '../screens/caregiver/caregiver_schedule_screen.dart';
+import '../screens/caregiver/caregiver_form_screen.dart';
+import '../screens/caregiver/caregiver_detail_screen.dart';
+import '../screens/caregiver/demo_hub_screen.dart';
+import '../models/user_profile.dart';
 import '../screens/firebase_demo/inbox_screen.dart';
 import '../screens/firebase_demo/firebase_demo_screen.dart';
 import '../models/app_notification.dart';
+import '../models/task_item.dart';
 import '../models/notification_target.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -31,6 +40,7 @@ import '../viewmodels/session_view_model.dart';
 import '../widgets/app_shell.dart';
 import '../widgets/dev/widget_gallery.dart';
 import '../widgets/feature_placeholder.dart';
+import '../screens/tasks/task_form_screens.dart';
 
 /// Route map theo architecture.md mục 7.2 (gốc: flutter-handoff.md Lab 2). Chủ file: A – Sanh.
 /// Ai làm màn nào: thay `FeaturePlaceholder` bằng màn thật của mình.
@@ -58,16 +68,16 @@ final routerProvider = Provider<GoRouter>((ref) {
   final refresh = ValueNotifier<int>(0);
   ref.onDispose(refresh.dispose);
   String? lastUid;
-  String? pendingNotification;
+  AppNotification? pendingNotification;
   ref.listen(localReminderOpenedProvider, (_, next) {
     next.whenData((item) {
-      pendingNotification = notificationTarget(item.route);
+      pendingNotification = item;
     });
     refresh.value++;
   });
   ref.listen(notificationOpenedProvider, (_, next) {
     next.whenData((item) {
-      pendingNotification = notificationTarget(item.route);
+      pendingNotification = item;
     });
     refresh.value++;
   });
@@ -135,10 +145,16 @@ final routerProvider = Provider<GoRouter>((ref) {
               : '/today';
         }
       }
-      final target = pendingNotification;
-      if (target != null) {
+      final pending = pendingNotification;
+      if (pending != null) {
         pendingNotification = null;
-        return target == path ? null : target;
+        final parent = pending.parentUid;
+        final target = parent != null &&
+                parent.isNotEmpty &&
+                ref.read(profileProvider).asData?.value?.pairedMomUid != parent
+            ? '/inbox'
+            : notificationTarget(pending.route);
+        return target == state.uri.toString() ? null : target;
       }
       return null;
     },
@@ -161,15 +177,10 @@ final routerProvider = Provider<GoRouter>((ref) {
           path: '/setup/first-task',
           builder: (_, __) => const FirstTaskScreen()),
       // F4 Thêm, sửa, xoá việc – Khang (màn con N11–N13, trả kết quả bằng pop(result))
+      GoRoute(path: '/task/date', builder: (_, __) => const TaskDateScreen()),
       GoRoute(
-          path: '/task/date',
-          builder: (_, __) => ph('N11 · F4', 'Chọn ngày', 'Khang')),
-      GoRoute(
-          path: '/task/repeat',
-          builder: (_, __) => ph('N12 · F4', 'Lặp lại', 'Khang')),
-      GoRoute(
-          path: '/task/scope',
-          builder: (_, __) => ph('N13 · F4', 'Phạm vi thay đổi', 'Khang')),
+          path: '/task/repeat', builder: (_, __) => const TaskRepeatScreen()),
+      GoRoute(path: '/task/scope', builder: (_, __) => const TaskScopeRoute()),
       // F6 Lời nhắc – Khang
       GoRoute(
           path: '/reminder/:taskId',
@@ -178,13 +189,20 @@ final routerProvider = Provider<GoRouter>((ref) {
           path: '/settings/reminders',
           builder: (_, __) => ph('N07 · F6', 'Cài đặt nhắc việc', 'Khang')),
       // F8 Cài đặt & hồ sơ – Sanh (khu demo Firebase F10 – Hiếu)
-      GoRoute(path: '/settings', builder: (_, __) => ph('S10 · F8', 'Cài đặt hiển thị', 'Sanh')),
-      GoRoute(path: '/settings/profile', builder: (_, __) => const ProfileDemoEntryScreen()),
-      GoRoute(path: '/settings/firebase-demo', builder: (_, __) => const FirebaseDemoScreen()),
-      GoRoute(path: '/settings/help', builder: (_, __) => ph('N08 · F8', 'Cách dùng đơn giản', 'Sanh')),
-      GoRoute(path: '/settings/data', builder: (_, __) => ph('N20 · F8', 'Dữ liệu trên điện thoại', 'Sanh')),
+      GoRoute(path: '/settings', builder: (_, __) => const SettingsScreen()),
+      GoRoute(
+          path: '/settings/profile', builder: (_, __) => const ProfileScreen()),
+      GoRoute(
+          path: '/settings/firebase-demo',
+          builder: (_, __) => const FirebaseDemoScreen()),
+      GoRoute(path: '/settings/help', builder: (_, __) => const HelpScreen()),
+      GoRoute(path: '/settings/data', builder: (_, __) => const DataScreen()),
       // F10 Firebase – Hiếu
       GoRoute(path: '/inbox', builder: (_, __) => const InboxScreen()),
+      GoRoute(
+          path: '/inbox/suggestions/:id',
+          builder: (_, state) =>
+              SuggestionDemoScreen(suggestionId: state.pathParameters['id']!)),
       // Chế độ Con cháu: mọi route /caregiver/* nằm ngoài shell của Bác.
       // F13/F14 – Hiếu. Guard demo vẫn mặc định tắt.
       GoRoute(
@@ -199,10 +217,13 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
           path: '/caregiver/schedule',
           builder: (_, state) => CaregiverScheduleScreen(
-                  view: switch (state.uri.queryParameters['view']) {
+              date: parseDateKey(state.uri.queryParameters['date']),
+              view: switch (state.uri.queryParameters['view']) {
                 'week' => CalendarView.week,
                 'month' => CalendarView.month,
-                _ => CalendarView.day
+                _ => state.uri.queryParameters.containsKey('date')
+                    ? CalendarView.day
+                    : null
               })),
       GoRoute(
           path: '/caregiver/task/new',
@@ -225,7 +246,9 @@ final routerProvider = Provider<GoRouter>((ref) {
               day: state.uri.queryParameters['date'] ??
                   DateTime.now().toIso8601String().substring(0, 10))),
       // F12 Gợi ý lịch (phía Con cháu) – Sanh
-      GoRoute(path: '/caregiver/suggest', builder: (_, __) => ph('G01 · F12', 'Con cháu soạn lịch gợi ý', 'Sanh')),
+      GoRoute(
+          path: '/caregiver/suggest',
+          builder: (_, __) => const SuggestionComposeScreen()),
       // F0 Trang xem thử widget – chỉ có ở bản debug (cần đăng nhập như mọi route khác).
       if (kDebugMode)
         GoRoute(
@@ -236,20 +259,46 @@ final routerProvider = Provider<GoRouter>((ref) {
         branches: [
           StatefulShellBranch(routes: [
             // F3 Hôm nay – Khang
-            GoRoute(path: '/today', builder: (_, __) => const TodayScreen(), routes: [
-              GoRoute(path: 'task/:id', builder: (_, __) => ph('S04 · F3', 'Chi tiết hoạt động', 'Khang')),
-              // F4 Thêm, sửa, xoá việc – Khang (add/result mở bằng go, thay thế, không chồng)
-              GoRoute(path: 'task/:id/edit', builder: (_, __) => ph('S15 · F4', 'Sửa việc', 'Khang')),
-              GoRoute(path: 'add', builder: (_, __) => ph('S05 · F4', 'Thêm việc – chọn hoạt động', 'Khang')),
-              GoRoute(path: 'add/time', builder: (_, __) => ph('S06 · F4', 'Thêm việc – thiết lập', 'Khang')),
-              GoRoute(path: 'add/result', builder: (_, __) => ph('ST-Saved · F4', 'Đã lưu xong', 'Khang')),
-              // F5 Giọng nói – Khang
-              GoRoute(path: 'voice', builder: (_, __) => ph('V01 · F5', 'Nói để thêm việc', 'Khang')),
-              // F7 Lịch tuần – Hương
-              GoRoute(path: 'all', builder: (_, __) => ph('S11 · F7', 'Chi tiết ngày – hôm nay', 'Hương')),
-              // F12 Gợi ý lịch (phía Bác) – Sanh
-              GoRoute(path: 'suggestions/:id', builder: (_, __) => ph('G03 · F12', 'Lịch Mai gợi ý', 'Sanh')),
-            ]),
+            GoRoute(
+                path: '/today',
+                builder: (_, __) => const TodayScreen(),
+                routes: [
+                  GoRoute(
+                      path: 'task/:id',
+                      builder: (_, __) =>
+                          ph('S04 · F3', 'Chi tiết hoạt động', 'Khang')),
+                  // F4 Thêm, sửa, xoá việc – Khang (add/result mở bằng go, thay thế, không chồng)
+                  GoRoute(
+                      path: 'task/:id/edit',
+                      builder: (_, state) => TaskConfigureScreen(
+                          editId: state.pathParameters['id']!)),
+                  GoRoute(
+                      path: 'add',
+                      builder: (_, __) => const ActivitySelectionScreen()),
+                  GoRoute(
+                      path: 'add/time',
+                      builder: (_, __) => const TaskConfigureScreen()),
+                  GoRoute(
+                      path: 'add/result',
+                      builder: (_, __) => const TaskSavedScreen()),
+                  // F5 Giọng nói – Khang
+                  GoRoute(
+                      path: 'voice',
+                      builder: (_, __) =>
+                          ph('V01 · F5', 'Nói để thêm việc', 'Khang')),
+                  // F7 Lịch tuần – Hương
+                  GoRoute(
+                      path: 'all',
+                      builder: (_, __) =>
+                          ph('S11 · F7', 'Chi tiết ngày – hôm nay', 'Hương')),
+                  // F12 Gợi ý lịch (phía Bác) – Sanh
+                  GoRoute(
+                      path: 'suggestions/:id',
+                      builder: (_, state) => SuggestionReviewScreen(
+                          id: state.pathParameters['id']!,
+                          entry: SuggestionEntry.fromQuery(
+                              state.uri.queryParameters['from']))),
+                ]),
           ]),
           StatefulShellBranch(routes: [
             // F7 Lịch tuần – Hương
