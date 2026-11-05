@@ -79,22 +79,22 @@ abstract final class HabitPalette {
 
   static const Map<String, HabitColors> byKey = {
     'move':
-        HabitColors(Color(0xFFD7EDE0), Color(0xFF0F3D2A), Color(0xFF2BA15C)),
+        HabitColors(Color(0xFFDCE2D7), AppColors.primary, AppColors.primary),
     'purpose':
-        HabitColors(Color(0xFFE3E7F8), Color(0xFF26357A), Color(0xFF768ADB)),
+        HabitColors(Color(0xFFEAE9EF), AppColors.primary, AppColors.primary),
     'downshift':
-        HabitColors(Color(0xFFEDE4F6), Color(0xFF4B2A73), Color(0xFFAC76DB)),
+        HabitColors(Color(0xFFEFE4DD), AppColors.primary, AppColors.primary),
     'eighty':
-        HabitColors(Color(0xFFFFF1D6), Color(0xFF7A4E00), Color(0xFFB98331)),
+        HabitColors(Color(0xFFF3EFE8), AppColors.primary, AppColors.primary),
     'plant':
-        HabitColors(Color(0xFFE2F0D2), Color(0xFF2F5214), Color(0xFF609D2A)),
-    'tea': HabitColors(Color(0xFFF6E6DA), Color(0xFF7A3412), Color(0xFFD0754E)),
+        HabitColors(Color(0xFFDCE2D7), AppColors.primary, AppColors.primary),
+    'tea': HabitColors(Color(0xFFEFE4DD), AppColors.primary, AppColors.primary),
     'belong':
-        HabitColors(Color(0xFFE0EEF2), Color(0xFF154A5A), Color(0xFF309BB5)),
+        HabitColors(Color(0xFFEAE9EF), AppColors.primary, AppColors.primary),
     'family':
-        HabitColors(Color(0xFFFCE4E1), Color(0xFF8C1D18), Color(0xFFD86E75)),
+        HabitColors(Color(0xFFEAE9EF), AppColors.primary, AppColors.primary),
     'tribe':
-        HabitColors(Color(0xFFF3E7EF), Color(0xFF6B1F4E), Color(0xFFD666AD)),
+        HabitColors(Color(0xFFDCE2D7), AppColors.primary, AppColors.primary),
   };
 
   static HabitColors of(String key) => byKey[key] ?? byKey['move']!;

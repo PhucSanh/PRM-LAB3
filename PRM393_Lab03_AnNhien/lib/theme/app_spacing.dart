@@ -32,7 +32,8 @@ abstract final class AppRadius {
   static const BorderRadius mdAll = BorderRadius.all(Radius.circular(md));
   static const BorderRadius buttonAll =
       BorderRadius.all(Radius.circular(button));
-  static const BorderRadius cardAll = BorderRadius.all(Radius.circular(xl));
+  static const BorderRadius cardAll = BorderRadius.all(Radius.circular(20));
+  static const BorderRadius inputAll = BorderRadius.all(Radius.circular(16));
   static const BorderRadius dialogAll = BorderRadius.all(Radius.circular(xl));
 }
 

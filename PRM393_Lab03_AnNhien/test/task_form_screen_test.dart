@@ -30,7 +30,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Đã lưu xong!'), findsOneWidget);
-    expect(find.text('Về trang Hôm nay'), findsOneWidget);
+    expect(find.text('Về trang chủ'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 }

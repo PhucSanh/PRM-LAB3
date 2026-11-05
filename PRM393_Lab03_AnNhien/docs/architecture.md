@@ -140,7 +140,7 @@ Màn dùng `switch (state)` để vẽ đủ 4 trạng thái. Hành động mộ
 | `/caregiver/suggest` | G01 → G01b → G02 (state của một màn `SuggestionComposeScreen`) | F12 | có |
 | `/dev/widgets` | Trang xem thử widget F0 (`WidgetGallery`) – **chỉ khai báo khi `kDebugMode`**; khi bật `redirect` thì phải đăng nhập mới vào được | F0 | có (debug) |
 
-Việc của F0 (Sanh) – đã làm ở bước 01 (02/11/2026): mọi route trên đã khai báo trong `app_router.dart`, màn chưa làm là `FeaturePlaceholder` ghi mã màn · feature · người theo bản chia task 02/11; nhóm route theo feature bằng comment `// F<số> <tên> – <người>`. `/caregiver/schedule` chọn C03 / C04 / C05 theo query `view`. Kiểm tra bằng `test/router_test.dart`. Khối `redirect` (chưa đăng nhập → `/sign-in`, đã đăng nhập ở `/sign-in` → `/today`) **đang tạm comment** để test UI không cần đăng nhập Google; bỏ comment trước khi nộp (đề chấm: chưa đăng nhập không vào được app). Khi còn comment thì `test/auth_routing_test.dart` fail.
+Việc của F0 (Sanh) – đã làm ở bước 01 (02/11/2026): mọi route trên đã khai báo trong `app_router.dart`, màn chưa làm là `FeaturePlaceholder` ghi mã màn · feature · người theo bản chia task 02/11; nhóm route theo feature bằng comment `// F<số> <tên> – <người>`. `/caregiver/schedule` chọn C03 / C04 / C05 theo query `view`. Kiểm tra bằng `test/router_test.dart`. Khối `redirect` hiện bật mặc định: chưa đăng nhập → `/sign-in`, đã có phiên → kiểm tra role/onboarding/pairing trước khi vào màn chính. `/intro` là màn giới thiệu public; Bắt đầu vẫn qua guard. Fixture UI tắt guard tường minh; `test/auth_routing_test.dart` dùng mặc định thật và kiểm tra chống bypass.
 
 Quy tắc điều hướng từ handoff: tab dùng `StatefulShellRoute`; Back hệ thống ở S03 thoát app; kết quả lưu (`/today/add/result`) dùng `go` (thay thế, không chồng); màn con N11–N13 trả kết quả bằng `pop(result)`; S04 mở từ 2 nơi nên nút Back ghi "Quay lại".
 
@@ -353,7 +353,7 @@ Nguồn chi tiết và cách chạy: [hieu-implementation-guide.md](hieu-impleme
 - Task v2: startDate/endDate `YYYY-MM-DD`, weekly (weekdays 1–7), monthly (monthDays 1–31 và lastDayOfMonth), excludedDates, durationMinutes, revision, timezone UTC+7. Status thực theo ngày ở completions; status trên template luôn pending. `setStatus(id,status)` cũ chỉ tác động hôm nay UTC+7.
 - V1 đọc tương thích có giới hạn được ghi trong guide; chưa migration cloud tự động. Settings/ProfileSetup đã có adapter Firebase, merge trên users/{uid}, không đổi chữ ký F2.
 - Điểm vào: `/pairing/code` (Bác), `/caregiver/pair`, `/caregiver/schedule?view=day|week|month`, wizard `/caregiver/task/new[/repeat|/review]`, `/caregiver/task/sent`, `/caregiver/task/:id?date=YYYY-MM-DD`.
-- Guard mặc định **tắt** theo yêu cầu demo; kiểm thử opt-in qua AUTH_GUARD. Rules không đổi thành public.
+- Guard mặc định **bật** theo yêu cầu mới nhất. `main.dart` và `main_dev.dart` mặc định dùng đăng nhập Google/Firebase thật; Fake đăng nhập sẵn chỉ bật tường minh với `--dart-define=UI_PREVIEW=true`. Rules giữ nguyên.
 
 ### Nhắc việc native — 04/11
 
@@ -364,3 +364,9 @@ trong guide. Đăng xuất huỷ pending/active và chặn tap UID cũ. Fake gi�
 Template sau split có completionSourceId trỏ cha; đọc status theo ancestry có
 chống vòng lặp, ưu tiên status trực tiếp của ID mới. Completions vẫn ở collection
 cũ, không copy lịch sử và không mất trạng thái đã xong chỉ vì ID chuỗi đổi.
+
+### Auth enabled — yêu cầu mới nhất
+
+`authGuardEnabledProvider` mặc định true. Mở `/intro` vẫn được xem giới thiệu, nhưng Bắt đầu và mọi route dữ liệu đi qua auth/role/onboarding guard. Người dùng chưa đăng nhập đi `/sign-in`; Google sign-in dùng service Firebase hiện có. Cả entry `lib/main.dart` và `lib/main_dev.dart` mặc định dùng production bootstrap. Chỉ dùng Fake tự đăng nhập khi chỉ định `--dart-define=UI_PREVIEW=true`; fixture UI override guard false riêng để kiểm tra từng màn. Các mô tả guard bị tắt/comment trước đây là lịch sử.
+
+Kiểm chứng bản bật đăng nhập: `flutter test` 779 passed; `flutter analyze` sạch; APK debug build từ `lib/main.dart` thành công. Chưa chạy đăng nhập Google với tài khoản thật trong phiên này vì không có thiết bị adb kết nối.

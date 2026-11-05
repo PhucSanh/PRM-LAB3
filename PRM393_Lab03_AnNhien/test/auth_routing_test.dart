@@ -37,6 +37,11 @@ class PushMessages extends FakeMessagingService {
 }
 
 void main() {
+  test('real login is enabled without opt-in flags', () {
+    final container = ProviderContainer();
+    addTearDown(container.dispose);
+    expect(container.read(authGuardEnabledProvider), isTrue);
+  });
   testWidgets(
       'notification opens approved destination and never bypasses signed-out gate',
       (tester) async {
@@ -208,7 +213,6 @@ ProviderContainer makeContainer(FakeAuthService auth, ProfileService profiles,
       suggestionServiceProvider
           .overrideWithValue(FakeSuggestionService(delay: Duration.zero)),
       reminderServiceProvider.overrideWithValue(FakeReminderService()),
-      authGuardEnabledProvider.overrideWithValue(true),
       caregiverScheduleServiceProvider
           .overrideWithValue(FakeCaregiverScheduleService()),
       authServiceProvider.overrideWithValue(auth),

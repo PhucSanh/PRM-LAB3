@@ -31,21 +31,24 @@ ProviderContainer demoContainer(
         FakeSuggestionService? suggestions,
         MessagingService? messages,
         List<TaskItem>? tasks,
-        TaskRepository? taskRepository}) =>
+        TaskRepository? taskRepository,
+        ProfileService? profiles}) =>
     ProviderContainer(overrides: [
+      authGuardEnabledProvider.overrideWithValue(false),
       initialRouteProvider.overrideWithValue(initialRoute),
       suggestionServiceProvider.overrideWithValue(
           incoming.FakeSuggestionService(delay: Duration.zero)),
       authServiceProvider.overrideWithValue(FakeAuthService(
           signedIn: const AppUser(uid: 'demo-user', displayName: 'Bác Lan'))),
-      profileServiceProvider.overrideWithValue(FakeProfileService([
-        UserProfile(
-            uid: 'demo-user',
-            displayName: 'Bác Lan',
-            role: role,
-            onboarded: true,
-            pairedMomUid: 'demo-mom')
-      ])),
+      profileServiceProvider.overrideWithValue(profiles ??
+          FakeProfileService([
+            UserProfile(
+                uid: 'demo-user',
+                displayName: 'Bác Lan',
+                role: role,
+                onboarded: true,
+                pairedMomUid: 'demo-mom')
+          ])),
       pairedMomUidProvider.overrideWithValue('demo-mom'),
       caregiverScheduleServiceProvider
           .overrideWithValue(schedules ?? FakeCaregiverScheduleService()),

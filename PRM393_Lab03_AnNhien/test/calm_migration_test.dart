@@ -3,6 +3,7 @@ import 'package:an_nhien/models/task_item.dart';
 import 'package:an_nhien/models/user_profile.dart';
 import 'package:an_nhien/router/app_router.dart';
 import 'package:an_nhien/services/task_repository.dart';
+import 'package:an_nhien/services/profile_service.dart';
 import 'package:an_nhien/theme/app_theme.dart';
 import 'package:an_nhien/viewmodels/calm_feature_providers.dart';
 import 'package:an_nhien/viewmodels/caregiver_schedule_view_model.dart';
@@ -20,6 +21,20 @@ const task = TaskItem(
     habitKey: 'move',
     hour: 8,
     minute: 30);
+
+// A finite snapshot avoids async-generator cancellation waiting in fake time.
+// Functional profile save/undo tests use their existing live-service fixtures.
+const _profileSnapshot = UserProfile(
+    uid: 'demo-user',
+    displayName: 'Bác Lan',
+    role: UserRole.elder,
+    onboarded: true);
+
+class _SnapshotProfiles extends FakeProfileService {
+  _SnapshotProfiles() : super([_profileSnapshot]);
+  @override
+  Stream<UserProfile> watch(String uid) => Stream.value(_profileSnapshot);
+}
 
 Future<ProviderContainer> pumpApp(
   WidgetTester tester,
@@ -39,6 +54,7 @@ Future<ProviderContainer> pumpApp(
       initialRoute: route,
       role: role,
       taskRepository: repository,
+      profiles: route == '/settings/profile' ? _SnapshotProfiles() : null,
       tasks: const [task]);
   addTearDown(container.dispose);
   await tester.pumpWidget(UncontrolledProviderScope(
@@ -359,6 +375,32 @@ void main() {
           await closeApp(tester);
         });
       }
+    }
+  }
+  // Auth, settings and editing screens must share the new visual system too.
+  for (final (route, name) in [
+    ('/role', 'role'),
+    ('/account', 'account'),
+    ('/today/add', 'activity_picker'),
+    ('/task/repeat', 'repeat'),
+    ('/settings/profile', 'profile'),
+    ('/settings/help', 'help'),
+    ('/settings/data', 'data'),
+    ('/inbox', 'inbox'),
+    ('/reminder/preview', 'reminder'),
+    ('/task/scope', 'scope'),
+  ]) {
+    for (final scale in [1.0, 2.0]) {
+      testWidgets('Consistent UI $name x$scale', (tester) async {
+        await pumpApp(tester, route, width: 360, height: 800, scale: scale);
+        expect(tester.takeException(), isNull);
+        expect(find.byType(FittedBox), findsNothing);
+        await expectLater(
+            find.byType(AnNhienApp),
+            matchesGoldenFile(
+                'goldens/consistent_${name}_${scale.toInt()}x.png'));
+        await closeApp(tester);
+      });
     }
   }
 }

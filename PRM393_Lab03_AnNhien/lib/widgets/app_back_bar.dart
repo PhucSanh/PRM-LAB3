@@ -33,6 +33,10 @@ class AppBackBar extends StatelessWidget implements PreferredSizeWidget {
     final scaler = MediaQuery.textScalerOf(context);
     final width = MediaQuery.sizeOf(context).width - 2 * AppSpacing.base;
     final hasEnd = step != null || trailing != null;
+    final buttonPadding = (theme.textButtonTheme.style?.padding?.resolve({}) ??
+            const EdgeInsets.symmetric(
+                horizontal: AppSpacing.lg, vertical: AppSpacing.md))
+        .resolve(Directionality.of(context));
     double naturalWidth(String label, TextStyle? style) {
       final painter = TextPainter(
         text: TextSpan(text: label, style: style),
@@ -48,17 +52,17 @@ class AppBackBar extends StatelessWidget implements PreferredSizeWidget {
         naturalWidth(backLabel, theme.textTheme.labelLarge) +
             AppSizes.icon +
             AppSpacing.sm +
-            2 * AppSpacing.base;
+            buttonPadding.horizontal;
     final endNaturalWidth = step != null
         ? naturalWidth(step, theme.textTheme.labelMedium)
         : naturalWidth(trailing is AppBarEditButton ? trailing.label : 'Sửa',
                 theme.textTheme.labelLarge) +
             AppSizes.iconInChip +
             AppSpacing.sm +
-            2 * AppSpacing.base;
+            buttonPadding.horizontal;
     final stacked =
         hasEnd && backNaturalWidth + endNaturalWidth + AppSpacing.sm > width;
-    final backWidth = hasEnd && !stacked ? width / 2 : width;
+    final backWidth = hasEnd && !stacked ? width * .6 : width;
     double measure(String label, TextStyle? style, double maxWidth) {
       final painter = TextPainter(
         text: TextSpan(text: label, style: style),
@@ -70,12 +74,17 @@ class AppBackBar extends StatelessWidget implements PreferredSizeWidget {
       return height;
     }
 
-    final backHeight = measure(backLabel, theme.textTheme.labelLarge,
-            backWidth - AppSizes.icon - AppSpacing.sm - 2 * AppSpacing.base) +
+    final backHeight = measure(
+            backLabel,
+            theme.textTheme.labelLarge,
+            backWidth -
+                AppSizes.icon -
+                AppSpacing.sm -
+                buttonPadding.horizontal) +
         2 * AppSpacing.md;
     final endHeight = step != null
-        ? measure(
-            step, theme.textTheme.labelMedium, stacked ? width : width / 2)
+        ? measure(step, theme.textTheme.labelMedium,
+            stacked ? width : width - backWidth)
         : scaler.scale(theme.textTheme.labelLarge!.fontSize!) *
                 theme.textTheme.labelLarge!.height! +
             2 * AppSpacing.md;
@@ -160,11 +169,13 @@ class AppBackBar extends StatelessWidget implements PreferredSizeWidget {
                     ])
               : Row(children: [
                   Expanded(
+                      flex: 3,
                       child: Align(
                           alignment: AlignmentDirectional.centerStart,
                           child: back)),
                   if (end != null)
                     Expanded(
+                        flex: 2,
                         child: Align(
                             alignment: AlignmentDirectional.centerEnd,
                             child: end)),

@@ -71,19 +71,13 @@ class _SuggestionSwipeDeckState extends State<SuggestionSwipeDeck> {
                     child: Container(
                         padding: const EdgeInsets.all(24),
                         decoration: BoxDecoration(
-                            color: drag.abs() > 30
-                                ? (drag > 0
-                                    ? colors.primaryContainer
-                                    : colors.errorContainer)
-                                : colors.surface,
-                            borderRadius: BorderRadius.circular(28),
-                            border: Border.all(color: colors.outlineVariant),
-                            boxShadow: [
-                              BoxShadow(
-                                  color: colors.shadow.withValues(alpha: .06),
-                                  blurRadius: 24,
-                                  offset: const Offset(0, 8))
-                            ]),
+                          color: drag.abs() > 30
+                              ? (drag > 0
+                                  ? colors.primaryContainer
+                                  : colors.errorContainer)
+                              : colors.secondaryContainer,
+                          borderRadius: BorderRadius.circular(28),
+                        ),
                         child: Column(children: [
                           HabitBadge(
                               habitKey: widget.tasks[choices.length].habitKey),

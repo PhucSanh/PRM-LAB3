@@ -32,7 +32,7 @@ class NavRow extends StatelessWidget {
       excludeSemantics: true,
       onTap: onTap,
       child: Material(
-        color: scheme.surface,
+        color: scheme.secondaryContainer,
         shape: const RoundedRectangleBorder(
           borderRadius: AppRadius.cardAll,
         ),

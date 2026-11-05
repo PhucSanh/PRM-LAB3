@@ -113,7 +113,7 @@ class _ChoiceTile<T> extends StatelessWidget {
       style: (option.previewScale != null
               ? theme.textTheme.bodyMedium
               : theme.textTheme.titleMedium)
-          ?.copyWith(color: fg, fontWeight: FontWeight.w700),
+          ?.copyWith(color: fg, fontWeight: FontWeight.w600),
       textAlign: segmented ? TextAlign.center : TextAlign.start,
     );
     if (option.previewScale != null) {
@@ -182,9 +182,9 @@ class _ChoiceTile<T> extends StatelessWidget {
         color: selected ? scheme.primaryContainer : scheme.surface,
         shape: RoundedRectangleBorder(
           borderRadius: AppRadius.cardAll,
-          side: BorderSide(
-              color: selected ? scheme.primary : scheme.outlineVariant,
-              width: AppSizes.border),
+          side: selected
+              ? BorderSide(color: scheme.primary, width: 1.5)
+              : BorderSide.none,
         ),
         clipBehavior: Clip.antiAlias,
         child: InkWell(

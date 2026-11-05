@@ -51,9 +51,9 @@ import '../screens/calm/family_screen.dart';
 final notificationOpenedProvider = StreamProvider<AppNotification>(
     (ref) => ref.watch(messagingServiceProvider).onOpened);
 
-/// Demo mặc định mở tự do. Chỉ bật chủ động bằng --dart-define=AUTH_GUARD=true.
+/// Đăng nhập bật mặc định. Chỉ tắt tường minh trong fixture / UI preview.
 final authGuardEnabledProvider = Provider<bool>(
-    (ref) => const bool.fromEnvironment('AUTH_GUARD', defaultValue: false));
+    (ref) => const bool.fromEnvironment('AUTH_GUARD', defaultValue: true));
 
 final initialRouteProvider = Provider<String>((ref) =>
     const String.fromEnvironment('INITIAL_ROUTE', defaultValue: '/intro'));
@@ -126,7 +126,7 @@ final routerProvider = Provider<GoRouter>((ref) {
       }
       // Public introduction is shown once on launch; its CTA uses normal guards.
       if (path == '/intro' && pendingNotification == null) return null;
-      // Giữ guard TẮT trong bản demo theo yêu cầu 03/11.
+      // Auth, role và onboarding được kiểm tra trước khi vào dữ liệu ứng dụng.
       if (ref.read(authGuardEnabledProvider)) {
         final session = ref.read(sessionProvider);
         final profile = ref.read(profileProvider);

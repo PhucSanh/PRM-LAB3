@@ -88,9 +88,8 @@ class _Card extends StatelessWidget {
     final scheme = Theme.of(context).colorScheme;
     return DecoratedBox(
       decoration: BoxDecoration(
-        color: scheme.surface,
+        color: scheme.secondaryContainer,
         borderRadius: AppRadius.cardAll,
-        border: Border.all(color: scheme.outlineVariant),
       ),
       child:
           Padding(padding: const EdgeInsets.all(AppSpacing.base), child: child),
