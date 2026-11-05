@@ -361,4 +361,30 @@ void main() {
       }
     }
   }
+  // Auth, settings and editing screens must share the new visual system too.
+  for (final (route, name) in [
+    ('/role', 'role'),
+    ('/account', 'account'),
+    ('/today/add', 'activity_picker'),
+    ('/task/repeat', 'repeat'),
+    ('/settings/profile', 'profile'),
+    ('/settings/help', 'help'),
+    ('/settings/data', 'data'),
+    ('/inbox', 'inbox'),
+    ('/reminder/preview', 'reminder'),
+    ('/task/scope', 'scope'),
+  ]) {
+    for (final scale in [1.0, 2.0]) {
+      testWidgets('Consistent UI $name x$scale', (tester) async {
+        await pumpApp(tester, route, width: 360, height: 800, scale: scale);
+        expect(tester.takeException(), isNull);
+        expect(find.byType(FittedBox), findsNothing);
+        await expectLater(
+            find.byType(AnNhienApp),
+            matchesGoldenFile(
+                'goldens/consistent_${name}_${scale.toInt()}x.png'));
+        await closeApp(tester);
+      });
+    }
+  }
 }
