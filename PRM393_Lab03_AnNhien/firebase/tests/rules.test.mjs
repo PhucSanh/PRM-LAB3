@@ -90,6 +90,10 @@ test('F10: inbox is owner-readable but only trusted backend can write', async ()
   await assertFails(getDoc(doc(db('child'), 'users/mom/notifications/n')));
   await assertFails(getDoc(doc(env.unauthenticatedContext().firestore(), 'users/mom/notifications/n')));
   await assertFails(updateDoc(doc(db('mom'), 'users/mom/notifications/n'), {route:'/inbox'}));
+  await assertSucceeds(updateDoc(doc(db('mom'), 'users/mom/notifications/n'), {readAt:serverTimestamp()}));
+  await assertFails(updateDoc(doc(db('child'), 'users/mom/notifications/n'), {readAt:serverTimestamp()}));
+  await assertFails(updateDoc(doc(db('mom'), 'users/mom/notifications/n'), {readAt:null}));
+  await assertFails(updateDoc(doc(db('mom'), 'users/mom/notifications/n'), {title:'forged',readAt:serverTimestamp()}));
   await assertSucceeds(deleteDoc(doc(db('mom'), 'users/mom/notifications/n')));
 });
 test('F10: device registration owner-only and validates token/time/payload', async () => {

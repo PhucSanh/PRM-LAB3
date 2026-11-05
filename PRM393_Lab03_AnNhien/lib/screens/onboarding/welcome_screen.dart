@@ -9,7 +9,7 @@ import '../../theme/display_settings.dart';
 import '../../viewmodels/onboarding_view_model.dart';
 import '../../widgets/app_button.dart';
 import '../../widgets/choice_group.dart';
-import '../../widgets/icon_circle.dart';
+import '../../widgets/brand_mark.dart';
 
 /// S01 Chào mừng – chọn cỡ chữ (Figma `1:2`) – chủ: Hương (F2).
 ///
@@ -45,11 +45,7 @@ class WelcomeScreen extends ConsumerWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        IconCircle(
-                          icon: Icons.spa_outlined,
-                          color: scheme.onPrimary,
-                          background: scheme.primary,
-                        ),
+                        const Center(child: BrandMark()),
                         const SizedBox(height: AppSpacing.sm),
                         Text('Chào mừng Bác!',
                             style: t.headlineMedium,

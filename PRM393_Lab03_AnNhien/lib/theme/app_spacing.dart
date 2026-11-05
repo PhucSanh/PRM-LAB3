@@ -21,7 +21,7 @@ abstract final class AppSpacing {
 abstract final class AppRadius {
   static const double sm = 8;
   static const double md = 12;
-  static const double button = 14;
+  static const double button = 20;
   static const double lg = 16;
   static const double xl = 24;
   static const double full = 999; // chip trạng thái, avatar (Bảng 1: StadiumBorder)
@@ -29,7 +29,7 @@ abstract final class AppRadius {
   static const BorderRadius smAll = BorderRadius.all(Radius.circular(sm));
   static const BorderRadius mdAll = BorderRadius.all(Radius.circular(md));
   static const BorderRadius buttonAll = BorderRadius.all(Radius.circular(button));
-  static const BorderRadius cardAll = BorderRadius.all(Radius.circular(lg));
+  static const BorderRadius cardAll = BorderRadius.all(Radius.circular(xl));
   static const BorderRadius dialogAll = BorderRadius.all(Radius.circular(xl));
 }
 

@@ -25,12 +25,13 @@ class CaregiverFormState {
       this.error,
       this.conflicts = const [],
       this.saved = false,
+      this.dirty = false,
       this.scope = ChangeScope.future});
   final TaskItem task;
   final TaskItem? original;
   final DateTime? occurrence;
   final String message;
-  final bool needsConsent, busy, saved;
+  final bool needsConsent, busy, saved, dirty;
   final String? error;
   final List<TaskItem> conflicts;
   final ChangeScope scope;
@@ -42,6 +43,7 @@ class CaregiverFormState {
           String? error,
           List<TaskItem>? conflicts,
           bool? saved,
+          bool? dirty,
           ChangeScope? scope}) =>
       CaregiverFormState(
           task: task ?? this.task,
@@ -53,6 +55,7 @@ class CaregiverFormState {
           error: error,
           conflicts: conflicts ?? const [],
           saved: saved ?? this.saved,
+          dirty: dirty ?? this.dirty,
           scope: scope ?? this.scope);
 }
 
@@ -89,19 +92,19 @@ class CaregiverFormViewModel extends Notifier<CaregiverFormState> {
   }
 
   void updateTask(TaskItem task) {
-    if (!state.busy) state = state.copyWith(task: task);
+    if (!state.busy) state = state.copyWith(task: task, dirty: true);
   }
 
   void message(String value) {
-    if (!state.busy) state = state.copyWith(message: value);
+    if (!state.busy) state = state.copyWith(message: value, dirty: true);
   }
 
   void consent(bool value) {
-    if (!state.busy) state = state.copyWith(needsConsent: value);
+    if (!state.busy) state = state.copyWith(needsConsent: value, dirty: true);
   }
 
   void scope(ChangeScope value) {
-    if (!state.busy) state = state.copyWith(scope: value);
+    if (!state.busy) state = state.copyWith(scope: value, dirty: true);
   }
 
   bool validate() {

@@ -26,7 +26,9 @@ import 'package:an_nhien/viewmodels/caregiver_schedule_view_model.dart';
 ProviderContainer demoContainer(
         {FakeCaregiverScheduleService? schedules,
         FakeSuggestionService? suggestions,
-        List<TaskItem>? tasks}) =>
+        MessagingService? messages,
+        List<TaskItem>? tasks,
+        TaskRepository? taskRepository}) =>
     ProviderContainer(overrides: [
       suggestionServiceProvider.overrideWithValue(
           incoming.FakeSuggestionService(delay: Duration.zero)),
@@ -46,14 +48,16 @@ ProviderContainer demoContainer(
       caregiverSuggestionServiceProvider
           .overrideWithValue(suggestions ?? FakeSuggestionService()),
       pairingServiceProvider.overrideWithValue(FakePairingService()),
-      taskRepositoryProvider.overrideWithValue(FakeTaskRepository(tasks ?? [])),
+      taskRepositoryProvider.overrideWithValue(
+          taskRepository ?? FakeTaskRepository(tasks ?? [])),
       familyRepositoryProvider.overrideWithValue(FakeFamilyRepository()),
       habitRepositoryProvider.overrideWithValue(FakeHabitRepository()),
       settingsServiceProvider.overrideWithValue(FakeSettingsService()),
       profileSetupServiceProvider.overrideWithValue(FakeProfileSetupService()),
       reminderServiceProvider.overrideWithValue(FakeReminderService()),
       sessionDataServiceProvider.overrideWithValue(FakeSessionDataService()),
-      messagingServiceProvider.overrideWithValue(FakeMessagingService()),
+      messagingServiceProvider
+          .overrideWithValue(messages ?? FakeMessagingService()),
       reportServiceProvider.overrideWithValue(FakeReportService()),
       demoReportServiceProvider.overrideWithValue(FakeReportService()),
       remoteConfigServiceProvider.overrideWithValue(FakeRemoteConfigService()),

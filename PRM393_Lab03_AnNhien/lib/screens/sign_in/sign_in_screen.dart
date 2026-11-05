@@ -5,6 +5,7 @@ import '../../theme/app_spacing.dart';
 import '../../viewmodels/sign_in_view_model.dart';
 import '../../viewmodels/account_view_model.dart';
 import '../../widgets/app_button.dart';
+import '../../widgets/brand_mark.dart';
 
 /// A01 (đã đổi theo đề Lab 3: đăng nhập Google) – chủ: B – Hiếu.
 /// Ghi thay đổi này vào docs/design-traceability.md và sửa Figma.
@@ -24,27 +25,39 @@ class SignInScreen extends ConsumerWidget {
           builder: (context, constraints) => SingleChildScrollView(
             padding: const EdgeInsets.all(AppSpacing.screen),
             child: ConstrainedBox(
-              constraints: BoxConstraints(minHeight: constraints.maxHeight - 2 * AppSpacing.screen),
+              constraints: BoxConstraints(
+                  minHeight: constraints.maxHeight - 2 * AppSpacing.screen),
               child: IntrinsicHeight(
                 child: Column(children: [
                   const Spacer(),
-                  Icon(Icons.spa_outlined, size: AppSizes.logo, color: Theme.of(context).colorScheme.primary),
+                  const BrandMark(),
                   const SizedBox(height: AppSpacing.base),
                   Text('An Nhiên', style: t.displaySmall),
                   const SizedBox(height: AppSpacing.sm),
-                  Text('Không cần mật khẩu.', style: t.bodyLarge, textAlign: TextAlign.center),
+                  Text('Nhẹ nhàng chăm sóc mỗi ngày.',
+                      style: t.bodyMedium?.copyWith(
+                          color:
+                              Theme.of(context).colorScheme.onSurfaceVariant),
+                      textAlign: TextAlign.center),
+                  const SizedBox(height: AppSpacing.lg),
+                  Text('Không cần mật khẩu.',
+                      style: t.bodyLarge, textAlign: TextAlign.center),
                   if (message != null) ...[
                     const SizedBox(height: AppSpacing.base),
                     Text(message,
-                        style: t.bodyLarge?.copyWith(color: Theme.of(context).colorScheme.error),
+                        style: t.bodyLarge?.copyWith(
+                            color: Theme.of(context).colorScheme.error),
                         textAlign: TextAlign.center),
                   ],
                   const Spacer(),
                   AppButton(
                     label: 'Tiếp tục với Google',
+                    wrapLabel: true,
                     icon: Icons.login,
                     busy: state.busy || signOut.busy,
-                    onPressed: () => ref.read(signInViewModelProvider.notifier).signInWithGoogle(),
+                    onPressed: () => ref
+                        .read(signInViewModelProvider.notifier)
+                        .signInWithGoogle(),
                   ),
                 ]),
               ),

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../theme/app_spacing.dart';
 import 'form_parts.dart';
@@ -19,6 +20,8 @@ class AppTextField extends StatelessWidget {
     this.icon,
     this.autofillHints,
     this.textInputAction,
+    this.inputFormatters,
+    this.onSubmitted,
   });
 
   final String label;
@@ -37,6 +40,8 @@ class AppTextField extends StatelessWidget {
   final IconData? icon;
   final Iterable<String>? autofillHints;
   final TextInputAction? textInputAction;
+  final List<TextInputFormatter>? inputFormatters;
+  final ValueChanged<String>? onSubmitted;
 
   @override
   Widget build(BuildContext context) {
@@ -48,35 +53,43 @@ class AppTextField extends StatelessWidget {
           borderSide: BorderSide(color: color, width: width),
         );
 
-    return Column(crossAxisAlignment: CrossAxisAlignment.stretch, mainAxisSize: MainAxisSize.min, children: [
-      FieldLabel(label, icon: icon),
-      const SizedBox(height: AppSpacing.sm),
-      ConstrainedBox(
-        constraints: const BoxConstraints(minHeight: AppSizes.minTarget),
-        child: TextField(
-          controller: controller,
-          keyboardType: keyboardType,
-          maxLength: maxLength,
-          onChanged: onChanged,
-          autofillHints: autofillHints,
-          textInputAction: textInputAction,
-          style: theme.textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.w500),
-          decoration: InputDecoration(
-            fillColor: hasError ? scheme.errorContainer : scheme.surface,
-            enabledBorder: border(hasError ? scheme.error : scheme.outline, AppSizes.border),
-            // Viền dày gấp đôi khi đang gõ: dấu hiệu tiêu điểm không chỉ bằng màu.
-            focusedBorder: border(hasError ? scheme.error : scheme.primary, 2 * AppSizes.border),
+    return Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          FieldLabel(label, icon: icon),
+          const SizedBox(height: AppSpacing.sm),
+          ConstrainedBox(
+            constraints: const BoxConstraints(minHeight: AppSizes.minTarget),
+            child: TextField(
+              controller: controller,
+              keyboardType: keyboardType,
+              maxLength: maxLength,
+              onChanged: onChanged,
+              autofillHints: autofillHints,
+              textInputAction: textInputAction,
+              inputFormatters: inputFormatters,
+              onSubmitted: onSubmitted,
+              style: theme.textTheme.bodyLarge
+                  ?.copyWith(fontWeight: FontWeight.w500),
+              decoration: InputDecoration(
+                fillColor: hasError ? scheme.errorContainer : scheme.surface,
+                enabledBorder: border(
+                    hasError ? scheme.error : scheme.outline, AppSizes.border),
+                // Viền dày gấp đôi khi đang gõ: dấu hiệu tiêu điểm không chỉ bằng màu.
+                focusedBorder: border(hasError ? scheme.error : scheme.primary,
+                    2 * AppSizes.border),
+              ),
+            ),
           ),
-        ),
-      ),
-      if (hasError) ...[
-        const SizedBox(height: AppSpacing.sm),
-        FieldMessage.error(errorText!),
-      ],
-      if (hint != null) ...[
-        const SizedBox(height: AppSpacing.sm),
-        FieldMessage.hint(exampleHint(hint!), showIcon: !hasError),
-      ],
-    ]);
+          if (hasError) ...[
+            const SizedBox(height: AppSpacing.sm),
+            FieldMessage.error(errorText!),
+          ],
+          if (hint != null) ...[
+            const SizedBox(height: AppSpacing.sm),
+            FieldMessage.hint(exampleHint(hint!), showIcon: !hasError),
+          ],
+        ]);
   }
 }

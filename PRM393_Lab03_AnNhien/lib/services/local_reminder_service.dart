@@ -83,6 +83,13 @@ class LocalReminderService implements ReminderService {
                 android: AndroidInitializationSettings('ic_notification')),
             onDidReceiveNotificationResponse: (response) =>
                 _open(response.payload));
+        await _android
+            ?.createNotificationChannel(const AndroidNotificationChannel(
+          'an_nhien_updates',
+          'Gia đình và hệ thống',
+          description: 'Cập nhật lịch, kết nối và thông báo từ An Nhiên',
+          importance: Importance.high,
+        ));
         final launch = await sdk.getNotificationAppLaunchDetails();
         if (launch?.didNotificationLaunchApp ?? false) {
           _open(launch?.notificationResponse?.payload);
