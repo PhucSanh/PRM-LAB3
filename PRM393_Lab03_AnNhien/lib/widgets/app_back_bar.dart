@@ -16,10 +16,8 @@ class AppBackBar extends StatelessWidget implements PreferredSizeWidget {
     this.onBack,
     double height = AppSizes.appBar,
     bool stacked = false,
-    double? backWidth,
   })  : _height = height,
-        _stacked = stacked,
-        _backWidth = backWidth;
+        _stacked = stacked;
 
   /// Resolve preferred height before Scaffold lays out its app bar.
   /// Never shrink Back/step labels when the system text size increases.
@@ -64,11 +62,7 @@ class AppBackBar extends StatelessWidget implements PreferredSizeWidget {
             buttonPadding.horizontal;
     final stacked =
         hasEnd && backNaturalWidth + endNaturalWidth + AppSpacing.sm > width;
-    final backWidth = hasEnd && !stacked
-        ? (backNaturalWidth + AppSpacing.xs)
-            .clamp(0, width - endNaturalWidth - AppSpacing.sm)
-            .toDouble()
-        : width;
+    final backWidth = hasEnd && !stacked ? width * .6 : width;
     double measure(String label, TextStyle? style, double maxWidth) {
       final painter = TextPainter(
         text: TextSpan(text: label, style: style),
@@ -106,7 +100,6 @@ class AppBackBar extends StatelessWidget implements PreferredSizeWidget {
       onBack: onBack,
       height: height + 2 * AppSpacing.sm,
       stacked: stacked,
-      backWidth: hasEnd && !stacked ? backWidth : null,
     );
   }
 
@@ -123,7 +116,6 @@ class AppBackBar extends StatelessWidget implements PreferredSizeWidget {
   final VoidCallback? onBack;
   final double _height;
   final bool _stacked;
-  final double? _backWidth;
 
   @override
   Size get preferredSize => Size.fromHeight(_height);
@@ -176,22 +168,14 @@ class AppBackBar extends StatelessWidget implements PreferredSizeWidget {
                                 child: end)),
                     ])
               : Row(children: [
-                  if (end == null)
-                    Expanded(
-                        child: Align(
-                            alignment: AlignmentDirectional.centerStart,
-                            child: back))
-                  else
-                    SizedBox(
-                        width: _backWidth ??
-                            (MediaQuery.sizeOf(context).width -
-                                    2 * AppSpacing.base) /
-                                2,
-                        child: Align(
-                            alignment: AlignmentDirectional.centerStart,
-                            child: back)),
+                  Expanded(
+                      flex: 3,
+                      child: Align(
+                          alignment: AlignmentDirectional.centerStart,
+                          child: back)),
                   if (end != null)
                     Expanded(
+                        flex: 2,
                         child: Align(
                             alignment: AlignmentDirectional.centerEnd,
                             child: end)),
