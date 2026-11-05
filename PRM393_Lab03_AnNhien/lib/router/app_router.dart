@@ -40,6 +40,7 @@ import '../viewmodels/session_view_model.dart';
 import '../widgets/app_shell.dart';
 import '../widgets/dev/widget_gallery.dart';
 import '../widgets/feature_placeholder.dart';
+import '../screens/tasks/task_form_screens.dart';
 
 /// Route map theo architecture.md mục 7.2 (gốc: flutter-handoff.md Lab 2). Chủ file: A – Sanh.
 /// Ai làm màn nào: thay `FeaturePlaceholder` bằng màn thật của mình.
@@ -176,15 +177,10 @@ final routerProvider = Provider<GoRouter>((ref) {
           path: '/setup/first-task',
           builder: (_, __) => const FirstTaskScreen()),
       // F4 Thêm, sửa, xoá việc – Khang (màn con N11–N13, trả kết quả bằng pop(result))
+      GoRoute(path: '/task/date', builder: (_, __) => const TaskDateScreen()),
       GoRoute(
-          path: '/task/date',
-          builder: (_, __) => ph('N11 · F4', 'Chọn ngày', 'Khang')),
-      GoRoute(
-          path: '/task/repeat',
-          builder: (_, __) => ph('N12 · F4', 'Lặp lại', 'Khang')),
-      GoRoute(
-          path: '/task/scope',
-          builder: (_, __) => ph('N13 · F4', 'Phạm vi thay đổi', 'Khang')),
+          path: '/task/repeat', builder: (_, __) => const TaskRepeatScreen()),
+      GoRoute(path: '/task/scope', builder: (_, __) => const TaskScopeRoute()),
       // F6 Lời nhắc – Khang
       GoRoute(
           path: '/reminder/:taskId',
@@ -274,19 +270,17 @@ final routerProvider = Provider<GoRouter>((ref) {
                   // F4 Thêm, sửa, xoá việc – Khang (add/result mở bằng go, thay thế, không chồng)
                   GoRoute(
                       path: 'task/:id/edit',
-                      builder: (_, __) => ph('S15 · F4', 'Sửa việc', 'Khang')),
+                      builder: (_, state) => TaskConfigureScreen(
+                          editId: state.pathParameters['id']!)),
                   GoRoute(
                       path: 'add',
-                      builder: (_, __) => ph(
-                          'S05 · F4', 'Thêm việc – chọn hoạt động', 'Khang')),
+                      builder: (_, __) => const ActivitySelectionScreen()),
                   GoRoute(
                       path: 'add/time',
-                      builder: (_, __) =>
-                          ph('S06 · F4', 'Thêm việc – thiết lập', 'Khang')),
+                      builder: (_, __) => const TaskConfigureScreen()),
                   GoRoute(
                       path: 'add/result',
-                      builder: (_, __) =>
-                          ph('ST-Saved · F4', 'Đã lưu xong', 'Khang')),
+                      builder: (_, __) => const TaskSavedScreen()),
                   // F5 Giọng nói – Khang
                   GoRoute(
                       path: 'voice',

@@ -76,7 +76,7 @@ evidence/ report/ slides/
 | Flutter | |
 | Dart | |
 | Package | xem `pubspec.lock` |
-| ARTEMIS (commit) | |
+| ARTEMIS (commit) | `351ca8422f7b5b54e80a9c1ce03a222e02415b6b` (`artemis-client`) |
 
 ## Link nộp
 

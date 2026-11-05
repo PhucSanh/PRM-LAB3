@@ -51,7 +51,7 @@ void main() {
       tester.platformDispatcher.textScaleFactorTestValue = scale;
       addTearDown(tester.view.reset);
       addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
-      final c = demoContainer(tasks: FakeTaskRepository());
+      final c = demoContainer(taskRepository: FakeTaskRepository());
       c.read(fontScaleProvider.notifier).set(AppFontScale.vua);
       final boundary = GlobalKey();
       await tester.pumpWidget(RepaintBoundary(
