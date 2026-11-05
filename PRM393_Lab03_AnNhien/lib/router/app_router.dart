@@ -36,6 +36,7 @@ import '../screens/suggestion/suggestion_compose_screen.dart';
 import '../screens/suggestion/suggestion_review_screen.dart';
 import '../viewmodels/suggestion_review_view_model.dart' show SuggestionEntry;
 import '../screens/today/today_screen.dart';
+import '../screens/today/task_detail_screen.dart';
 import '../viewmodels/session_view_model.dart';
 import '../widgets/app_shell.dart';
 import '../widgets/dev/widget_gallery.dart';
@@ -261,12 +262,13 @@ final routerProvider = Provider<GoRouter>((ref) {
             // F3 Hôm nay – Khang
             GoRoute(
                 path: '/today',
-                builder: (_, __) => const TodayScreen(),
+                builder: (_, state) => TodayScreen(
+                    forceMainView: state.uri.queryParameters['view'] == 'main'),
                 routes: [
                   GoRoute(
                       path: 'task/:id',
-                      builder: (_, __) =>
-                          ph('S04 · F3', 'Chi tiết hoạt động', 'Khang')),
+                      builder: (_, state) => TaskDetailScreen(
+                          taskId: state.pathParameters['id']!)),
                   // F4 Thêm, sửa, xoá việc – Khang (add/result mở bằng go, thay thế, không chồng)
                   GoRoute(
                       path: 'task/:id/edit',
@@ -315,8 +317,10 @@ final routerProvider = Provider<GoRouter>((ref) {
                         // F3 Chi tiết hoạt động (mở từ lịch tuần) – Khang
                         GoRoute(
                             path: 'task/:id',
-                            builder: (_, __) =>
-                                ph('S04 · F3', 'Chi tiết hoạt động', 'Khang')),
+                            builder: (_, state) => TaskDetailScreen(
+                                taskId: state.pathParameters['id']!,
+                                day: DateTime.tryParse(
+                                    state.pathParameters['date'] ?? ''))),
                       ]),
                 ]),
           ]),
