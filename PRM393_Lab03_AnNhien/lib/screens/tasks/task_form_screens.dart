@@ -591,37 +591,35 @@ class TaskScopeRoute extends StatelessWidget {
   const TaskScopeRoute({super.key});
   @override
   Widget build(BuildContext context) => Scaffold(
-        body: Center(
-          child: Padding(
-            padding: AppSpacing.screenPadding,
-            child: Column(mainAxisSize: MainAxisSize.min, children: [
-              const Icon(Icons.repeat_rounded, size: 80),
-              const SizedBox(height: AppSpacing.lg),
-              Text('Thay đổi lần nào?',
-                  style: Theme.of(context).textTheme.headlineMedium),
-              const SizedBox(height: AppSpacing.sm),
-              const Text('Lịch sử được giữ lại', textAlign: TextAlign.center),
-              const SizedBox(height: AppSpacing.lg),
-              AppButton(
-                  label: 'Chỉ lần này',
-                  icon: Icons.calendar_today_rounded,
-                  onPressed: () => context.pop(ChangeScope.once)),
-              const SizedBox(height: AppSpacing.sm),
-              AppButton(
-                  label: 'Lần này và các lần sau',
-                  icon: Icons.date_range_rounded,
-                  kind: AppButtonKind.secondary,
-                  onPressed: () => context.pop(ChangeScope.thisAndFollowing)),
-              const SizedBox(height: AppSpacing.sm),
-              AppButton(
-                  label: 'Giữ nguyên',
-                  icon: Icons.close_rounded,
-                  kind: AppButtonKind.text,
-                  onPressed: context.pop),
-            ]),
-          ),
-        ),
-      );
+      appBar: AppBackBar.adaptive(context),
+      body: SafeArea(
+          child: ListView(
+              padding: const EdgeInsets.all(AppSpacing.screen),
+              children: [
+            const BotanicalScene(height: 128, branch: false),
+            const SizedBox(height: AppSpacing.lg),
+            const CalmPageHeader(
+                title: 'Thay đổi lần nào?',
+                subtitle: 'Lịch sử được giữ lại',
+                actions: false),
+            const SizedBox(height: AppSpacing.lg),
+            AppButton(
+                label: 'Chỉ lần này',
+                icon: Icons.calendar_today_rounded,
+                onPressed: () => context.pop(ChangeScope.once)),
+            const SizedBox(height: AppSpacing.base),
+            AppButton(
+                label: 'Lần này và các lần sau',
+                icon: Icons.date_range_rounded,
+                kind: AppButtonKind.secondary,
+                onPressed: () => context.pop(ChangeScope.thisAndFollowing)),
+            const SizedBox(height: AppSpacing.base),
+            AppButton(
+                label: 'Giữ nguyên',
+                icon: Icons.close_rounded,
+                kind: AppButtonKind.text,
+                onPressed: context.pop),
+          ])));
 }
 
 class TaskSaveStatusScreen extends ConsumerWidget {

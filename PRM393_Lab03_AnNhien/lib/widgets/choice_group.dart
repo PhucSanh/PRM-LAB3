@@ -182,9 +182,9 @@ class _ChoiceTile<T> extends StatelessWidget {
         color: selected ? scheme.primaryContainer : scheme.surface,
         shape: RoundedRectangleBorder(
           borderRadius: AppRadius.cardAll,
-          side: BorderSide(
-              color: selected ? scheme.primary : scheme.outlineVariant,
-              width: AppSizes.border),
+          side: selected
+              ? BorderSide(color: scheme.primary, width: 1.5)
+              : BorderSide.none,
         ),
         clipBehavior: Clip.antiAlias,
         child: InkWell(

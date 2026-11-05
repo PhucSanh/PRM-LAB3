@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../theme/app_spacing.dart';
+import '../../theme/app_typography.dart';
 import '../../viewmodels/sign_in_view_model.dart';
 import '../../viewmodels/account_view_model.dart';
 import '../../widgets/app_button.dart';
@@ -30,9 +31,9 @@ class SignInScreen extends ConsumerWidget {
               child: IntrinsicHeight(
                 child: Column(children: [
                   const Spacer(),
-                  const BotanicalScene(height: 240, round: true),
+                  const BotanicalScene(height: 260, welcome: true),
                   const SizedBox(height: AppSpacing.base),
-                  Text('An Nhiên', style: t.displaySmall),
+                  Text('An Nhiên', style: AppTypography.welcomeWordmark),
                   const SizedBox(height: AppSpacing.sm),
                   Text('Nhẹ nhàng chăm sóc mỗi ngày.',
                       style: t.bodyMedium?.copyWith(
