@@ -70,6 +70,10 @@ class _CaregiverScheduleScreenState
         vm = ref.read(caregiverScheduleViewModelProvider.notifier);
     return CaregiverPage(
         title: 'Lịch của mẹ',
+        titleAction: IconButton(
+            tooltip: 'Hộp thông báo',
+            onPressed: () => context.push('/inbox'),
+            icon: const Icon(Icons.notifications_none_rounded)),
         onBack: () => context.go('/account'),
         footer: AppButton(
             label: 'Tạo lịch cho mẹ',
@@ -82,66 +86,77 @@ class _CaregiverScheduleScreenState
                     context.push('/caregiver/task/new');
                   }),
         children: [
-          AppButton(
-              label: 'Hộp thông báo',
-              icon: Icons.notifications_rounded,
-              kind: AppButtonKind.secondary,
-              wrapLabel: true,
-              onPressed: () => context.push('/inbox')),
-          if (ref.watch(pairedMomUidProvider) == null)
-            AppButton(
-                label: 'Ghép nối',
-                icon: Icons.phonelink,
-                kind: AppButtonKind.text,
-                wrapLabel: true,
-                onPressed: () => context.push('/caregiver/pair')),
-          Wrap(spacing: AppSpacing.sm, runSpacing: AppSpacing.sm, children: [
-            for (final entry in const {
-              CalendarView.day: 'Ngày',
-              CalendarView.week: 'Tuần',
-              CalendarView.month: 'Tháng'
-            }.entries)
-              OutlinedButton(
-                  style: OutlinedButton.styleFrom(
-                      padding:
-                          const EdgeInsets.symmetric(horizontal: AppSpacing.sm),
-                      backgroundColor: s.view == entry.key
-                          ? Theme.of(context).colorScheme.primaryContainer
-                          : null),
-                  onPressed: () => vm.selectView(entry.key),
-                  child: Text(entry.value)),
-          ]),
-          Text('Đang chọn: ${switch (s.view) {
-            CalendarView.day => 'Ngày',
-            CalendarView.week => 'Tuần',
-            CalendarView.month => 'Tháng'
-          }}'),
+          Container(
+              padding: const EdgeInsets.all(4),
+              decoration: BoxDecoration(
+                  color: Theme.of(context).colorScheme.primaryContainer,
+                  borderRadius: BorderRadius.circular(24)),
+              child: Row(children: [
+                for (final entry in const {
+                  CalendarView.day: 'Ngày',
+                  CalendarView.week: 'Tuần',
+                  CalendarView.month: 'Tháng'
+                }.entries)
+                  Expanded(
+                      child: TextButton(
+                          style: TextButton.styleFrom(
+                              padding: const EdgeInsets.symmetric(vertical: 12),
+                              backgroundColor: s.view == entry.key
+                                  ? Theme.of(context).colorScheme.surface
+                                  : Colors.transparent,
+                              shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(20))),
+                          onPressed: () => vm.selectView(entry.key),
+                          child: Text(entry.value))),
+              ])),
           GestureDetector(
             onHorizontalDragEnd: (details) {
               final speed = details.primaryVelocity ?? 0;
               if (speed.abs() > 250) vm.move(speed < 0 ? 1 : -1);
             },
-            child: CalendarDateField(
-                label: 'Chọn ngày', value: s.date, onChanged: vm.selectDate),
+            child: Card(
+                child: Padding(
+                    padding: const EdgeInsets.all(8),
+                    child: Column(children: [
+                      Row(children: [
+                        IconButton(
+                            tooltip: 'Trước',
+                            onPressed: () => vm.move(-1),
+                            icon: const Icon(Icons.chevron_left_rounded)),
+                        Expanded(
+                            child: TextButton(
+                                onPressed: () async {
+                                  final date = await showDatePicker(
+                                      context: context,
+                                      initialDate: s.date,
+                                      firstDate: DateTime(2020),
+                                      lastDate: DateTime(2100));
+                                  if (date != null) vm.selectDate(date);
+                                },
+                                child: Text(
+                                    '${s.date.day}/${s.date.month}/${s.date.year}',
+                                    textAlign: TextAlign.center))),
+                        IconButton(
+                            tooltip: 'Sau',
+                            onPressed: () => vm.move(1),
+                            icon: const Icon(Icons.chevron_right_rounded)),
+                      ]),
+                      if (s.view != CalendarView.day) _calendar(context, s, vm),
+                    ]))),
           ),
-          const Text('Vuốt ngang trên ngày để chuyển nhanh.'),
-          Wrap(
-              spacing: AppSpacing.betweenTargets,
-              runSpacing: AppSpacing.sm,
-              children: [
-                OutlinedButton(
-                    onPressed: () => vm.move(-1), child: const Text('← Trước')),
-                OutlinedButton(
-                    onPressed: () => vm.move(1), child: const Text('Sau →')),
-              ]),
           if (dateKey(s.date) != dateKey(vietnamToday()))
-            AppButton(
-              label: 'Về hôm nay',
-              icon: Icons.today_rounded,
-              kind: AppButtonKind.tonal,
-              onPressed: () => vm.selectDate(vietnamToday()),
-            ),
+            TextButton.icon(
+                onPressed: () => vm.selectDate(vietnamToday()),
+                icon: const Icon(Icons.today_rounded),
+                label: const Text('Về hôm nay')),
+          Text('Việc ngày ${s.date.day}/${s.date.month}',
+              style: Theme.of(context).textTheme.titleLarge),
           if (s.message != null) FieldMessage.hint(s.message!),
+          if (ref.watch(pairedMomUidProvider) == null)
+            AppButton(
+                label: 'Ghép nối',
+                icon: Icons.phonelink,
+                onPressed: () => context.push('/caregiver/pair')),
           switch (s.items) {
             UiLoading() => const LoadingView(),
             UiError(:final message) =>
@@ -152,40 +167,107 @@ class _CaregiverScheduleScreenState
                 message: ref.watch(pairedMomUidProvider) == null
                     ? 'Ghép nối trước để cùng xem lịch.'
                     : 'Chọn Tạo lịch cho mẹ để thêm một việc.'),
-            UiData(:final data) => s.view == CalendarView.day
-                ? Column(children: [
-                    for (final o in data) ...[
-                      _row(context, o),
-                      const SizedBox(height: AppSpacing.base)
-                    ]
-                  ])
-                : Column(children: [
-                    for (final day in _days(s)) ...[
-                      AppButton(
-                          label:
-                              '${day.day}/${day.month}/${day.year} · ${data.where((o) => dateKey(o.date) == dateKey(day)).length} việc',
-                          icon: Icons.calendar_today,
-                          kind: AppButtonKind.secondary,
-                          wrapLabel: true,
-                          onPressed: () {
-                            vm.selectView(CalendarView.day);
-                            vm.selectDate(day);
-                          }),
-                      const SizedBox(height: AppSpacing.betweenTargets),
-                    ]
-                  ]),
+            UiData(:final data) => Builder(builder: (context) {
+                final selected = data
+                    .where((o) => dateKey(o.date) == dateKey(s.date))
+                    .toList();
+                return selected.isEmpty
+                    ? const EmptyView(
+                        icon: Icons.event_available,
+                        title: 'Ngày này chưa có việc')
+                    : Column(children: [
+                        for (final o in selected) ...[
+                          _row(context, o),
+                          const SizedBox(height: AppSpacing.base)
+                        ]
+                      ]);
+              }),
           },
         ]);
   }
 
-  List<DateTime> _days(CaregiverCalendarState s) {
-    final from = s.view == CalendarView.week
-        ? s.date.subtract(Duration(days: s.date.weekday - 1))
-        : DateTime(s.date.year, s.date.month);
-    final n = s.view == CalendarView.week
-        ? 7
-        : DateTime(s.date.year, s.date.month + 1, 0).day;
-    return List.generate(n, (i) => from.add(Duration(days: i)));
+  Widget _calendar(BuildContext context, CaregiverCalendarState s,
+      CaregiverScheduleViewModel vm) {
+    final month = s.view == CalendarView.month;
+    final first = month
+        ? DateTime(s.date.year, s.date.month)
+        : s.date.subtract(Duration(days: s.date.weekday - 1));
+    final offset = month ? first.weekday - 1 : 0;
+    final count = month ? DateTime(s.date.year, s.date.month + 1, 0).day : 7;
+    final slots = ((offset + count) / 7).ceil() * 7;
+    final data = switch (s.items) {
+      UiData(:final data) => data,
+      _ => <ScheduleOccurrence>[]
+    };
+    final colors = Theme.of(context).colorScheme;
+    return Column(children: [
+      Row(children: [
+        for (final label in const ['T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'CN'])
+          Expanded(
+              child: ExcludeSemantics(
+                  child: FittedBox(
+                      fit: BoxFit.scaleDown,
+                      child: Text(label,
+                          style: Theme.of(context).textTheme.bodySmall))))
+      ]),
+      const SizedBox(height: 8),
+      for (var row = 0; row < slots ~/ 7; row++)
+        Row(children: [
+          for (var col = 0; col < 7; col++)
+            Expanded(child: Builder(builder: (context) {
+              final index = row * 7 + col - offset;
+              if (index < 0 || index >= count) {
+                return SizedBox(height: month ? 48 : 56);
+              }
+              final day = first.add(Duration(days: index));
+              final selected = dateKey(day) == dateKey(s.date);
+              final n =
+                  data.where((o) => dateKey(o.date) == dateKey(day)).length;
+              return Semantics(
+                  button: true,
+                  selected: selected,
+                  label: 'Ngày ${day.day} tháng ${day.month}, $n việc',
+                  child: ExcludeSemantics(
+                      child: InkWell(
+                          borderRadius: BorderRadius.circular(18),
+                          onTap: () => vm.selectDate(day),
+                          child: Container(
+                              constraints:
+                                  BoxConstraints(minHeight: month ? 44 : 56),
+                              margin: const EdgeInsets.all(2),
+                              decoration: BoxDecoration(
+                                  color: selected ? colors.primary : null,
+                                  borderRadius: BorderRadius.circular(18),
+                                  border:
+                                      dateKey(day) == dateKey(vietnamToday())
+                                          ? Border.all(color: colors.primary)
+                                          : null),
+                              child: Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    FittedBox(
+                                        fit: BoxFit.scaleDown,
+                                        child: Text('${day.day}',
+                                            style: TextStyle(
+                                                fontWeight: FontWeight.w700,
+                                                color: selected
+                                                    ? colors.onPrimary
+                                                    : colors.onSurface))),
+                                    const SizedBox(height: 3),
+                                    Container(
+                                        width: 5,
+                                        height: 5,
+                                        decoration: BoxDecoration(
+                                            shape: BoxShape.circle,
+                                            color: n == 0
+                                                ? Colors.transparent
+                                                : selected
+                                                    ? colors.onPrimary
+                                                    : colors.primary)),
+                                  ])))));
+            }))
+        ]),
+    ]);
   }
 
   Widget _row(BuildContext context, ScheduleOccurrence o) => TaskRow(

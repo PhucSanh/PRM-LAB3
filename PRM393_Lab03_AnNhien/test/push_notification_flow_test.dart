@@ -175,8 +175,17 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('Lịch thật từ con'), findsOneWidget);
     expect(find.text('Gợi ý khác'), findsNothing);
+    final review = find.text('Xem lại lựa chọn');
+    await tester.scrollUntilVisible(review, 150,
+        scrollable: find.byType(Scrollable).first);
+    await tester.pumpAndSettle();
+    await tester.tap(review);
+    await tester.pumpAndSettle();
+    expect(suggestions.acceptedTasks, isEmpty);
     final accept = find.text('Thêm việc đã chọn vào lịch');
-    await tester.ensureVisible(accept);
+    await tester.scrollUntilVisible(accept, 150,
+        scrollable: find.byType(Scrollable).first);
+    await tester.pumpAndSettle();
     await tester.tap(accept);
     await tester.pumpAndSettle();
     expect(suggestions.acceptedTasks.single.title, 'Lịch thật từ con');

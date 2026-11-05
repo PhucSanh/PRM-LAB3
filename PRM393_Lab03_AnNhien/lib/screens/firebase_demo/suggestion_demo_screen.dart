@@ -8,6 +8,7 @@ import '../../widgets/form_parts.dart';
 import '../../widgets/state_views.dart';
 import '../../widgets/time_field.dart';
 import '../../widgets/undo_snackbar.dart';
+import '../../widgets/suggestion_swipe_deck.dart';
 
 /// Khu demo backend F10 cho Hiếu nghiệm thu dịch vụ F12; màn G01–G12 do Sanh làm.
 class SuggestionDemoScreen extends ConsumerStatefulWidget {
@@ -19,6 +20,7 @@ class SuggestionDemoScreen extends ConsumerStatefulWidget {
 }
 
 class _SuggestionDemoScreenState extends ConsumerState<SuggestionDemoScreen> {
+  final reviewing = <String>{};
   final excluded = <String, Set<int>>{};
   final times = <String, Map<int, ({int hour, int minute})>>{};
   @override
@@ -36,7 +38,7 @@ class _SuggestionDemoScreenState extends ConsumerState<SuggestionDemoScreen> {
         },
         children: [
           const Text(
-              'Bác chọn việc muốn nhận. Chỉ việc Bác chọn mới được thêm vào lịch.'),
+              'Quẹt phải để chọn, quẹt trái để bỏ qua. Bác có thể đổi ý trước khi thêm vào lịch.'),
           if (s.message != null) FieldMessage.error(s.message!),
           ref.watch(pendingSuggestionsProvider).when(
                 loading: () => const LoadingView(),
@@ -56,74 +58,94 @@ class _SuggestionDemoScreenState extends ConsumerState<SuggestionDemoScreen> {
                             CaregiverInfoCard(children: [
                               if (suggestion.message.isNotEmpty)
                                 Text(suggestion.message),
-                              for (final (index, t)
-                                  in suggestion.tasks.indexed) ...[
-                                CheckboxListTile(
-                                    value: !(excluded[suggestion.id]
-                                            ?.contains(index) ??
-                                        false),
-                                    title: Text(t.title),
-                                    onChanged: s.busy
-                                        ? null
-                                        : (v) => setState(() {
-                                              final set = excluded.putIfAbsent(
-                                                  suggestion.id, () => {});
-                                              v == true
-                                                  ? set.remove(index)
-                                                  : set.add(index);
-                                            })),
-                                TimeField(
-                                    label: 'Giờ của ${t.title}',
-                                    value: TimeOfDay(
-                                        hour: times[suggestion.id]?[index]
-                                                ?.hour ??
-                                            t.hour,
-                                        minute: times[suggestion.id]?[index]
-                                                ?.minute ??
-                                            t.minute),
-                                    onChanged: (time) => setState(() =>
-                                        times.putIfAbsent(
-                                            suggestion.id, () => {})[index] = (
-                                          hour: time.hour,
-                                          minute: time.minute
-                                        ))),
-                              ],
-                              AppButton(
-                                  label: 'Thêm việc đã chọn vào lịch',
-                                  icon: Icons.check,
-                                  wrapLabel: true,
-                                  busy: s.busy,
-                                  onPressed: () async {
-                                    final selected = List.generate(
-                                            suggestion.tasks.length, (i) => i)
-                                        .where((i) => !(excluded[suggestion.id]
-                                                ?.contains(i) ??
-                                            false))
-                                        .toList();
-                                    if (selected.isEmpty) {
-                                      ScaffoldMessenger.of(context)
-                                          .showSnackBar(const SnackBar(
-                                              content: Text(
-                                                  'Bác chọn ít nhất một việc hoặc bấm Bỏ qua nhé.')));
-                                      return;
-                                    }
-                                    final overrides = {
-                                      for (final e in (times[suggestion.id] ??
-                                              <int, ({int hour, int minute})>{})
-                                          .entries)
-                                        if (selected.contains(e.key))
-                                          e.key: e.value
-                                    };
-                                    final ok = await vm.resolve(
-                                        suggestion.id, selected,
-                                        times: overrides);
-                                    if (ok && context.mounted) {
-                                      ScaffoldMessenger.of(context)
-                                          .showSnackBar(const SnackBar(
-                                              content: Text(
-                                                  'Đã thêm việc Bác chọn vào lịch.')));
-                                    }
-                                  }),
+                              if (!reviewing.contains(suggestion.id))
+                                SuggestionSwipeDeck(
+                                    key: ValueKey(suggestion.id),
+                                    tasks: suggestion.tasks,
+                                    busy: s.busy,
+                                    onChoice: (index, accepted) => setState(() {
+                                          final set = excluded.putIfAbsent(
+                                              suggestion.id, () => {});
+                                          accepted
+                                              ? set.remove(index)
+                                              : set.add(index);
+                                        }),
+                                    onReview: () => setState(
+                                        () => reviewing.add(suggestion.id))),
+                              if (reviewing.contains(suggestion.id))
+                                for (final (index, t)
+                                    in suggestion.tasks.indexed) ...[
+                                  CheckboxListTile(
+                                      value: !(excluded[suggestion.id]
+                                              ?.contains(index) ??
+                                          false),
+                                      title: Text(t.title),
+                                      onChanged: s.busy
+                                          ? null
+                                          : (v) => setState(() {
+                                                final set =
+                                                    excluded.putIfAbsent(
+                                                        suggestion.id,
+                                                        () => {});
+                                                v == true
+                                                    ? set.remove(index)
+                                                    : set.add(index);
+                                              })),
+                                  TimeField(
+                                      label: 'Giờ của ${t.title}',
+                                      value: TimeOfDay(
+                                          hour: times[suggestion.id]?[index]
+                                                  ?.hour ??
+                                              t.hour,
+                                          minute: times[suggestion.id]?[index]
+                                                  ?.minute ??
+                                              t.minute),
+                                      onChanged: (time) => setState(() =>
+                                          times.putIfAbsent(suggestion.id,
+                                              () => {})[index] = (
+                                            hour: time.hour,
+                                            minute: time.minute
+                                          ))),
+                                ],
+                              if (reviewing.contains(suggestion.id))
+                                AppButton(
+                                    label: 'Thêm việc đã chọn vào lịch',
+                                    icon: Icons.check,
+                                    wrapLabel: true,
+                                    busy: s.busy,
+                                    onPressed: () async {
+                                      final selected = List.generate(
+                                              suggestion.tasks.length, (i) => i)
+                                          .where((i) =>
+                                              !(excluded[suggestion.id]
+                                                      ?.contains(i) ??
+                                                  false))
+                                          .toList();
+                                      if (selected.isEmpty) {
+                                        ScaffoldMessenger.of(context)
+                                            .showSnackBar(const SnackBar(
+                                                content: Text(
+                                                    'Bác chọn ít nhất một việc hoặc bấm Bỏ qua nhé.')));
+                                        return;
+                                      }
+                                      final overrides = {
+                                        for (final e in (times[suggestion.id] ??
+                                                <int,
+                                                    ({int hour, int minute})>{})
+                                            .entries)
+                                          if (selected.contains(e.key))
+                                            e.key: e.value
+                                      };
+                                      final ok = await vm.resolve(
+                                          suggestion.id, selected,
+                                          times: overrides);
+                                      if (ok && context.mounted) {
+                                        ScaffoldMessenger.of(context)
+                                            .showSnackBar(const SnackBar(
+                                                content: Text(
+                                                    'Đã thêm việc Bác chọn vào lịch.')));
+                                      }
+                                    }),
                               AppButton(
                                   label: 'Bỏ qua',
                                   icon: Icons.close,

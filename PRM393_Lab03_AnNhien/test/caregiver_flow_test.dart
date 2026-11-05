@@ -145,6 +145,7 @@ void main() {
                 of: find.byType(ListView).first,
                 matching: find.byType(Scrollable))
             .first);
+    await tester.pumpAndSettle();
     await tester.tap(today);
     await tester.pumpAndSettle();
     expect(c.read(caregiverScheduleViewModelProvider).date, vietnamToday());
@@ -230,8 +231,17 @@ void main() {
     expect(schedules.tasks, isEmpty);
     router.go('/settings/firebase-demo/suggestions');
     await tester.pumpAndSettle();
+    final review = find.text('Xem lại lựa chọn');
+    await tester.scrollUntilVisible(review, 150,
+        scrollable: find.byType(Scrollable).first);
+    await tester.pumpAndSettle();
+    await tester.tap(review);
+    await tester.pumpAndSettle();
+    expect(suggestions.acceptedTasks, isEmpty);
     final accept = find.text('Thêm việc đã chọn vào lịch');
-    await tester.ensureVisible(accept);
+    await tester.scrollUntilVisible(accept, 150,
+        scrollable: find.byType(Scrollable).first);
+    await tester.pumpAndSettle();
     await tester.tap(accept);
     await tester.pumpAndSettle();
     expect(schedules.tasks.length, 1);
@@ -316,6 +326,8 @@ void main() {
               [
                 '/caregiver/pair',
                 '/caregiver/schedule',
+                '/caregiver/schedule?view=week',
+                '/caregiver/schedule?view=month',
                 '/caregiver/task/new',
                 '/caregiver/task/new/review'
               ].contains(route)) {

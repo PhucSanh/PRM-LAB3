@@ -13,10 +13,12 @@ class CaregiverPage extends StatelessWidget {
       required this.title,
       required this.children,
       this.step,
+      this.titleAction,
       this.footer,
       this.onBack,
       this.scrollController});
   final String title;
+  final Widget? titleAction;
   final List<Widget> children;
   final String? step;
   final Widget? footer;
@@ -32,7 +34,12 @@ class CaregiverPage extends StatelessWidget {
                     ScrollViewKeyboardDismissBehavior.onDrag,
                 padding: const EdgeInsets.all(AppSpacing.screen),
                 children: [
-              Text(title, style: Theme.of(context).textTheme.headlineMedium),
+              Row(children: [
+                Expanded(
+                    child: Text(title,
+                        style: Theme.of(context).textTheme.headlineMedium)),
+                if (titleAction != null) titleAction!,
+              ]),
               const SizedBox(height: AppSpacing.base),
               for (final child in children) ...[
                 child,
