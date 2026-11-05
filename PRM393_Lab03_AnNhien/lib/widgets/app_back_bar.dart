@@ -67,6 +67,7 @@ class AppBackBar extends StatelessWidget implements PreferredSizeWidget {
     final backWidth = hasEnd && !stacked
         ? (backNaturalWidth + AppSpacing.xs)
             .clamp(0, width - endNaturalWidth - AppSpacing.sm)
+            .toDouble()
         : width;
     double measure(String label, TextStyle? style, double maxWidth) {
       final painter = TextPainter(
