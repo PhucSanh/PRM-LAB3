@@ -8,6 +8,7 @@ import '../../theme/app_spacing.dart';
 import '../../viewmodels/task_form_view_model.dart';
 import '../../widgets/app_button.dart';
 import '../../widgets/calm_parts.dart';
+import '../../widgets/icon_circle.dart';
 import '../../widgets/app_back_bar.dart';
 import '../../widgets/botanical_scene.dart';
 import '../../widgets/app_text_field.dart';
@@ -642,51 +643,47 @@ class TaskSaveStatusScreen extends ConsumerWidget {
       ])));
     }
     return Scaffold(
+        appBar: AppBackBar.adaptive(context, onBack: onBackToForm),
         body: SafeArea(
-            child: Padding(
-                padding: AppSpacing.screenPadding,
-                child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(
-                          error
-                              ? Icons.error_outline_rounded
-                              : Icons.sync_rounded,
-                          size: 112,
-                          color: error
-                              ? Theme.of(context).colorScheme.error
-                              : Theme.of(context).colorScheme.primary),
-                      const SizedBox(height: AppSpacing.xl),
-                      Text(error ? 'Chưa lưu được' : 'Đang lưu việc...',
-                          style: Theme.of(context).textTheme.headlineMedium,
-                          textAlign: TextAlign.center),
-                      const SizedBox(height: AppSpacing.md),
-                      Text(
-                          error
-                              ? 'Chưa thể lưu trên điện thoại.\nNội dung đang nhập vẫn được giữ lại.'
-                              : 'Lưu trên điện thoại, không cần mạng\nĐang không có mạng',
-                          style: Theme.of(context).textTheme.bodyLarge,
-                          textAlign: TextAlign.center),
-                      const Spacer(),
-                      if (error) ...[
-                        AppButton(
-                            label: 'Thử lại',
-                            icon: Icons.refresh_rounded,
-                            onPressed: () => ref
-                                .read(taskFormViewModelProvider.notifier)
-                                .save()),
-                        const SizedBox(height: AppSpacing.sm),
-                        AppButton(
-                            label: 'Quay lại sửa',
-                            icon: Icons.edit_rounded,
-                            kind: AppButtonKind.secondary,
-                            onPressed: onBackToForm)
-                      ] else
-                        AppButton(
-                            label: 'Về trang Hôm nay',
-                            icon: Icons.wb_sunny_rounded,
-                            onPressed: () => context.go('/calendar'))
-                    ]))));
+            child: ListView(
+                padding: const EdgeInsets.all(AppSpacing.screen),
+                children: [
+              Center(
+                  child: IconCircle(
+                      icon: error
+                          ? Icons.error_outline_rounded
+                          : Icons.sync_rounded,
+                      danger: error)),
+              const SizedBox(height: AppSpacing.lg),
+              Text(error ? 'Chưa lưu được' : 'Đang lưu việc...',
+                  style: Theme.of(context).textTheme.headlineMedium,
+                  textAlign: TextAlign.center),
+              const SizedBox(height: AppSpacing.md),
+              Text(
+                  error
+                      ? 'Chưa thể lưu trên điện thoại.\nNội dung đang nhập vẫn được giữ lại.'
+                      : 'Lưu trên điện thoại, không cần mạng\nĐang không có mạng',
+                  style: Theme.of(context).textTheme.bodyLarge,
+                  textAlign: TextAlign.center),
+              const SizedBox(height: AppSpacing.xl),
+              if (error) ...[
+                AppButton(
+                    label: 'Thử lại',
+                    icon: Icons.refresh_rounded,
+                    onPressed: () =>
+                        ref.read(taskFormViewModelProvider.notifier).save()),
+                const SizedBox(height: AppSpacing.base),
+                AppButton(
+                    label: 'Quay lại sửa',
+                    icon: Icons.edit_rounded,
+                    kind: AppButtonKind.secondary,
+                    onPressed: onBackToForm),
+              ] else
+                AppButton(
+                    label: 'Về trang chủ',
+                    icon: Icons.home_rounded,
+                    onPressed: () => context.go('/calendar')),
+            ])));
   }
 }
 
@@ -704,8 +701,8 @@ class TaskSavedScreen extends ConsumerWidget {
                 padding: const EdgeInsets.all(AppSpacing.screen),
                 child: Column(mainAxisSize: MainAxisSize.min, children: [
                   AppButton(
-                      label: 'Về trang Hôm nay',
-                      icon: Icons.wb_sunny_rounded,
+                      label: 'Về trang chủ',
+                      icon: Icons.home_rounded,
                       onPressed: () => context.go('/calendar')),
                   const SizedBox(height: AppSpacing.sm),
                   AppButton(
@@ -729,7 +726,7 @@ class TaskSavedScreen extends ConsumerWidget {
                         child: Column(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              const Icon(Icons.save_rounded, size: 112),
+                              const IconCircle(icon: Icons.check_rounded),
                               const SizedBox(height: AppSpacing.lg),
                               Text('Đã lưu xong!',
                                   style: Theme.of(context)
