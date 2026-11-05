@@ -9,6 +9,7 @@ import '../../viewmodels/task_form_view_model.dart';
 import '../../widgets/app_button.dart';
 import '../../widgets/calm_parts.dart';
 import '../../widgets/icon_circle.dart';
+import '../../widgets/habit_widgets.dart';
 import '../../widgets/app_back_bar.dart';
 import '../../widgets/botanical_scene.dart';
 import '../../widgets/app_text_field.dart';
@@ -118,53 +119,12 @@ class _ActivityChoice extends StatelessWidget {
   final bool selected;
   final VoidCallback onTap;
   @override
-  Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    return Semantics(
-      button: true,
-      checked: selected,
-      label: activity.name,
-      excludeSemantics: true,
-      child: Material(
-          color: selected ? scheme.primaryContainer : scheme.secondaryContainer,
-          shape: RoundedRectangleBorder(
-              borderRadius: AppRadius.cardAll,
-              side: selected
-                  ? BorderSide(color: scheme.primary, width: 1.5)
-                  : BorderSide.none),
-          child: InkWell(
-            onTap: onTap,
-            child: ConstrainedBox(
-                constraints: const BoxConstraints(minHeight: 112),
-                child: Padding(
-                    padding: const EdgeInsets.all(AppSpacing.base),
-                    child: Row(children: [
-                      Container(
-                          width: 64,
-                          height: 64,
-                          decoration: BoxDecoration(
-                              color: HabitPalette.of(activity.key).bg,
-                              borderRadius: AppRadius.mdAll),
-                          child: Icon(activity.icon,
-                              color: HabitPalette.of(activity.key).fg,
-                              size: AppSizes.icon)),
-                      const SizedBox(width: AppSpacing.base),
-                      Expanded(
-                          child: Text(activity.name,
-                              style: Theme.of(context).textTheme.titleLarge)),
-                      Icon(
-                          selected
-                              ? Icons.check_circle_rounded
-                              : Icons.radio_button_unchecked_rounded,
-                          color: selected ? scheme.primary : scheme.outline,
-                          size: 40),
-                      const SizedBox(width: AppSpacing.sm),
-                      Text(selected ? 'Đã chọn' : 'Chọn',
-                          style: Theme.of(context).textTheme.labelMedium),
-                    ]))),
-          )),
-    );
-  }
+  Widget build(BuildContext context) => HabitTile(
+      habitKey: activity.key,
+      name: activity.name,
+      icon: activity.icon,
+      selected: selected,
+      onTap: onTap);
 }
 
 class TaskConfigureScreen extends ConsumerStatefulWidget {
