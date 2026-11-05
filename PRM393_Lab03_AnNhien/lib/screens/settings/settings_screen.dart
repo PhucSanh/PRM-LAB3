@@ -15,6 +15,7 @@ import '../../widgets/choice_group.dart';
 import '../../widgets/confirm_dialog.dart';
 import '../../widgets/nav_row.dart';
 import '../../widgets/section_card.dart';
+import '../../widgets/calm_parts.dart';
 import '../../widgets/state_views.dart';
 import '../../widgets/switch_row.dart';
 import '../../widgets/undo_snackbar.dart';
@@ -93,17 +94,7 @@ class _SettingsBody extends ConsumerWidget {
           AppSpacing.screen, AppSpacing.sm, AppSpacing.screen, AppSpacing.xl),
       child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
         // Tiêu đề đặt ở đầu nội dung (không trong app bar) để chữ ×2.0 không bị thu nhỏ (DT-28).
-        Row(children: [
-          Icon(AppIcons.settings, size: AppSizes.icon, color: scheme.onSurface),
-          const SizedBox(width: AppSpacing.sm),
-          Expanded(
-            child: Semantics(
-              header: true,
-              child: Text('Cài đặt hiển thị',
-                  style: theme.textTheme.headlineMedium),
-            ),
-          ),
-        ]),
+        const CalmPageHeader(title: 'Cài đặt hiển thị', actions: false),
         const SizedBox(height: AppSpacing.base),
         SectionCard(
           icon: AppIcons.textSize,
@@ -236,7 +227,6 @@ class _FontPreview extends StatelessWidget {
         decoration: BoxDecoration(
           color: theme.scaffoldBackgroundColor,
           borderRadius: AppRadius.mdAll,
-          border: Border.all(color: scheme.outline),
         ),
         child: Padding(
           padding: const EdgeInsets.all(AppSpacing.base),

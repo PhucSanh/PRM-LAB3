@@ -7,6 +7,7 @@ import '../../viewmodels/inbox_view_model.dart';
 import '../../viewmodels/ui_state.dart';
 import '../../theme/app_spacing.dart';
 import '../../widgets/app_back_bar.dart';
+import '../../widgets/calm_parts.dart';
 import '../../widgets/app_button.dart';
 import '../../widgets/state_views.dart';
 
@@ -57,9 +58,10 @@ class _InboxScreenState extends ConsumerState<InboxScreen> {
           child: ListView(
         padding: const EdgeInsets.all(AppSpacing.screen),
         children: [
-          Text('Hộp thông báo', style: theme.textTheme.headlineMedium),
-          const SizedBox(height: AppSpacing.sm),
-          const Text('Cập nhật từ gia đình và An Nhiên, cùng ở một nơi.'),
+          const CalmPageHeader(
+              title: 'Hộp thông báo',
+              subtitle: 'Cập nhật từ gia đình và An Nhiên, cùng ở một nơi.',
+              actions: false),
           const SizedBox(height: AppSpacing.base),
           Wrap(spacing: AppSpacing.sm, runSpacing: AppSpacing.sm, children: [
             for (final entry in const <NotificationKind?, String>{
