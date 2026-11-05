@@ -35,15 +35,10 @@ class TodayScreen extends ConsumerWidget {
           UiLoading() => const LoadingView(message: 'Đang tải việc hôm nay…'),
           UiError(:final message) =>
             ErrorView(message: message, onRetry: vm.load),
-          UiEmpty() => EmptyView(
-              icon: Icons.event_available_outlined,
-              title: 'Hôm nay chưa có việc',
-              message: 'Bắt đầu nhẹ nhàng với một việc nhỏ.',
-              action: AppButton(
-                label: 'Thêm việc đầu tiên',
-                icon: Icons.add,
-                onPressed: () => context.push('/today/add'),
-              ),
+          UiEmpty() => _TodayEmpty(
+              onAddTask: () => context.push('/today/add'),
+              onOpenSettings: () => context.push('/settings'),
+              onOpenInbox: () => context.push('/inbox'),
             ),
           UiData(:final data) => _TodayContent(
               key: ValueKey(forceMainView ? 'today-main' : 'today-default'),
@@ -52,6 +47,55 @@ class TodayScreen extends ConsumerWidget {
       ),
     );
   }
+}
+
+/// S03 trống vẫn cần lối vào Cài đặt và Hộp thông báo như S03 danh sách cũ.
+/// Đây là thao tác phụ, còn “Thêm việc đầu tiên” vẫn là hành động chính.
+class _TodayEmpty extends StatelessWidget {
+  const _TodayEmpty({
+    required this.onAddTask,
+    required this.onOpenSettings,
+    required this.onOpenInbox,
+  });
+
+  final VoidCallback onAddTask;
+  final VoidCallback onOpenSettings;
+  final VoidCallback onOpenInbox;
+
+  @override
+  Widget build(BuildContext context) => SafeArea(
+        child: ListView(
+          padding: const EdgeInsets.all(AppSpacing.screen),
+          children: [
+            Align(
+              alignment: Alignment.centerRight,
+              child: Wrap(spacing: AppSpacing.sm, children: [
+                TextButton.icon(
+                  onPressed: onOpenSettings,
+                  icon: const Icon(AppIcons.settings),
+                  label: const Text('Cài đặt'),
+                ),
+                TextButton.icon(
+                  onPressed: onOpenInbox,
+                  icon: const Icon(Icons.notifications_none_rounded),
+                  label: const Text('Thông báo'),
+                ),
+              ]),
+            ),
+            const SizedBox(height: AppSpacing.lg),
+            EmptyView(
+              icon: Icons.event_available_outlined,
+              title: 'Hôm nay chưa có việc',
+              message: 'Bắt đầu nhẹ nhàng với một việc nhỏ.',
+              action: AppButton(
+                label: 'Thêm việc đầu tiên',
+                icon: Icons.add,
+                onPressed: onAddTask,
+              ),
+            ),
+          ],
+        ),
+      );
 }
 
 class _TodayContent extends ConsumerStatefulWidget {
