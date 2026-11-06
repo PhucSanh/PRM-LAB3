@@ -1,3 +1,5 @@
+import 'weekly_report_service.dart';
+import 'device_access_service.dart';
 import 'firebase_family_suggestion_service.dart';
 import 'caregiver_suggestion_service.dart' as caregiver;
 import 'local_reminder_service.dart';
@@ -75,7 +77,10 @@ final messagingServiceProvider = Provider<MessagingService>((ref) {
   return service;
 });
 final reportServiceProvider = Provider<ReportService>((ref) =>
-    FirebaseReportService(FirebaseAuth.instance, FirebaseStorage.instance));
+    WeeklyReportService(
+        ref.watch(taskRepositoryProvider),
+        ref.watch(deviceAccessServiceProvider),
+        () => ref.read(authServiceProvider).currentUser?.uid));
 
 final _userDataProvider = Provider((ref) => FirebaseUserData(
     ref.watch(firestoreSdkProvider), ref.watch(authSdkProvider)));
@@ -146,3 +151,6 @@ final reminderRuntimeProvider = Provider<ReminderRuntime>((ref) {
   ref.onDispose(runtime.dispose);
   return runtime;
 });
+
+final deviceAccessServiceProvider =
+    Provider<DeviceAccessService>((ref) => AndroidDeviceAccessService());
