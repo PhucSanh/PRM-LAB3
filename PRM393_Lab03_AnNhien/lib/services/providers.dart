@@ -1,6 +1,7 @@
 import 'contact_launcher_service.dart';
 import 'voice_task_service.dart';
 import 'firebase_voice_task_service.dart';
+import 'local_voice_task_service.dart';
 import 'weekly_report_service.dart';
 import 'device_access_service.dart';
 import 'firebase_family_suggestion_service.dart';
@@ -160,8 +161,12 @@ final reminderRuntimeProvider = Provider<ReminderRuntime>((ref) {
 final deviceAccessServiceProvider =
     Provider<DeviceAccessService>((ref) => AndroidDeviceAccessService());
 
-final voiceTaskServiceProvider = Provider<VoiceTaskService>(
-    (ref) => FirebaseVoiceTaskService(ref.watch(functionsSdkProvider)));
+// Groq qua callable; khi server chưa bật (chưa deploy / chưa có key) thì dùng
+// bộ hiểu lời nói trên máy để Bác vẫn thêm việc bằng giọng nói được.
+final voiceTaskServiceProvider = Provider<VoiceTaskService>((ref) =>
+    FallbackVoiceTaskService(
+        FirebaseVoiceTaskService(ref.watch(functionsSdkProvider)),
+        LocalVoiceTaskService()));
 
 final contactLauncherServiceProvider =
     Provider<ContactLauncherService>((ref) => AndroidContactLauncherService());

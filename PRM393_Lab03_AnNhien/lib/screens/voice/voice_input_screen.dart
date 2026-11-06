@@ -8,6 +8,7 @@ import '../../widgets/app_text_field.dart';
 import '../../widgets/calm_parts.dart';
 import '../../widgets/form_parts.dart';
 import '../../widgets/read_aloud_control.dart';
+import '../../widgets/undo_snackbar.dart';
 import '../../widgets/voice_task_review.dart';
 import '../../theme/app_spacing.dart';
 
@@ -88,7 +89,7 @@ class _VoiceInputScreenState extends ConsumerState<VoiceInputScreen> {
             const FieldMessage.hint(
                 'Nhập giọng nói đang tạm tắt. Bác có thể gõ tên việc và nhập lịch bằng tay.'),
           const Text(
-              'Khi Bác bấm “Hiểu lời Bác nói”, phần chữ sẽ được gửi tới Groq để hiểu ngày, giờ. Bản ghi âm không được gửi tới Groq bởi ứng dụng.'),
+              'Khi Bác bấm “Hiểu lời Bác nói”, phần chữ, giờ thức dậy và các giờ đã có việc (không kèm tên việc) được gửi tới Groq để hiểu ngày, giờ. Bản ghi âm không được gửi đi.'),
           const SizedBox(height: AppSpacing.lg),
           if (result == null)
             AppButton(
@@ -145,12 +146,41 @@ class _VoiceInputScreenState extends ConsumerState<VoiceInputScreen> {
           ],
           if (result?.ready == true) ...[
             VoiceTaskReview(draft: result!.draft),
+            if (result.onDevice) ...[
+              const SizedBox(height: AppSpacing.md),
+              const FieldMessage.hint(
+                  'Cháu đang hiểu lời Bác ngay trên điện thoại. Bác xem kỹ ngày, giờ nhé.'),
+            ],
+            if (state.conflict != null) ...[
+              const SizedBox(height: AppSpacing.md),
+              Semantics(
+                  liveRegion: true, child: FieldMessage.hint(state.conflict!)),
+            ],
             const SizedBox(height: AppSpacing.md),
             ReadAloudControl(text: result.draft.reviewText),
             const SizedBox(height: AppSpacing.md),
             AppButton(
-                label: 'Dùng lịch này',
+                label: state.adding ? 'Đang thêm vào lịch…' : 'Thêm vào lịch',
                 icon: Icons.check_rounded,
+                busy: state.adding,
+                onPressed: state.busy
+                    ? null
+                    : () async {
+                        final draft = result.draft;
+                        final writer = ref.read(voiceTaskWriterProvider);
+                        final task = await vm.addToSchedule();
+                        if (task == null || !context.mounted) return;
+                        showUndoSnackbar(context,
+                            title: 'Đã thêm: ${task.title}',
+                            subtitle:
+                                'Ngày ${draft.dateLabel}, lúc ${draft.timeLabel}. Bác nói tiếp việc khác được.',
+                            onUndo: () => writer.undo(task));
+                      }),
+            const SizedBox(height: AppSpacing.md),
+            AppButton(
+                label: 'Xem và sửa trước khi lưu',
+                icon: Icons.edit_rounded,
+                kind: AppButtonKind.secondary,
                 onPressed: state.busy
                     ? null
                     : () {
@@ -176,7 +206,7 @@ class _VoiceInputScreenState extends ConsumerState<VoiceInputScreen> {
                     }),
           const SizedBox(height: AppSpacing.base),
           const Text(
-              'Chưa có việc nào được lưu. Bác sẽ kiểm tra ngày, giờ và bấm Lưu ở bước tiếp theo.'),
+              'Việc chỉ được lưu khi Bác bấm “Thêm vào lịch”, hoặc bấm Lưu ở bước nhập tay. Lưu xong vẫn có nút Hoàn tác.'),
         ]),
       )),
     );

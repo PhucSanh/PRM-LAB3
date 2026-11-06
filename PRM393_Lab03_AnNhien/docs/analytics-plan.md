@@ -32,7 +32,7 @@ Nguồn: chỉ số thành công M1–M8 (`lab2/PRD.md` mục 10, `lab2/persona.
 | `complete_task` ★ | "Đúng, đã xong" (DLG-Done, S04, S14) | `habit_key` (string), `on_time` (bool), `taps` (int), `source` (string: today / detail / reminder) | F3 – Khang | Bác làm việc đúng giờ? Đánh dấu xong ≤ 2 chạm? (M1) |
 | `postpone_task` | Chọn mốc dời (DLG-Later) | `habit_key` (string), `option` (string: 30m / afternoon / tomorrow) | F3 – Khang | Việc nào hay bị dời, dời tới đâu? |
 | `skip_task` | Bỏ qua (DLG-Skip, S14) | `habit_key` (string), `reason` (string: rain / tired / busy / other / none) | F3 – Khang | Việc nào hay bị bỏ, vì sao? (FR11) |
-| `undo_action` | Bấm "Hoàn tác" ở snackbar | `action` (string: done / postpone / skip / delete / dismiss_suggestion) | F3 – Khang | Bác có bấm nhầm không? (M3) |
+| `undo_action` | Bấm "Hoàn tác" ở snackbar | `action` (string: done / postpone / skip / delete / dismiss_suggestion / voice_add_task) | F3 – Khang | Bác có bấm nhầm không? (M3) |
 | `add_task` ★ | Lưu việc mới (ST-Saved) | `habit_key` (string), `repeat` (string), `source` (string: tap / voice / habit / first_task), `duration_sec` (int) | F4 – Khang | Thêm việc ≤ 60 giây? Thói quen nào được thêm nhiều? (M2) |
 | `edit_task` | Lưu thay đổi (S15) | `habit_key` (string), `scope` (string: this / following / all) | F4 – Khang | Bác sửa gì nhiều nhất? |
 | `delete_task` | Xoá (DLG-Delete) | `habit_key` (string), `scope` (string) | F4 – Khang | Việc nào bị bỏ hẳn? |

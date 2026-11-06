@@ -7,10 +7,12 @@ Code Flutter và callable `interpretVoiceTask` đã nối; key chưa được cu
 ## Luồng của Bác
 
 1. Mở Nói để thêm việc, bấm Bắt đầu nói hoặc gõ câu.
-2. Bấm **Hiểu lời Bác nói**: app gửi phần chữ và ngày ngữ cảnh nếu có, qua callable có Firebase Auth tới Groq. Không gửi bản ghi âm tới Groq.
-3. Thiếu ngày/giờ hoặc mơ hồ: đọc câu hỏi, cho Bác nói/gõ câu trả lời bổ sung. Tối đa 4 lượt, mỗi lượt 500 ký tự; có thể sửa câu ban đầu để bắt đầu lại.
-4. Đủ thông tin: hiển thị tên việc, ngày, giờ và lặp; đọc lại bằng TTS Android. **Dùng lịch này** chỉ điền form F4; chưa có task nào được lưu.
-5. Bác kiểm tra/chỉnh sửa và bấm Lưu theo luồng hiện tại. Key chưa bật, lỗi mạng hoặc provider lỗi: giữ câu nói, cho thử lại và nhập tay.
+2. Bấm **Hiểu lời Bác nói**: app gửi phần chữ, ngày ngữ cảnh và **ngữ cảnh của Bác** (`userContext`: xưng hô `ong`/`ba`, giờ thức dậy `HH:mm`, tối đa 20 khung giờ đã bận gồm giờ bắt đầu, số phút, nhóm thói quen; **không có tên việc**) qua callable có Firebase Auth tới Groq. Không gửi bản ghi âm.
+3. Nhờ ngữ cảnh, AI hiểu "khi thức dậy" (= giờ thức dậy), "sau bữa sáng" (+60 phút), "sau khi đi bộ / ăn trưa / ngủ trưa" (= giờ kết thúc khung bận cùng nhóm). Thiếu dữ liệu thì hỏi lại, không bịa giờ.
+4. Thiếu ngày/giờ hoặc mơ hồ: đọc câu hỏi, cho Bác nói/gõ câu trả lời bổ sung. Tối đa 4 lượt, mỗi lượt 500 ký tự; có thể sửa câu ban đầu để bắt đầu lại.
+5. Đủ thông tin: hiển thị tên việc, ngày, giờ, lặp; đọc lại bằng TTS. Nếu trùng giờ với việc đã có, báo ngay trên máy (tên việc chỉ hiện trên máy).
+6. **Thêm vào lịch**: lưu thẳng qua `TaskRepository` (`VoiceTaskWriter`), snackbar **Hoàn tác** không tự tắt (vẫn chạy sau khi rời màn). **Xem và sửa trước khi lưu**: điền form F4 như cũ.
+7. Callable chưa deploy / chưa có key (`not-found`, `failed-precondition` → `VoiceUnavailableException`): `FallbackVoiceTaskService` chuyển sang `LocalVoiceTaskService` (bộ hiểu tiếng Việt theo luật, chạy trên máy, cùng luật hỏi lại). Màn ghi rõ "Cháu đang hiểu lời Bác ngay trên điện thoại". Lỗi mạng / quota không chuyển, vẫn báo như cũ.
 
 ## Cấu hình key (thực hiện sau khi có key)
 

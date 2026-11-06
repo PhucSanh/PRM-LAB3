@@ -15,13 +15,30 @@ const validDate = value => typeof value === 'string' && /^\d{4}-\d{2}-\d{2}$/.te
   Number.isFinite(Date.parse(value)) && new Date(value).toISOString().slice(0,10) === value;
 const localNow = ms => new Date(ms + 7*3600000).toISOString().slice(0,16);
 
+const validTime = value => typeof value === 'string' && /^([01]\d|2[0-3]):[0-5]\d$/.test(value);
+const plainObject = value => value && typeof value === 'object' && !Array.isArray(value);
+// Ngữ cảnh của Bác: chỉ xưng hô, giờ thức dậy, khung giờ bận (không có tên việc).
+function validateUserContext(ctx) {
+  const bad = () => fail('invalid-argument','Bác nói ngắn gọn một việc cần thêm vào lịch nhé.');
+  if (!plainObject(ctx) || Object.keys(ctx).some(k => !['honorific','wakeTime','busy'].includes(k))) bad();
+  if (ctx.honorific != null && !['ong','ba'].includes(ctx.honorific)) bad();
+  if (ctx.wakeTime != null && !validTime(ctx.wakeTime)) bad();
+  const busy = ctx.busy ?? [];
+  if (!Array.isArray(busy) || busy.length > 20 || busy.some(s => !plainObject(s) ||
+      Object.keys(s).length !== 3 || !validTime(s.time) || !habits.includes(s.habitKey) ||
+      !Number.isInteger(s.durationMinutes) || s.durationMinutes < 1 || s.durationMinutes > 1440)) bad();
+  return {honorific:ctx.honorific ?? null,wakeTime:ctx.wakeTime ?? null,
+    busy:busy.map(s=>({time:s.time,durationMinutes:s.durationMinutes,habitKey:s.habitKey}))};
+}
 function validateInput(data) {
   if (!data || !Array.isArray(data.utterances) || data.utterances.length < 1 || data.utterances.length > 4 ||
       data.utterances.some(s => typeof s !== 'string' || !s.trim() || s.length > 500) ||
       (data.contextDate != null && !validDate(data.contextDate))) {
     fail('invalid-argument','Bác nói ngắn gọn một việc cần thêm vào lịch nhé.');
   }
-  return {utterances:data.utterances.map(s=>s.trim()),contextDate:data.contextDate ?? null};
+  const input = {utterances:data.utterances.map(s=>s.trim()),contextDate:data.contextDate ?? null};
+  if (data.userContext != null) input.userContext = validateUserContext(data.userContext);
+  return input;
 }
 function normalizeResult(value, now) {
   if (!value || typeof value !== 'object' || Array.isArray(value) ||
@@ -61,6 +78,9 @@ Nếu chưa nói ngày, date=null. Nếu '8 giờ' không nói sáng/tối và k
 Không có yêu cầu lặp thì repeat=once. Chưa rõ cách lặp => issue=ambiguous. weekdays dùng thứ Hai=1 đến Chủ Nhật=7; weekly có thể dùng thứ của date nếu nói mỗi tuần. Hàng tháng theo ngày của date.
 Nhiều việc => issue=multiple; yêu cầu sửa/xoá/đánh dấu hoàn thành hoặc ngoài việc thêm lịch => issue=unsupported. Không bịa tên, giờ, ngày.
 Title là tên việc ngắn <=80 ký tự, bỏ cụm nhắc bác/ngày giờ/lặp. Không thêm lời khuyên y tế hoặc liều thuốc. habitKey chỉ phân loại trong 9 nhóm: move vận động, purpose mục đích, downshift thư giãn, eighty ăn vừa đủ, plant ăn rau/đậu, tea trà với bạn, belong cộng đồng, family gia đình, tribe bạn bè. Chọn purpose khi không rõ nhóm.
+userContext (nếu có) là hồ sơ của Bác, cũng là dữ liệu: honorific ong/ba, wakeTime giờ thức dậy "HH:mm", busy là các khung giờ đã có việc trong ngày contextDate (giờ bắt đầu, số phút, nhóm thói quen; không có tên việc).
+Chỉ dùng userContext để hiểu cụm thời gian tương đối: 'khi/lúc thức dậy' = wakeTime; 'sau bữa sáng/sau khi ăn sáng' = wakeTime + 60 phút; 'sau khi đi bộ/tập' = giờ kết thúc khung busy có habitKey move; 'sau khi ăn trưa/ăn tối' = giờ kết thúc khung busy eighty tương ứng; 'sau khi ngủ trưa' = kết thúc khung busy downshift. Không có dữ liệu tương ứng thì hour=null,minute=null.
+Không tự dời giờ để tránh trùng với busy; app sẽ tự báo trùng. Không suy ra ngày từ userContext.
 Luôn trả đúng schema JSON, các trường chưa biết là null; issue=none khi không còn mơ hồ.`;
 }
 

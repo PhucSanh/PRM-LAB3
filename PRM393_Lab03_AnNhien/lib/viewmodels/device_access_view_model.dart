@@ -1,11 +1,17 @@
+import 'dart:async';
+
 import 'package:clock/clock.dart';
+import '../models/task_item.dart';
 import '../models/voice_task_draft.dart';
+import '../services/profile_setup_service.dart';
 import '../services/remote_config_service.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../services/providers.dart';
 import '../utils/app_error.dart';
+import 'calm_feature_providers.dart';
 import 'session_view_model.dart';
 import 'task_form_view_model.dart';
+import 'today_view_model.dart';
 
 final _voiceConfigUpdatesProvider = StreamProvider<Set<String>>(
     (ref) => ref.watch(remoteConfigServiceProvider).onUpdated);
@@ -28,28 +34,101 @@ class VoiceDraft {
       this.error,
       this.followUp = '',
       this.utterances = const [],
-      this.interpretation});
+      this.interpretation,
+      this.conflict,
+      this.adding = false});
   final String text, followUp;
-  final bool busy, interpreting;
+  final bool busy, interpreting, adding;
   final String? error;
   final List<String> utterances;
   final VoiceTaskInterpretation? interpretation;
+
+  /// Câu báo trùng giờ với việc đã có (chỉ hiện trên máy, không gửi đi).
+  final String? conflict;
+
+  /// [error] và [conflict] không giữ lại khi không truyền (giống [error] cũ).
   VoiceDraft copyWith(
           {String? text,
           String? followUp,
           bool? busy,
           bool? interpreting,
+          bool? adding,
           String? error,
           List<String>? utterances,
-          VoiceTaskInterpretation? interpretation}) =>
+          VoiceTaskInterpretation? interpretation,
+          String? conflict}) =>
       VoiceDraft(
           text: text ?? this.text,
           followUp: followUp ?? this.followUp,
           busy: busy ?? this.busy,
           interpreting: interpreting ?? this.interpreting,
+          adding: adding ?? this.adding,
           error: error,
           utterances: utterances ?? this.utterances,
-          interpretation: interpretation ?? this.interpretation);
+          interpretation: interpretation ?? this.interpretation,
+          conflict: conflict);
+}
+
+/// Thời lượng mặc định của việc thêm bằng giọng nói (giống form F4).
+const voiceTaskDurationMinutes = 15;
+
+/// Ngữ cảnh của Bác gửi kèm câu nói. Lỗi đọc hồ sơ / lịch không chặn việc
+/// hiểu lời nói: thiếu phần nào thì bỏ phần đó.
+Future<(VoiceUserContext, List<TaskItem>)> loadVoiceContext(
+    Ref ref, String uid, DateTime day) async {
+  ProfileSetup? setup;
+  var tasks = const <TaskItem>[];
+  try {
+    setup = await ref
+        .read(profileSetupServiceProvider)
+        .watchSetup(uid)
+        .first
+        .timeout(const Duration(seconds: 3));
+  } catch (_) {/* hồ sơ chưa có hoặc chưa tải được */}
+  try {
+    tasks = await ref
+        .read(taskRepositoryProvider)
+        .tasksForDay(day)
+        .timeout(const Duration(seconds: 5));
+  } catch (_) {/* lịch chưa tải được */}
+  final sorted = [
+    ...tasks
+  ]..sort((a, b) => (a.hour * 60 + a.minute).compareTo(b.hour * 60 + b.minute));
+  return (
+    VoiceUserContext(
+        honorific: setup?.honorific.name,
+        wakeHour: setup?.wakeHour,
+        wakeMinute: setup?.wakeMinute,
+        busy: sorted
+            .take(VoiceUserContext.maxBusy)
+            .map((t) => VoiceBusySlot(
+                hour: t.hour,
+                minute: t.minute,
+                durationMinutes: t.durationMinutes,
+                habitKey: t.habitKey))
+            .toList(growable: false)),
+    tasks
+  );
+}
+
+/// Việc đã có trùng khung giờ với bản nháp, hoặc `null`.
+TaskItem? findConflict(VoiceTaskDraft draft, List<TaskItem> sameDay,
+    {int durationMinutes = voiceTaskDurationMinutes}) {
+  if (draft.hour == null || draft.minute == null) return null;
+  final start = draft.hour! * 60 + draft.minute!, end = start + durationMinutes;
+  for (final t in sameDay) {
+    if (t.status == TaskStatus.skipped) continue;
+    final s = t.hour * 60 + t.minute, e = s + t.durationMinutes;
+    if (start < e && s < end) return t;
+  }
+  return null;
+}
+
+String conflictMessage(TaskItem task) {
+  final time = '${task.hour.toString().padLeft(2, '0')}:'
+      '${task.minute.toString().padLeft(2, '0')}';
+  return 'Lúc $time Bác đã có việc “${task.title}”. '
+      'Bác vẫn thêm được, hoặc nói giờ khác nhé.';
 }
 
 class VoiceInputViewModel extends Notifier<VoiceDraft> {
@@ -138,13 +217,27 @@ class VoiceInputViewModel extends Notifier<VoiceDraft> {
     try {
       await ref.read(speechViewModelProvider.notifier).stop();
       if (!_active(generation, uid)) return;
-      final result = await ref.read(voiceTaskServiceProvider).interpret(turns,
-          contextDate: ref.read(taskFormViewModelProvider).date);
+      final contextDate = ref.read(taskFormViewModelProvider).date;
+      final (userContext, _) =
+          await loadVoiceContext(ref, uid, contextDate ?? clock.now());
       if (!_active(generation, uid)) return;
+      final result = await ref
+          .read(voiceTaskServiceProvider)
+          .interpret(turns, contextDate: contextDate, userContext: userContext);
+      if (!_active(generation, uid)) return;
+      String? conflict;
+      if (result.ready) {
+        final (_, sameDay) =
+            await loadVoiceContext(ref, uid, result.draft.date!);
+        if (!_active(generation, uid)) return;
+        final hit = findConflict(result.draft, sameDay);
+        if (hit != null) conflict = conflictMessage(hit);
+      }
       state = before.copyWith(
           busy: false,
           interpreting: false,
           interpretation: result,
+          conflict: conflict,
           utterances: List.unmodifiable(turns),
           followUp: '');
       // Read only a checked proposal or a clarification; never execute model output.
@@ -195,7 +288,88 @@ class VoiceInputViewModel extends Notifier<VoiceDraft> {
         : draft.weekdays.toSet());
     return true;
   }
+
+  /// Thêm thẳng bản nháp đã đủ thông tin vào lịch của Bác. Trả về việc đã lưu
+  /// để View hiện "Hoàn tác"; `null` khi chưa lưu được (lỗi nằm trong state).
+  Future<TaskItem?> addToSchedule() async {
+    final result = state.interpretation;
+    if (state.busy || result == null || !result.ready) return null;
+    if (!result.draft.isFuture(clock.now())) {
+      state = state.copyWith(
+          conflict: state.conflict,
+          error: 'Thời điểm này đã qua. Bác sửa câu nói và chọn giờ khác nhé.');
+      return null;
+    }
+    final uid = ref.read(sessionProvider).value?.uid;
+    final before = state, generation = ++_generation;
+    state = state.copyWith(busy: true, adding: true, conflict: state.conflict);
+    try {
+      final task = await ref
+          .read(voiceTaskWriterProvider)
+          .add(result.draft, attempts: before.utterances.length);
+      // Bắt đầu lượt mới để Bác nói tiếp việc khác.
+      if (_active(generation, uid)) state = const VoiceDraft();
+      return task;
+    } catch (_) {
+      if (_active(generation, uid)) {
+        state = before.copyWith(
+            conflict: before.conflict,
+            error: 'Chưa thêm được vào lịch. Bác thử lại hoặc nhập tay nhé.');
+      }
+      return null;
+    }
+  }
 }
+
+/// Lưu / hoàn tác việc thêm bằng giọng nói. Không autoDispose để "Hoàn tác"
+/// trên snackbar vẫn chạy khi Bác đã rời màn nói.
+class VoiceTaskWriter {
+  VoiceTaskWriter(this._ref);
+  final Ref _ref;
+
+  Future<TaskItem> add(VoiceTaskDraft draft, {int attempts = 1}) async {
+    final task = draft.toTask(clock.now().microsecondsSinceEpoch.toString(),
+        durationMinutes: voiceTaskDurationMinutes);
+    final analytics = _ref.read(analyticsServiceProvider);
+    try {
+      task.validate();
+      await _ref.read(taskRepositoryProvider).save(task);
+    } catch (error, stack) {
+      await _ref
+          .read(crashServiceProvider)
+          .recordError(error, stack, reason: 'save_voice_task');
+      await analytics
+          .logEvent('voice_add_task', {'success': false, 'attempts': attempts});
+      rethrow;
+    }
+    await analytics
+        .logEvent('voice_add_task', {'success': true, 'attempts': attempts});
+    await analytics.logEvent('add_task', {
+      'habit_key': task.habitKey,
+      'repeat': task.repeat.name,
+      'source': 'voice',
+    });
+    _refresh();
+    return task;
+  }
+
+  Future<void> undo(TaskItem task) async {
+    await _ref.read(taskRepositoryProvider).delete(task.id);
+    await _ref
+        .read(analyticsServiceProvider)
+        .logEvent('undo_action', {'action': 'voice_add_task'});
+    _refresh();
+  }
+
+  void _refresh() {
+    _ref.invalidate(todayViewModelProvider);
+    _ref.invalidate(calendarTasksProvider);
+    _ref.invalidate(recentActivitiesProvider);
+  }
+}
+
+final voiceTaskWriterProvider =
+    Provider<VoiceTaskWriter>((ref) => VoiceTaskWriter(ref));
 
 final voiceInputViewModelProvider =
     NotifierProvider.autoDispose<VoiceInputViewModel, VoiceDraft>(

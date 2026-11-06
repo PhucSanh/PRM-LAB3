@@ -40,10 +40,12 @@ class ScriptedVoiceService implements VoiceTaskService {
   ScriptedVoiceService(this.next);
   Future<VoiceTaskInterpretation> Function() next;
   final requests = <List<String>>[];
+  final contexts = <VoiceUserContext?>[];
   @override
   Future<VoiceTaskInterpretation> interpret(List<String> utterances,
-      {DateTime? contextDate}) {
+      {DateTime? contextDate, VoiceUserContext? userContext}) {
     requests.add(List.of(utterances));
+    contexts.add(userContext);
     return next();
   }
 }
@@ -120,7 +122,10 @@ void main() {
     final vm = c.read(voiceInputViewModelProvider.notifier)
       ..edit('Mai tưới cây');
     final request = vm.analyze();
-    await Future<void>.delayed(Duration.zero);
+    // Chờ ViewModel đọc xong ngữ cảnh (hồ sơ + lịch) và gửi request đầu.
+    while (service.requests.isEmpty) {
+      await Future<void>.delayed(const Duration(milliseconds: 10));
+    }
     await vm.analyze();
     expect(service.requests, hasLength(1));
     await c.read(authServiceProvider).signOut();

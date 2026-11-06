@@ -17,20 +17,22 @@ class FirebaseVoiceTaskService implements VoiceTaskService {
 
   @override
   Future<VoiceTaskInterpretation> interpret(List<String> utterances,
-      {DateTime? contextDate}) async {
+      {DateTime? contextDate, VoiceUserContext? userContext}) async {
     try {
       final data = await _call({
         'utterances': utterances,
-        if (contextDate != null) 'contextDate': dateKey(contextDate)
+        if (contextDate != null) 'contextDate': dateKey(contextDate),
+        if (userContext != null && !userContext.isEmpty)
+          'userContext': userContext.toMap(),
       });
       return VoiceTaskInterpretation.fromMap(data);
     } on FirebaseFunctionsException catch (e) {
       // Never expose provider responses, keys or transcript in user-facing errors.
+      if (e.code == 'failed-precondition' || e.code == 'not-found') {
+        throw const VoiceUnavailableException();
+      }
       throw AppException(switch (e.code) {
         'unauthenticated' => 'Bác đăng nhập lại để dùng hiểu lời nói nhé.',
-        'failed-precondition' ||
-        'not-found' =>
-          'Hiểu lời nói chưa được bật. Bác có thể nhập lịch bằng tay.',
         'resource-exhausted' =>
           'Đã thử nhiều lần. Bác chờ một lát hoặc nhập tay nhé.',
         'unavailable' ||

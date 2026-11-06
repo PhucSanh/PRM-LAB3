@@ -66,3 +66,14 @@ test('unauthenticated, malformed and missing-key requests never access quota or 
   await assert.rejects(service('user',{utterances:[]}),e=>e.code==='invalid-argument');
   await assert.rejects(service('user',{utterances:['a']}),e=>e.code==='failed-precondition');
 });
+test('voice userContext carries only honorific, wake time and untitled busy slots',()=>{
+  const ctx={honorific:'ba',wakeTime:'05:30',busy:[{time:'09:30',durationMinutes:30,habitKey:'move'}]};
+  assert.deepEqual(validateInput({utterances:['mai tập'],userContext:ctx}).userContext,ctx);
+  assert.deepEqual(validateInput({utterances:['mai tập'],userContext:{}}).userContext,{honorific:null,wakeTime:null,busy:[]});
+  for(const bad of [{title:'x'},{honorific:'admin'},{wakeTime:'25:00'},{wakeTime:'5:30'},
+    {busy:[{time:'09:30',durationMinutes:30,habitKey:'move',title:'Đi bộ'}]},
+    {busy:[{time:'09:30',durationMinutes:0,habitKey:'move'}]},
+    {busy:Array.from({length:21},()=>({time:'09:30',durationMinutes:30,habitKey:'move'}))},'text',[]])
+    assert.throws(()=>validateInput({utterances:['mai tập'],userContext:bad}),e=>e.code==='invalid-argument');
+  assert.match(systemPrompt(now),/wakeTime \+ 60/);
+});

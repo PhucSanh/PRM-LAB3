@@ -45,6 +45,26 @@ class VoiceTaskDraft {
   String get reviewText =>
       '${title ?? 'Chưa rõ tên việc'}. Ngày $dateLabel, lúc $timeLabel. $repeatLabel. Bác kiểm tra lại trước khi lưu nhé.';
 
+  /// Việc mới từ bản nháp đã đủ thông tin. Chỉ gọi khi [complete].
+  TaskItem toTask(String id, {int durationMinutes = 15}) {
+    assert(complete, 'Draft must be complete before saving');
+    final day = date!;
+    return TaskItem(
+      id: id,
+      title: title!,
+      habitKey: habitKey,
+      hour: hour!,
+      minute: minute!,
+      repeat: repeat,
+      durationMinutes: durationMinutes,
+      startDate: dateKey(day),
+      weekdays: {RepeatRule.weekly, RepeatRule.someDays}.contains(repeat)
+          ? (weekdays.isEmpty ? [day.weekday] : weekdays)
+          : const [],
+      monthDays: repeat == RepeatRule.monthly ? [day.day] : const [],
+    );
+  }
+
   factory VoiceTaskDraft.fromMap(Map<String, dynamic> data) {
     final title = data['title'], rawDate = data['date'];
     final hour = data['hour'], minute = data['minute'];
@@ -87,10 +107,56 @@ class VoiceTaskDraft {
   }
 }
 
+/// Một khung giờ đã bận trong ngày. Không chứa tên việc: chỉ giờ, thời lượng
+/// và nhóm thói quen, để AI hiểu "sau khi đi bộ" mà không đọc lịch riêng tư.
+class VoiceBusySlot {
+  const VoiceBusySlot(
+      {required this.hour,
+      required this.minute,
+      required this.durationMinutes,
+      required this.habitKey});
+  final int hour, minute, durationMinutes;
+  final String habitKey;
+  Map<String, Object> toMap() => {
+        'time':
+            '${hour.toString().padLeft(2, '0')}:${minute.toString().padLeft(2, '0')}',
+        'durationMinutes': durationMinutes,
+        'habitKey': habitKey,
+      };
+}
+
+/// Ngữ cảnh của Bác gửi kèm câu nói: cách xưng hô, giờ thức dậy và các khung
+/// giờ đã bận của ngày đang xem. Mọi trường đều có thể thiếu.
+class VoiceUserContext {
+  const VoiceUserContext(
+      {this.honorific, this.wakeHour, this.wakeMinute, this.busy = const []});
+
+  /// Khoá `ong` / `ba` như `users/{uid}.honorific`.
+  final String? honorific;
+  final int? wakeHour, wakeMinute;
+  final List<VoiceBusySlot> busy;
+
+  static const maxBusy = 20;
+  bool get hasWakeTime => wakeHour != null && wakeMinute != null;
+  bool get isEmpty => honorific == null && !hasWakeTime && busy.isEmpty;
+
+  Map<String, Object?> toMap() => {
+        'honorific': honorific,
+        'wakeTime': hasWakeTime
+            ? '${wakeHour!.toString().padLeft(2, '0')}:${wakeMinute!.toString().padLeft(2, '0')}'
+            : null,
+        'busy': busy.take(maxBusy).map((s) => s.toMap()).toList(),
+      };
+}
+
 class VoiceTaskInterpretation {
-  const VoiceTaskInterpretation({required this.draft, required this.question});
+  const VoiceTaskInterpretation(
+      {required this.draft, required this.question, this.onDevice = false});
   final VoiceTaskDraft draft;
   final String? question;
+
+  /// `true` khi kết quả do bộ hiểu lời nói trên máy tạo (chưa bật Groq).
+  final bool onDevice;
   bool get ready => question == null && draft.complete;
   factory VoiceTaskInterpretation.fromMap(Map<String, dynamic> data) {
     if (data['draft'] is! Map ||

@@ -71,7 +71,7 @@ void main() {
       await tester.pumpAndSettle();
       await tap(tester, 'Hiểu lời Bác nói');
       expect(find.text(ambiguous().question!).hitTestable(), findsOneWidget);
-      expect(find.text('Dùng lịch này'), findsNothing);
+      expect(find.text('Xem và sửa trước khi lưu'), findsNothing);
       vm.editFollowUp('8 giờ rưỡi sáng thứ hai tư sáu');
       await tester.pumpAndSettle();
       service.next = () async => ready();
@@ -86,7 +86,7 @@ void main() {
           find.byType(AnNhienApp),
           matchesGoldenFile(
               'goldens/groq_review_${width.toInt()}_${scale.toInt()}x.png'));
-      await tap(tester, 'Dùng lịch này');
+      await tap(tester, 'Xem và sửa trước khi lưu');
       expect(find.text('Thêm việc'), findsOneWidget);
       expect(c.read(taskFormViewModelProvider).title, 'Tưới cây');
       expect(c.read(taskFormViewModelProvider).minute, 30);
