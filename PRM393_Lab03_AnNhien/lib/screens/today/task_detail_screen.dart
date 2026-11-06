@@ -79,11 +79,8 @@ class _TaskDetail extends StatelessWidget {
         // Màn này nằm trong AppShell có thanh điều hướng đáy. Chừa đủ phần
         // cuộn cuối để các nút hành động (đặc biệt “Đã xong”) không bị thanh
         // đó che ở màn hình thấp.
-        padding: const EdgeInsets.fromLTRB(
-            AppSpacing.screen,
-            AppSpacing.screen,
-            AppSpacing.screen,
-            AppSpacing.screen + AppSizes.navBar),
+        padding: const EdgeInsets.fromLTRB(AppSpacing.screen, AppSpacing.screen,
+            AppSpacing.screen, AppSpacing.screen + AppSizes.navBar),
         children: [
           Semantics(
             header: true,
@@ -358,8 +355,11 @@ Future<bool> runTaskAction(
       },
     );
   } else {
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(
-      ProviderScope.containerOf(context).read(todayViewModelProvider.notifier).actionError ?? 'Chưa cập nhật được việc. Bác thử lại nhé.')));
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text(ProviderScope.containerOf(context)
+                .read(todayViewModelProvider.notifier)
+                .actionError ??
+            'Chưa cập nhật được việc. Bác thử lại nhé.')));
   }
   return saved;
 }

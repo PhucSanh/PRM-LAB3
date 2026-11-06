@@ -127,7 +127,7 @@ class FirebaseTaskRepository implements TaskRepository, ScopedTaskRepository {
               status: byTask[task.id] ?? TaskStatus.pending,
               occurrenceDate: dayKey,
               rescheduleSourceDate: reschedule.sourceDate,
-          isRescheduled:true,
+              isRescheduled: true,
             ));
           }
         }
@@ -203,23 +203,40 @@ class FirebaseTaskRepository implements TaskRepository, ScopedTaskRepository {
         final taskRef = data.collection('tasks').doc(task.id);
         return data.db.runTransaction((tx) async {
           final templateSnapshot = await tx.get(taskRef);
-          if (!templateSnapshot.exists) throw const AppException('Việc này không còn trong lịch.');
+          if (!templateSnapshot.exists) {
+            throw const AppException('Việc này không còn trong lịch.');
+          }
           final template = TaskItem.fromMap(task.id, templateSnapshot.data()!);
           final snapshot = await tx.get(doc);
           // All writers below also update template.revision. Its transaction read
           // serializes concurrent moves; a retry re-reads this query as well.
-          final all = await data.collection('taskReschedules').where('taskId', isEqualTo:task.id).get();
-          final moves = all.docs.map((d) => TaskReschedule.fromMap(d.data())).toList();
+          final all = await data
+              .collection('taskReschedules')
+              .where('taskId', isEqualTo: task.id)
+              .get();
+          final moves =
+              all.docs.map((d) => TaskReschedule.fromMap(d.data())).toList();
           validateRescheduleTarget(template, sourceDate, targetDay, moves);
-          final before = snapshot.exists ? TaskReschedule.fromMap(snapshot.data()!) : null;
-          final next = TaskReschedule(taskId:task.id, sourceDate:sourceDate,
-            targetDate:dateKey(targetDay), hour:hour, minute:minute, history:[
-              ...?before?.history, {'fromDate':before?.targetDate ?? sourceDate,
-                'fromHour':before?.hour ?? task.hour, 'fromMinute':before?.minute ?? task.minute},
-            ]);
-          tx.set(doc, {...next.toMap(), 'updatedAt':FieldValue.serverTimestamp()});
-          tx.update(taskRef, {'revision':template.revision + 1});
-          return TaskRescheduleChange(key:key, before:before, after:next);
+          final before =
+              snapshot.exists ? TaskReschedule.fromMap(snapshot.data()!) : null;
+          final next = TaskReschedule(
+              taskId: task.id,
+              sourceDate: sourceDate,
+              targetDate: dateKey(targetDay),
+              hour: hour,
+              minute: minute,
+              history: [
+                ...?before?.history,
+                {
+                  'fromDate': before?.targetDate ?? sourceDate,
+                  'fromHour': before?.hour ?? task.hour,
+                  'fromMinute': before?.minute ?? task.minute
+                },
+              ]);
+          tx.set(doc,
+              {...next.toMap(), 'updatedAt': FieldValue.serverTimestamp()});
+          tx.update(taskRef, {'revision': template.revision + 1});
+          return TaskRescheduleChange(key: key, before: before, after: next);
         });
       });
 
@@ -227,30 +244,48 @@ class FirebaseTaskRepository implements TaskRepository, ScopedTaskRepository {
   Future<void> restoreReschedule(TaskRescheduleChange change) =>
       data.run(() async {
         final doc = data.collection('taskReschedules').doc(change.key);
-        final taskId = change.after?.taskId ?? change.before?.taskId ?? change.key.substring(0,change.key.length-11);
+        final taskId = change.after?.taskId ??
+            change.before?.taskId ??
+            change.key.substring(0, change.key.length - 11);
         final taskRef = data.collection('tasks').doc(taskId);
         await data.db.runTransaction((tx) async {
           final templateSnapshot = await tx.get(taskRef);
           final currentSnapshot = await tx.get(doc);
-          if (!templateSnapshot.exists) throw const AppException('Việc này không còn trong lịch.');
-          final current = currentSnapshot.exists ? TaskReschedule.fromMap(currentSnapshot.data()!) : null;
-          if (change.after != null && !sameReschedule(current,change.after)) {
-            throw const AppException('Lần việc đã được dời tiếp. Bác tải lại lịch nhé.');
+          if (!templateSnapshot.exists) {
+            throw const AppException('Việc này không còn trong lịch.');
           }
-          final template = TaskItem.fromMap(taskId,templateSnapshot.data()!);
+          final current = currentSnapshot.exists
+              ? TaskReschedule.fromMap(currentSnapshot.data()!)
+              : null;
+          if (change.after != null && !sameReschedule(current, change.after)) {
+            throw const AppException(
+                'Lần việc đã được dời tiếp. Bác tải lại lịch nhé.');
+          }
+          final template = TaskItem.fromMap(taskId, templateSnapshot.data()!);
           if (current != null) {
             if (!template.occursOn(DateTime.parse(current.sourceDate))) {
-              throw const AppException('Lần việc đã được sửa. Không thể hoàn tác lần dời cũ.');
+              throw const AppException(
+                  'Lần việc đã được sửa. Không thể hoàn tác lần dời cũ.');
             }
-            final all = await data.collection('taskReschedules').where('taskId', isEqualTo:taskId).get();
-            validateRescheduleTarget(template,current.sourceDate,
-              DateTime.parse(change.before?.targetDate ?? current.sourceDate),
-              all.docs.map((d) => TaskReschedule.fromMap(d.data())));
+            final all = await data
+                .collection('taskReschedules')
+                .where('taskId', isEqualTo: taskId)
+                .get();
+            validateRescheduleTarget(
+                template,
+                current.sourceDate,
+                DateTime.parse(change.before?.targetDate ?? current.sourceDate),
+                all.docs.map((d) => TaskReschedule.fromMap(d.data())));
           }
-          if (change.before == null) { tx.delete(doc); } else {
-            tx.set(doc,{...change.before!.toMap(),'updatedAt':FieldValue.serverTimestamp()});
+          if (change.before == null) {
+            tx.delete(doc);
+          } else {
+            tx.set(doc, {
+              ...change.before!.toMap(),
+              'updatedAt': FieldValue.serverTimestamp()
+            });
           }
-          tx.update(taskRef,{'revision':template.revision+1});
+          tx.update(taskRef, {'revision': template.revision + 1});
         });
       });
 }

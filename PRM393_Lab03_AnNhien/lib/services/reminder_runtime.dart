@@ -52,8 +52,9 @@ class ReminderRuntime with WidgetsBindingObserver {
     if (user == null || generation != _generation) return;
     reminders.vibrate = true;
     _settings = settings?.watch().listen((value) {
-      if (generation != _generation || reminders.vibrate == value.vibrate)
+      if (generation != _generation || reminders.vibrate == value.vibrate) {
         return;
+      }
       reminders.vibrate = value.vibrate;
       reminders
           .sync(_last)

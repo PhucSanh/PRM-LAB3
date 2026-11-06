@@ -69,7 +69,8 @@ class TaskReschedule {
 
 /// Snapshot trước khi ghi dời, dùng để Undo mà không đoán lại thời gian cũ.
 class TaskRescheduleChange {
-  const TaskRescheduleChange({required this.key, required this.before, this.after});
+  const TaskRescheduleChange(
+      {required this.key, required this.before, this.after});
   final String key;
   final TaskReschedule? before;
   final TaskReschedule? after;
@@ -81,16 +82,22 @@ void validateRescheduleTarget(TaskItem template, String sourceDate,
   final target = dateKey(targetDay);
   final list = moves.where((m) => m.taskId == template.id).toList();
   final canonicalMovedAway = list.any((m) => m.sourceDate == target);
-  if ((target != sourceDate && template.occursOn(targetDay) && !canonicalMovedAway) ||
+  if ((target != sourceDate &&
+          template.occursOn(targetDay) &&
+          !canonicalMovedAway) ||
       list.any((m) => m.sourceDate != sourceDate && m.targetDate == target)) {
-    throw const AppException('Ngày này đã có một lần của việc này. Bác đổi giờ lần đã có hoặc chọn ngày khác nhé.');
+    throw const AppException(
+        'Ngày này đã có một lần của việc này. Bác đổi giờ lần đã có hoặc chọn ngày khác nhé.');
   }
 }
 
 bool sameReschedule(TaskReschedule? a, TaskReschedule? b) =>
-    a?.taskId == b?.taskId && a?.sourceDate == b?.sourceDate &&
-    a?.targetDate == b?.targetDate && a?.hour == b?.hour &&
-    a?.minute == b?.minute && a?.history.length == b?.history.length;
+    a?.taskId == b?.taskId &&
+    a?.sourceDate == b?.sourceDate &&
+    a?.targetDate == b?.targetDate &&
+    a?.hour == b?.hour &&
+    a?.minute == b?.minute &&
+    a?.history.length == b?.history.length;
 
 class FakeTaskRepository implements TaskRepository {
   FakeTaskRepository([List<TaskItem>? seed]) : _tasks = [...(seed ?? _sample)];
@@ -152,7 +159,7 @@ class FakeTaskRepository implements TaskRepository {
           status: TaskStatus.pending,
           occurrenceDate: key,
           rescheduleSourceDate: reschedule.sourceDate,
-          isRescheduled:true,
+          isRescheduled: true,
         ));
       }
     }
@@ -189,8 +196,11 @@ class FakeTaskRepository implements TaskRepository {
     final key = '${task.id}_$sourceDate';
     final before = _reschedules[key];
     final template = _tasks.where((t) => t.id == task.id).firstOrNull;
-    if (template == null) throw const AppException('Việc này không còn trong lịch.');
-    validateRescheduleTarget(template, sourceDate, targetDay, _reschedules.values);
+    if (template == null) {
+      throw const AppException('Việc này không còn trong lịch.');
+    }
+    validateRescheduleTarget(
+        template, sourceDate, targetDay, _reschedules.values);
     final history = [
       ...?before?.history,
       {
@@ -207,19 +217,24 @@ class FakeTaskRepository implements TaskRepository {
       minute: minute,
       history: history,
     );
-    return TaskRescheduleChange(key: key, before: before, after:_reschedules[key]);
+    return TaskRescheduleChange(
+        key: key, before: before, after: _reschedules[key]);
   }
 
   @override
   Future<void> restoreReschedule(TaskRescheduleChange change) async {
     final current = _reschedules[change.key];
     if (change.after != null && !sameReschedule(current, change.after)) {
-      throw const AppException('Lần việc đã được dời tiếp. Bác tải lại lịch nhé.');
+      throw const AppException(
+          'Lần việc đã được dời tiếp. Bác tải lại lịch nhé.');
     }
     if (current != null) {
       final template = _tasks.where((t) => t.id == current.taskId).first;
-      validateRescheduleTarget(template, current.sourceDate,
-        DateTime.parse(change.before?.targetDate ?? current.sourceDate), _reschedules.values);
+      validateRescheduleTarget(
+          template,
+          current.sourceDate,
+          DateTime.parse(change.before?.targetDate ?? current.sourceDate),
+          _reschedules.values);
     }
     if (change.before == null) {
       _reschedules.remove(change.key);
