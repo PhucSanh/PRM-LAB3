@@ -1,3 +1,5 @@
+import '../models/app_settings.dart';
+import 'settings_service.dart';
 import 'package:flutter/widgets.dart';
 import 'dart:async';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -10,7 +12,9 @@ import 'local_reminder_service.dart';
 /// change. New tasks from the child's device therefore also schedule on mom's.
 class ReminderRuntime with WidgetsBindingObserver {
   ReminderRuntime(this.auth, this.schedules, this.reminders, this.crash,
-      {this.onNativePermissionGranted});
+      {this.onNativePermissionGranted, this.settings});
+  final SettingsService? settings;
+  StreamSubscription<AppSettings>? _settings;
   final FirebaseAuth auth;
   final CaregiverScheduleService schedules;
   final LocalReminderService reminders;
@@ -38,6 +42,7 @@ class ReminderRuntime with WidgetsBindingObserver {
     final generation = ++_generation;
     _last = const [];
     await _tasks?.cancel();
+    await _settings?.cancel();
     if (generation != _generation) return;
     if (!_hasBound || _boundUid != user?.uid) {
       await reminders.clearAll(preservePending: !_hasBound && user != null);
@@ -45,6 +50,15 @@ class ReminderRuntime with WidgetsBindingObserver {
       _hasBound = true;
     }
     if (user == null || generation != _generation) return;
+    reminders.vibrate = true;
+    _settings = settings?.watch().listen((value) {
+      if (generation != _generation || reminders.vibrate == value.vibrate)
+        return;
+      reminders.vibrate = value.vibrate;
+      reminders
+          .sync(_last)
+          .catchError((Object e, StackTrace st) => _report(e, st));
+    }, onError: (Object e, StackTrace st) => _report(e, st));
     final today =
         calendarDate(DateTime.now().toUtc().add(const Duration(hours: 7)));
     _tasks = schedules
@@ -78,6 +92,7 @@ class ReminderRuntime with WidgetsBindingObserver {
     reminders.onPermissionGranted = null;
     ++_generation;
     await _auth?.cancel();
+    await _settings?.cancel();
     await _tasks?.cancel();
   }
 }

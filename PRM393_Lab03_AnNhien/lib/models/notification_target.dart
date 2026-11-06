@@ -4,7 +4,7 @@ String notificationTarget(String? value) {
     return value!;
   }
   if (value != null &&
-      RegExp(r'^/caregiver/schedule\?date=\d{4}-\d{2}-\d{2}$')
+      RegExp(r'^/(caregiver/schedule|reminder/[A-Za-z0-9_-]+)\?date=\d{4}-\d{2}-\d{2}$')
           .hasMatch(value)) {
     final date = value.split('=').last;
     final parsed = DateTime.tryParse(date);
