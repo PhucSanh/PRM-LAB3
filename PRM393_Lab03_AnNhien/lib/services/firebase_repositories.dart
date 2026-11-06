@@ -34,7 +34,11 @@ class FirebaseUserData {
   }
 }
 
-class FirebaseFamilyRepository implements FamilyRepository {
+class FirebaseFamilyRepository
+    implements FamilyRepository, FavoriteFamilyRepository {
+  @override
+  Future<void> setFavorite(String id, bool value) => data
+      .run(() => data.collection('family').doc(id).update({'favorite': value}));
   FirebaseFamilyRepository(this.data);
   final FirebaseUserData data;
   Relative _map(DocumentSnapshot<Map<String, dynamic>> doc) {
@@ -43,7 +47,8 @@ class FirebaseFamilyRepository implements FamilyRepository {
         id: doc.id,
         name: m['name'] as String,
         relation: m['relation'] as String,
-        phone: m['phone'] as String);
+        phone: m['phone'] as String,
+        favorite: m['favorite'] as bool? ?? false);
   }
 
   @override
@@ -59,6 +64,7 @@ class FirebaseFamilyRepository implements FamilyRepository {
             'name': relative.name,
             'relation': relative.relation,
             'phone': relative.phone,
+            'favorite': relative.favorite,
           }));
   @override
   Future<void> delete(String id) =>
@@ -82,7 +88,15 @@ class FirebaseHabitRepository implements HabitRepository {
 }
 
 /// Giữ contract F3/F4; trạng thái hiện tại luôn thuộc ngày UTC+7 hôm nay.
-class FirebaseTaskRepository implements TaskRepository, ScopedTaskRepository {
+class FirebaseTaskRepository
+    implements TaskRepository, ScopedTaskRepository, RecentActivityRepository {
+  @override
+  Future<List<TaskItem>> recentActivities(DateTime day) => data.run(() async {
+        final snapshot = await data.collection('tasks').get();
+        return selectRecentActivities(
+            snapshot.docs.map((d) => TaskItem.fromMap(d.id, d.data())).toList(),
+            day);
+      });
   FirebaseTaskRepository(this.data);
   final FirebaseUserData data;
   DateTime get today => DateTime.now().toUtc().add(const Duration(hours: 7));

@@ -1,3 +1,4 @@
+import '../services/task_repository.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/task_item.dart';
 import '../models/habit.dart';
@@ -42,7 +43,10 @@ final habitDetailProvider = FutureProvider.family<Habit?, String>((ref, key) {
 });
 final familyListProvider = FutureProvider<List<Relative>>((ref) {
   ref.watch(sessionProvider.select((s) => s.asData?.value?.uid));
-  return ref.watch(familyRepositoryProvider).all();
+  return ref.watch(familyRepositoryProvider).all().then((items) => [...items]
+    ..sort((a, b) => a.favorite != b.favorite
+        ? (a.favorite ? -1 : 1)
+        : a.name.compareTo(b.name)));
 });
 
 /// Existing repository status contract is TODAY only. Other dates stay read-only.
@@ -127,3 +131,13 @@ class FamilyEditor extends Notifier<bool> {
 
 final familyEditorProvider =
     NotifierProvider<FamilyEditor, bool>(FamilyEditor.new);
+
+final recentActivitiesProvider = FutureProvider<List<TaskItem>>((ref) async {
+  final uid = ref.watch(sessionProvider.select((s) => s.value?.uid));
+  if (uid == null) return [];
+  final repository = ref.watch(taskRepositoryProvider);
+  return repository is RecentActivityRepository
+      ? (repository as RecentActivityRepository)
+          .recentActivities(vietnamToday())
+      : repository.tasksForDay(vietnamToday());
+});

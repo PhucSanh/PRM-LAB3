@@ -24,6 +24,7 @@ class TaskFormState {
     this.date,
     this.hour = 8,
     this.minute = 0,
+    this.durationMinutes = 15,
     this.isAm = true,
     this.repeat = RepeatRule.daily,
     this.weekdays = const {DateTime.monday},
@@ -41,6 +42,7 @@ class TaskFormState {
   final DateTime? date;
   final int hour;
   final int minute;
+  final int durationMinutes;
   final bool isAm;
   final RepeatRule repeat;
   final Set<int> weekdays;
@@ -82,6 +84,7 @@ class TaskFormState {
           hour != original?.hour ||
           minute != original?.minute ||
           repeat != original?.repeat ||
+          durationMinutes != original?.durationMinutes ||
           remind != original?.remind
       : title.isNotEmpty ||
           activity != 'move' ||
@@ -99,6 +102,7 @@ class TaskFormState {
     bool clearDate = false,
     int? hour,
     int? minute,
+    int? durationMinutes,
     bool? isAm,
     RepeatRule? repeat,
     Set<int>? weekdays,
@@ -117,6 +121,7 @@ class TaskFormState {
         date: clearDate ? null : date ?? this.date,
         hour: hour ?? this.hour,
         minute: minute ?? this.minute,
+        durationMinutes: durationMinutes ?? this.durationMinutes,
         isAm: isAm ?? this.isAm,
         repeat: repeat ?? this.repeat,
         weekdays: weekdays ?? this.weekdays,
@@ -142,7 +147,9 @@ class TaskFormViewModel extends Notifier<TaskFormState> {
   void startCreate(
       {DateTime? day,
       String activity = 'move',
-      String title = 'Đi bộ nhẹ nhàng'}) {
+      String title = 'Đi bộ nhẹ nhàng',
+      int durationMinutes = 15,
+      RepeatRule repeat = RepeatRule.daily}) {
     _scopedUndo = null;
     _lastMutation = null;
     _editDay = null;
@@ -156,6 +163,8 @@ class TaskFormViewModel extends Notifier<TaskFormState> {
     state = TaskFormState(
       activity: activity,
       title: title,
+      durationMinutes: durationMinutes,
+      repeat: repeat,
       date: future
           ? requested
           : DateTime(nextHour.year, nextHour.month, nextHour.day),
@@ -163,6 +172,23 @@ class TaskFormViewModel extends Notifier<TaskFormState> {
       minute: 0,
       isAm: hour < 12,
     );
+  }
+
+  void startFromRecent(TaskItem task, {DateTime? day}) {
+    startCreate(
+        day: day,
+        activity: task.habitKey,
+        title: task.title,
+        durationMinutes: task.durationMinutes,
+        repeat: task.repeat);
+    final now = DateTime.now(), selected = state.date!;
+    final originalTime = DateTime(
+        selected.year, selected.month, selected.day, task.hour, task.minute);
+    if (originalTime.isAfter(now))
+      setTime(hour: task.hour, minute: task.minute, isAm: task.hour < 12);
+    setRemind(task.remind);
+    setWeekdays(
+        task.weekdays.isEmpty ? {selected.weekday} : task.weekdays.toSet());
   }
 
   Future<bool> startEdit(String id, {DateTime? day}) async {
@@ -179,6 +205,7 @@ class TaskFormViewModel extends Notifier<TaskFormState> {
       date: _editDay,
       hour: task.hour,
       minute: task.minute,
+      durationMinutes: task.durationMinutes,
       isAm: task.hour < 12,
       repeat: task.isRescheduled ? RepeatRule.once : task.repeat,
       weekdays: task.weekdays.toSet(),
@@ -204,6 +231,11 @@ class TaskFormViewModel extends Notifier<TaskFormState> {
       state = state.copyWith(hour: hour, minute: minute, isAm: isAm);
   void setRepeat(RepeatRule value) => state = state.copyWith(repeat: value);
   void setWeekdays(Set<int> value) => state = state.copyWith(weekdays: value);
+  void setDuration(int value) {
+    if (value >= 1 && value <= 240)
+      state = state.copyWith(durationMinutes: value);
+  }
+
   void setRemind(bool value) => state = state.copyWith(remind: value);
   void restoreEditing() => state =
       state.copyWith(saveState: TaskSaveState.editing, clearError: true);
@@ -230,6 +262,7 @@ class TaskFormViewModel extends Notifier<TaskFormState> {
       clearEndDate:
           before?.repeat == RepeatRule.once && state.repeat != RepeatRule.once,
       remind: state.remind,
+      durationMinutes: state.durationMinutes,
       status: before?.status ?? TaskStatus.pending,
       startDate: before?.startDate ??
           dateKey(before != null ? _editDay! : state.date ?? DateTime.now()),
@@ -266,6 +299,7 @@ class TaskFormViewModel extends Notifier<TaskFormState> {
       _lastWasDelete = false;
       ref.invalidate(todayViewModelProvider);
       ref.invalidate(calendarTasksProvider);
+      ref.invalidate(recentActivitiesProvider);
       state = state.copyWith(
           saveState: TaskSaveState.saved, original: task, editingId: task.id);
       return true;

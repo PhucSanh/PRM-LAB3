@@ -155,3 +155,10 @@ test('profile cannot forge pairing or change established role; settings merge is
   await assertFails(getDoc(doc(db('mom'),'pairings/123456')));
   await assertFails(setDoc(doc(db('mom'),'pairingOwners/mom'),{code:'123456'}));
 });
+
+test('voice quota cannot be read or reset by authenticated clients',async()=>{
+  await env.withSecurityRulesDisabled(async ctx=>setDoc(doc(ctx.firestore(),'voiceUsage/mom'),{dayCount:60}));
+  await assertFails(getDoc(doc(db('mom'),'voiceUsage/mom')));
+  await assertFails(setDoc(doc(db('mom'),'voiceUsage/mom'),{dayCount:0}));
+  await assertFails(deleteDoc(doc(db('mom'),'voiceUsage/mom')));
+});

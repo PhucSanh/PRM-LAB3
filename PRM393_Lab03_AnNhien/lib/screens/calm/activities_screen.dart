@@ -1,3 +1,4 @@
+import '../../models/guided_activity.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -47,6 +48,20 @@ class ActivitiesScreen extends ConsumerWidget {
                             context.go('/activities?section=${entry.key}'))),
             ])),
         const SizedBox(height: AppSpacing.lg),
+        if (selected == 'explore') ...[
+          Text('Một việc nhỏ cho hôm nay',
+              style: Theme.of(context).textTheme.titleLarge),
+          const SizedBox(height: AppSpacing.sm),
+          const Text(
+              'Có hướng dẫn ngắn, thời lượng rõ và có thể thêm ngay vào lịch.'),
+          for (final activity in guidedActivities)
+            CalmListRow(
+                title: activity.title,
+                subtitle: '${activity.minutes} phút · Xem cách làm',
+                icon: HabitStyle.iconOf(activity.habitKey),
+                onTap: () => context.push('/activities/guides/${activity.id}')),
+          const SizedBox(height: AppSpacing.lg),
+        ],
         if (selected != 'saved')
           ref.watch(habitsListProvider).when(
                 loading: () =>
@@ -181,6 +196,15 @@ class HabitDetailScreen extends ConsumerWidget {
                               const SizedBox(height: AppSpacing.xl),
                               Text('Bắt đầu từ một việc nhỏ',
                                   style: text.titleLarge),
+                              for (final activity in guidedActivities
+                                  .where((a) => a.habitKey == habit.key))
+                                CalmListRow(
+                                    title: activity.title,
+                                    subtitle:
+                                        '${activity.minutes} phút · Có hướng dẫn',
+                                    icon: HabitStyle.iconOf(habit.key),
+                                    onTap: () => context.push(
+                                        '/activities/guides/${activity.id}')),
                               const SizedBox(height: AppSpacing.sm),
                               Text(
                                   'Bạn có thể chọn hoạt động phù hợp và đặt giờ trong lịch của mình.',

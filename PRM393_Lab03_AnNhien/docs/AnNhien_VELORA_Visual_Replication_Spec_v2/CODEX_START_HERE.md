@@ -1,5 +1,7 @@
 # CODEX START HERE — AN NHIÊN CALM & PREMIUM
 
+**Giọng nói cập nhật:** [18_VOICE_ASSISTANT_GROQ.md](docs/uiux/18_VOICE_ASSISTANT_GROQ.md) quy định luồng hiểu lịch, hỏi lại và xác nhận; không tự lưu từ LLM.
+
 **Cập nhật khả dụng 2026-11-06:** đọc [17_USABILITY_REFINEMENTS.md](docs/uiux/17_USABILITY_REFINEMENTS.md) cùng 15/16 trước khi sửa UI hoặc navigation.
 
 **LATEST USER OVERRIDE — reference first:** Người dùng bác bỏ giao diện chữ quá lớn/đậm và yêu cầu clone bố cục VELORA trước, rồi chọn chữ rõ cho người lớn tuổi. Áp dụng 15 và 16: heading chức năng dùng Be Vietnam Pro SemiBold 600; serif chỉ dành cho wordmark intro; không áp bảng 24/600 và 30/700 cũ. Trang mở đầu và main page phải theo reference.
