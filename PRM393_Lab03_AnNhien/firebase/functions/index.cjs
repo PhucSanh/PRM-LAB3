@@ -2,6 +2,8 @@
 const {initializeApp} = require('firebase-admin/app');
 const {getFirestore} = require('firebase-admin/firestore');
 const {getMessaging} = require('firebase-admin/messaging');
+const {defineSecret,defineString} = require('firebase-functions/params');
+const {createVoiceTaskService} = require('./voice-task.cjs');
 const {onCall,HttpsError} = require('firebase-functions/v2/https');
 const {onDocumentCreated,onDocumentWritten,onDocumentWrittenWithAuthContext} = require('firebase-functions/v2/firestore');
 const {createNotificationEvents} = require('./notification-events.cjs');
@@ -40,3 +42,15 @@ exports.notifyPairingChanged = onDocumentWritten({...options,
 // Delivery is at least once. Stable notification id lets the client deduplicate.
 exports.notifyInbox=onDocumentCreated({...options,document:'users/{uid}/notifications/{id}',retry:true},event=>
   sendInboxPush(db,getMessaging(),{uid:event.params.uid,id:event.params.id,data:event.data?.data()}));
+
+// Secret is bound to this endpoint only; never returned to Flutter or logged.
+const groqKey = defineSecret('GROQ_API_KEY');
+const groqModel = defineString('GROQ_VOICE_MODEL',{default:'openai/gpt-oss-20b'});
+const interpretVoiceTask = createVoiceTaskService(db,{getKey:()=>groqKey.value(),getModel:()=>groqModel.value()});
+exports.interpretVoiceTask = onCall({...options,secrets:[groqKey],timeoutSeconds:30,concurrency:8},async request=>{
+  try { return await interpretVoiceTask(request.auth?.uid,request.data); }
+  catch(e) {
+    if(e instanceof DomainError) throw new HttpsError(e.code,e.message);
+    throw new HttpsError('internal','Chưa hiểu được lời nói lúc này. Bác thử lại hoặc nhập tay nhé.');
+  }
+});
