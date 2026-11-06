@@ -77,13 +77,15 @@ class DailyActionsViewModel extends Notifier<bool> {
   }
 
   Future<void> undo(QuickTaskUndo change) async {
-    if (_uid() != change.uid)
+    if (_uid() != change.uid) {
       throw const AppException('Tài khoản đã thay đổi. Bác mở lại lịch nhé.');
+    }
     if (change.move != null) {
       await ref.read(taskRepositoryProvider).restoreReschedule(change.move!);
     } else {
-      if (dateKey(change.day) != dateKey(vietnamNow()))
+      if (dateKey(change.day) != dateKey(vietnamNow())) {
         throw const AppException('Đã sang ngày mới. Bác mở lại lịch nhé.');
+      }
       await ref
           .read(todayViewModelProvider.notifier)
           .undo(change.task.id, previousStatus: change.task.status);

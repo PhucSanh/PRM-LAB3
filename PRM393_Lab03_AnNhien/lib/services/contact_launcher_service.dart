@@ -10,9 +10,10 @@ class AndroidContactLauncherService implements ContactLauncherService {
   @override
   Future<void> openDialer(String phone) async {
     final normalized = phone.replaceAll(RegExp(r'[ ()-]'), '');
-    if (!RegExp(r'^\+?[0-9]{6,20}$').hasMatch(normalized))
+    if (!RegExp(r'^\+?[0-9]{6,20}$').hasMatch(normalized)) {
       throw const AppException(
           'Số điện thoại chưa hợp lệ. Bác sửa lại thông tin người thân nhé.');
+    }
     try {
       await channel.invokeMethod<void>('openDialer', normalized);
     } catch (_) {
