@@ -34,7 +34,9 @@ List<PlannedReminder> planReminders(
     final t = o.task;
     if (!t.remind ||
         [TaskStatus.done, TaskStatus.skipped].contains(t.status) ||
-        !t.occursOn(o.date)) {
+        (!t.occursOn(o.date) &&
+            !(t.occurrenceDate == dateKey(o.date) &&
+                t.rescheduleSourceDate != null))) {
       continue;
     }
     final time = DateTime.utc(

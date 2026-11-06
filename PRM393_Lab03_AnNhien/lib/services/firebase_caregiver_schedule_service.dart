@@ -1,3 +1,4 @@
+import 'task_repository.dart';
 import 'dart:async';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/task_item.dart';
@@ -27,8 +28,9 @@ class FirebaseCaregiverScheduleService implements CaregiverScheduleService {
       Stream.multi((sink) {
         List<TaskItem>? tasks;
         Map<String, TaskStatus>? statuses;
+        Map<String, TaskReschedule>? moved;
         void emit() {
-          if (tasks == null || statuses == null) return;
+          if (tasks == null || statuses == null || moved == null) return;
           final list = <ScheduleOccurrence>[];
           final templates = {for (final t in tasks!) t.id: t};
           for (var day = calendarDate(from);
@@ -39,7 +41,9 @@ class FirebaseCaregiverScheduleService implements CaregiverScheduleService {
                 if (e.key.endsWith('_${dateKey(day)}'))
                   e.key.substring(0, e.key.length - 11): e.value
             };
-            for (final task in tasks!.where((t) => t.occursOn(day))) {
+            for (final task in tasks!.where((t) =>
+                t.occursOn(day) &&
+                !moved!.containsKey('${t.id}_${dateKey(day)}'))) {
               list.add(ScheduleOccurrence(
                   task.copyWith(
                       status: resolveOccurrenceStatus(
@@ -47,6 +51,25 @@ class FirebaseCaregiverScheduleService implements CaregiverScheduleService {
                       occurrenceDate: dateKey(day)),
                   day));
             }
+          }
+          for (final change in moved!.values) {
+            final day = parseDateKey(change.targetDate);
+            final task = templates[change.taskId];
+            if (day == null ||
+                task == null ||
+                day.isBefore(calendarDate(from)) ||
+                day.isAfter(calendarDate(through))) {
+              continue;
+            }
+            list.add(ScheduleOccurrence(
+                task.copyWith(
+                    hour: change.hour,
+                    minute: change.minute,
+                    status: statuses!['${task.id}_${change.targetDate}'] ??
+                        TaskStatus.pending,
+                    occurrenceDate: change.targetDate,
+                    rescheduleSourceDate: change.sourceDate),
+                day));
           }
           list.sort((a, b) {
             final d = a.date.compareTo(b.date);
@@ -62,7 +85,7 @@ class FirebaseCaregiverScheduleService implements CaregiverScheduleService {
             AppException('Chưa tải được lịch. Kiểm tra mạng hoặc ghép nối lại.',
                 cause: e),
             st);
-        final StreamSubscription<QuerySnapshot<Map<String, dynamic>>> a, b;
+        final StreamSubscription<QuerySnapshot<Map<String, dynamic>>> a, b, c;
         try {
           a = _tasks(momUid).snapshots().listen((s) {
             tasks =
@@ -84,9 +107,22 @@ class FirebaseCaregiverScheduleService implements CaregiverScheduleService {
             };
             emit();
           }, onError: error);
+          c = data.db
+              .collection('users')
+              .doc(momUid)
+              .collection('taskReschedules')
+              .snapshots()
+              .listen((snapshot) {
+            moved = {
+              for (final doc in snapshot.docs)
+                doc.id: TaskReschedule.fromMap(doc.data())
+            };
+            emit();
+          }, onError: error);
           sink.onCancel = () async {
             await a.cancel();
             await b.cancel();
+            await c.cancel();
           };
         } catch (e, st) {
           error(e, st);

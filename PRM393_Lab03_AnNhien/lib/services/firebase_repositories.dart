@@ -166,9 +166,17 @@ class FirebaseTaskRepository implements TaskRepository, ScopedTaskRepository {
       data.run(() async {
         final key = dateKey(today);
         final task = await data.collection('tasks').doc(taskId).get();
-        if (!task.exists ||
-            !TaskItem.fromMap(taskId, task.data()!).occursOn(today)) {
+        if (!task.exists) {
           throw const AppException('Việc này không nằm trong lịch hôm nay.');
+        }
+        if (!TaskItem.fromMap(taskId, task.data()!).occursOn(today)) {
+          final moved = await data
+              .collection('taskReschedules')
+              .where('taskId', isEqualTo: taskId)
+              .get();
+          if (!moved.docs.any((d) => d.data()['targetDate'] == key)) {
+            throw const AppException('Việc này không nằm trong lịch hôm nay.');
+          }
         }
         await data.collection('completions').doc('${taskId}_$key').set({
           'taskId': taskId,
