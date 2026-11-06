@@ -308,8 +308,9 @@ class _TaskConfigureScreenState extends ConsumerState<TaskConfigureScreen> {
                               null) {
                         WidgetsBinding.instance.addPostFrameCallback((_) {
                           final field = _timeAnchor.currentContext;
-                          if (mounted && field != null)
+                          if (mounted && field != null) {
                             Scrollable.ensureVisible(field, alignment: 0.1);
+                          }
                         });
                       }
                       if (!context.mounted) return;

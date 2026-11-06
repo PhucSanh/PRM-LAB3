@@ -3,6 +3,7 @@ import 'package:an_nhien/widgets/app_back_bar.dart';
 import 'package:an_nhien/widgets/app_button.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/semantics.dart';
+import 'package:flutter/rendering.dart' show SemanticsActionEvent;
 import 'package:flutter_test/flutter_test.dart';
 
 import 'harness.dart';
@@ -54,8 +55,10 @@ void main() {
               onPressed: () => taps++));
       final node = tester.getSemantics(find.byType(AppButton));
       expect(node.getSemanticsData().hasAction(SemanticsAction.tap), isTrue);
-      tester.binding.pipelineOwner.semanticsOwner!
-          .performAction(node.id, SemanticsAction.tap);
+      tester.binding.performSemanticsAction(SemanticsActionEvent(
+          viewId: tester.view.viewId,
+          nodeId: node.id,
+          type: SemanticsAction.tap));
       expect(taps, 1);
       handle.dispose();
     });
