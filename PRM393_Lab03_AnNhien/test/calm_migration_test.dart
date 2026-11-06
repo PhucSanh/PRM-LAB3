@@ -1,3 +1,4 @@
+import 'package:clock/clock.dart';
 import 'package:an_nhien/app.dart';
 import 'package:an_nhien/models/task_item.dart';
 import 'package:an_nhien/models/user_profile.dart';
@@ -82,6 +83,13 @@ Future<void> closeApp(WidgetTester tester) async {
   await tester.pump(const Duration(milliseconds: 400));
 }
 
+void testReferenceWidgets(String name, WidgetTesterCallback body) {
+  testWidgets(
+      name,
+      (tester) => withClock(
+          Clock.fixed(DateTime.utc(2026, 11, 5, 3)), () => body(tester)));
+}
+
 void main() {
   setUpAll(() async {
     final fonts = FontLoader(AppTheme.fontFamily);
@@ -106,7 +114,8 @@ void main() {
     addTearDown(container.dispose);
     expect(container.read(initialRouteProvider), '/intro');
   });
-  testWidgets('reference intro paging opens main and five real destinations',
+  testReferenceWidgets(
+      'reference intro paging opens main and five real destinations',
       (tester) async {
     final container = await pumpApp(tester, '/intro');
     final router = container.read(routerProvider);
@@ -146,7 +155,7 @@ void main() {
     expect(tester.takeException(), isNull);
     await closeApp(tester);
   });
-  testWidgets(
+  testReferenceWidgets(
       'caregiver default Calendar and Family resolve to the correct shell',
       (tester) async {
     final container =
@@ -160,7 +169,8 @@ void main() {
     expect(find.text('Hoạt động'), findsNothing);
     await closeApp(tester);
   });
-  testWidgets('calendar date, activity segment and Back survive branch changes',
+  testReferenceWidgets(
+      'calendar date, activity segment and Back survive branch changes',
       (tester) async {
     final container = await pumpApp(tester, '/calendar?date=2026-11-06');
     final router = container.read(routerProvider);
@@ -181,7 +191,8 @@ void main() {
     expect(tester.takeException(), isNull);
     await closeApp(tester);
   });
-  testWidgets('caregiver shell keeps date/view and has no elder activity tab',
+  testReferenceWidgets(
+      'caregiver shell keeps date/view and has no elder activity tab',
       (tester) async {
     final container = await pumpApp(
         tester, '/caregiver/schedule?date=2026-11-06&view=week',
@@ -199,7 +210,7 @@ void main() {
     expect(tester.takeException(), isNull);
     await closeApp(tester);
   });
-  testWidgets(
+  testReferenceWidgets(
       'legacy week/habit aliases and task details read actual repositories',
       (tester) async {
     final container = await pumpApp(tester, '/week/2026-11-06');
@@ -219,7 +230,8 @@ void main() {
     expect(tester.takeException(), isNull);
     await closeApp(tester);
   });
-  testWidgets('complete and Undo write real repository status on today only',
+  testReferenceWidgets(
+      'complete and Undo write real repository status on today only',
       (tester) async {
     final repository = FakeTaskRepository(const [task]);
     final day = dateKey(vietnamToday());
@@ -246,7 +258,7 @@ void main() {
     expect(tester.takeException(), isNull);
     await closeApp(tester);
   });
-  testWidgets('calendar completion restores postponed status on undo',
+  testReferenceWidgets('calendar completion restores postponed status on undo',
       (tester) async {
     final postponed = task.copyWith(status: TaskStatus.postponed);
     final repository = FakeTaskRepository([postponed]);
@@ -268,7 +280,7 @@ void main() {
     expect(tester.takeException(), isNull);
     await closeApp(tester);
   });
-  testWidgets(
+  testReferenceWidgets(
       'family form persists real contact and warns before discarding draft',
       (tester) async {
     final container = await pumpApp(tester, '/family');
@@ -313,7 +325,8 @@ void main() {
     ('/caregiver/family', UserRole.caregiver),
   ]) {
     for (final width in [320.0, 390.0, 800.0]) {
-      testWidgets('$route $width at 200% stays readable', (tester) async {
+      testReferenceWidgets('$route $width at 200% stays readable',
+          (tester) async {
         await pumpApp(tester, route, width: width, scale: 2, role: role);
         expect(tester.takeException(), isNull);
         expect(find.byType(FittedBox), findsNothing);
@@ -341,7 +354,7 @@ void main() {
     ('/caregiver/suggest', 'suggestion', UserRole.caregiver),
     ('/settings', 'settings', UserRole.elder),
   ]) {
-    testWidgets('Calm screen golden $name', (tester) async {
+    testReferenceWidgets('Calm screen golden $name', (tester) async {
       await pumpApp(tester, route, role: role);
       if (!['settings', 'suggestion', 'habits'].contains(name)) {
         expect(find.byType(BotanicalScene), findsWidgets);
@@ -361,7 +374,8 @@ void main() {
   ]) {
     for (final width in [360.0, 390.0]) {
       for (final scale in [1.0, 1.5, 2.0]) {
-        testWidgets('VELORA v2 $name ${width.toInt()} x$scale', (tester) async {
+        testReferenceWidgets('VELORA v2 $name ${width.toInt()} x$scale',
+            (tester) async {
           await pumpApp(tester, route,
               role: role,
               width: width,
@@ -391,7 +405,7 @@ void main() {
     ('/task/scope', 'scope'),
   ]) {
     for (final scale in [1.0, 2.0]) {
-      testWidgets('Consistent UI $name x$scale', (tester) async {
+      testReferenceWidgets('Consistent UI $name x$scale', (tester) async {
         await pumpApp(tester, route, width: 360, height: 800, scale: scale);
         expect(tester.takeException(), isNull);
         expect(find.byType(FittedBox), findsNothing);

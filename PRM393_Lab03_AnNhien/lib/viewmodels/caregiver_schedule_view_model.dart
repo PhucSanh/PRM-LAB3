@@ -1,3 +1,4 @@
+import 'package:clock/clock.dart';
 import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/task_item.dart';
@@ -8,7 +9,7 @@ import 'account_view_model.dart';
 import 'ui_state.dart';
 
 DateTime vietnamToday() =>
-    calendarDate(DateTime.now().toUtc().add(const Duration(hours: 7)));
+    calendarDate(clock.now().toUtc().add(const Duration(hours: 7)));
 final pairedMomUidProvider =
     Provider<String?>((ref) => ref.watch(profileProvider).value?.pairedMomUid);
 
