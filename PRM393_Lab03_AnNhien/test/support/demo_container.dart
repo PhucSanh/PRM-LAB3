@@ -1,3 +1,4 @@
+import 'package:an_nhien/services/device_access_service.dart';
 import 'package:an_nhien/router/app_router.dart';
 import 'package:an_nhien/services/suggestion_service.dart' as incoming;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -32,11 +33,16 @@ ProviderContainer demoContainer(
         MessagingService? messages,
         List<TaskItem>? tasks,
         TaskRepository? taskRepository,
-        ProfileService? profiles}) =>
+        ProfileService? profiles,
+        DeviceAccessService? device,
+        ReminderService? reminders,
+        incoming.SuggestionService? incomingSuggestions}) =>
     ProviderContainer(overrides: [
+      deviceAccessServiceProvider
+          .overrideWithValue(device ?? AndroidDeviceAccessService()),
       authGuardEnabledProvider.overrideWithValue(false),
       initialRouteProvider.overrideWithValue(initialRoute),
-      suggestionServiceProvider.overrideWithValue(
+      suggestionServiceProvider.overrideWithValue(incomingSuggestions ??
           incoming.FakeSuggestionService(delay: Duration.zero)),
       authServiceProvider.overrideWithValue(FakeAuthService(
           signedIn: const AppUser(uid: 'demo-user', displayName: 'Bác Lan'))),
@@ -61,7 +67,8 @@ ProviderContainer demoContainer(
       habitRepositoryProvider.overrideWithValue(FakeHabitRepository()),
       settingsServiceProvider.overrideWithValue(FakeSettingsService()),
       profileSetupServiceProvider.overrideWithValue(FakeProfileSetupService()),
-      reminderServiceProvider.overrideWithValue(FakeReminderService()),
+      reminderServiceProvider
+          .overrideWithValue(reminders ?? FakeReminderService()),
       sessionDataServiceProvider.overrideWithValue(FakeSessionDataService()),
       messagingServiceProvider
           .overrideWithValue(messages ?? FakeMessagingService()),
