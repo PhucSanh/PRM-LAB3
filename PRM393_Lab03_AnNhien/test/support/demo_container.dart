@@ -36,7 +36,8 @@ ProviderContainer demoContainer(
         ProfileService? profiles,
         DeviceAccessService? device,
         ReminderService? reminders,
-        incoming.SuggestionService? incomingSuggestions}) =>
+        incoming.SuggestionService? incomingSuggestions,
+        SettingsService? settings}) =>
     ProviderContainer(overrides: [
       deviceAccessServiceProvider
           .overrideWithValue(device ?? AndroidDeviceAccessService()),
@@ -65,7 +66,8 @@ ProviderContainer demoContainer(
           .overrideWithValue(taskRepository ?? FakeTaskRepository(tasks ?? [])),
       familyRepositoryProvider.overrideWithValue(FakeFamilyRepository()),
       habitRepositoryProvider.overrideWithValue(FakeHabitRepository()),
-      settingsServiceProvider.overrideWithValue(FakeSettingsService()),
+      settingsServiceProvider
+          .overrideWithValue(settings ?? FakeSettingsService()),
       profileSetupServiceProvider.overrideWithValue(FakeProfileSetupService()),
       reminderServiceProvider
           .overrideWithValue(reminders ?? FakeReminderService()),

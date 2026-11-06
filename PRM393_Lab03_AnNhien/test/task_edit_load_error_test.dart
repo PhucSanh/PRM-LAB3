@@ -67,7 +67,7 @@ void main() {
     await tester.tap(find.text('Thử lại').last);
     await tester.pumpAndSettle();
     expect(find.text('Lưu thay đổi'), findsOneWidget);
-    expect(c.read(taskFormViewModelProvider).date, DateTime(2099,11,7));
+    expect(c.read(taskFormViewModelProvider).date, DateTime(2099, 11, 7));
     expect(tester.takeException(), isNull);
     await tester.pumpWidget(const SizedBox.shrink());
     await tester.pump(const Duration(milliseconds: 400));
