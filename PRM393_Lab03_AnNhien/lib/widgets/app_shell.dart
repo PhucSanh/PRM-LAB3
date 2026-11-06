@@ -106,6 +106,7 @@ class AppShell extends StatelessWidget {
                                     button: true,
                                     selected: index == selected,
                                     label: label,
+                                    onTap: () => select(index),
                                     excludeSemantics: true,
                                     child: InkWell(
                                         onTap: () => select(index),

@@ -2,6 +2,7 @@ import 'package:an_nhien/theme/app_spacing.dart';
 import 'package:an_nhien/widgets/app_back_bar.dart';
 import 'package:an_nhien/widgets/app_button.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/semantics.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'harness.dart';
@@ -41,6 +42,24 @@ void main() {
       });
     }
 
+    testWidgets('TalkBack activates the shared button exactly once',
+        (tester) async {
+      final handle = tester.ensureSemantics();
+      var taps = 0;
+      await pumpHarness(
+          tester,
+          AppButton(
+              label: 'Lưu việc này',
+              icon: Icons.save,
+              onPressed: () => taps++));
+      final node = tester.getSemantics(find.byType(AppButton));
+      expect(node.getSemanticsData().hasAction(SemanticsAction.tap), isTrue);
+      tester.binding.pipelineOwner.semanticsOwner!
+          .performAction(node.id, SemanticsAction.tap);
+      expect(taps, 1);
+      handle.dispose();
+    });
+
     testWidgets('busy: hiện vòng xoay và không bấm được', (tester) async {
       var taps = 0;
       await pumpHarness(
@@ -53,6 +72,7 @@ void main() {
         settle: false,
       );
       expect(find.byType(CircularProgressIndicator), findsOneWidget);
+      expect(find.text('Lưu việc này'), findsOneWidget);
       await tester.tap(find.byType(FilledButton));
       expect(taps, 0);
     });

@@ -105,6 +105,7 @@ class VeloraHomeDiscovery extends ConsumerWidget {
                           width: (box.maxWidth - 12 * (count - 1)) / count,
                           child: Semantics(
                               label: habit.name,
+                              onTap: () => open(habit),
                               button: true,
                               excludeSemantics: true,
                               child: VeloraCategoryTile(
