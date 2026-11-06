@@ -398,3 +398,21 @@ Kiểm chứng bản bật đăng nhập: `flutter test` 779 passed; `flutter an
 - `interpretVoiceTask` là callable có Auth, secret `GROQ_API_KEY`, model server parameter `GROQ_VOICE_MODEL`, quota transaction `voiceUsage/{uid}`. Chỉ trả draft/clarification, không ghi lịch. Không gửi transcript vào analytics/crash/Firestore.
 - `VoiceTaskDraft`/`VoiceTaskInterpretation` kiểm tra response; xác nhận chỉ điền TaskFormViewModel, giữ bước Lưu hiện tại. Session/generation bỏ kết quả về muộn. Chi tiết cấu hình, giới hạn và kiểm chứng ở [groq-voice-setup.md](groq-voice-setup.md).
 - Chưa có key/chưa deploy; Functions vẫn cần project đủ điều kiện Blaze. Không coi widget/mock tests là đã kiểm chứng model thật.
+
+### Hỗ trợ toàn app — 06/11/2026
+
+`AnNhienApp.builder` → `Overlay.wrap` → `GlobalAssistance` → router. Hai nút hỗ trợ nằm ngoài từng Scaffold, vẫn có trên màn đầu, form và dialog; xử lý bàn phím một lần, child Back dispatcher đóng trợ lý trước. Đọc nội dung `Text`/ô nhập đang trong viewport, bỏ Offstage/ẩn/mật khẩu; `SpeechViewModel` chia TTS dài thành từng đoạn và dừng khi chuyển route.
+
+Hội thoại/lệnh: widget → `AssistantViewModel` → `assistantServiceProvider`. Production đang chọn `LocalAssistantService` theo quyết định không bật Blaze của người dùng. Backend LLM đã có mã nhưng chưa triển khai; muốn bật cần thay provider bằng `AvailableAssistantService(FirebaseAssistantService(...), LocalAssistantService())`, cấu hình secret và deploy hai callable. LLM chỉ đề xuất action thuộc whitelist, không có quyền ghi dữ liệu trực tiếp. Danh bạ/lịch lấy qua repository trên máy; không gửi toàn bộ danh bạ/lịch cho model. Lịch/số thật được hiển thị để Bác chọn; thêm dùng `VoiceInputViewModel`/`VoiceTaskWriter`, sửa/xoá dùng route form F4 có scope và Undo, gọi dùng `FamilyActionsViewModel` → dialer. Session/generation bỏ kết quả muộn; đóng bảng ngừng TTS và bỏ hành động chưa hoàn tất. Không tự mở mic, không ghi âm/nghe nền.
+
+### Sửa lỗi lưu người thân trên điện thoại — 06/11/2026
+
+Đối chiếu rules production với mã nguồn xác nhận production còn whitelist `name/relation/phone`, trong khi `FirebaseFamilyRepository.save` gửi thêm `favorite`. Toàn bộ chênh lệch rules chỉ là cho phép trường `favorite` tùy chọn dạng boolean, giữ quyền owner. Bổ sung regression test tạo/sửa favorite, sai kiểu, trường lạ và truy cập chéo tài khoản; 15/15 rules tests qua emulator. Triển khai riêng `firestore:rules`, không cần thay APK hay bật Blaze. Không tạo/sửa danh bạ thật để thử.
+
+### Giới hạn lịch, đọc theo khung và trợ lý nổi — 06/11/2026
+
+- `validateScheduleLimits` là kiểm tra thuần theo occurrence: trùng thời điểm bắt đầu hoặc hơn 2 tên chuẩn hóa/ngày bị từ chối; áp dụng recurrence/ngoại lệ/reschedule. So sánh các mẫu liên quan trên chu kỳ lịch Gregorian 400 năm sau mốc thay đổi cuối, giới hạn theo endDate/once. `validateScheduleLimitsAsync` chạy phần tính toán ngoài UI isolate.
+- `FirebaseUserData.checkSchedule` đọc snapshot từ server, mô phỏng thay đổi trước ghi và trả callback cập nhật bộ đếm `users/{uid}/scheduleState/current`. Các transaction tạo/sửa/dời/hoàn tác của adapter Bác và caregiver đọc/ghi cùng khóa để retry khi hai bản app mới ghi đồng thời. Rules khóa chỉ cho owner/caregiver và revision +1. Validation là logic của các adapter mới, không phải rules đếm mọi task: app cũ hoặc writer khác không tham gia giao thức cần được cập nhật tương ứng. Các endpoint gợi ý qua Functions chưa được bật trên project không Blaze.
+- `AppSurface`, `AppTextField`, `HabitAccentCard`, `CalmListRow`, `VeloraScheduleCard` dùng `ReadAloudRegion`; TTS lấy text/EditableText trong subtree khi chạm, không đọc toàn trang. Widget không truy cập SDK/service trực tiếp, vẫn gọi SpeechViewModel.
+- `GlobalAssistance` phủ Stack lên router; không thu nhỏ nội dung bằng footer nữa. Nút tròn kéo trong giới hạn viewport, giữ vị trí khi chuyển route, bảng hội thoại giữ xử lý Back/bàn phím. Không có nghe nền. `showTimeWheel` giữ API dùng chung nhưng nội dung là CupertinoDatePicker.time 24 giờ, phút bất kỳ, Lưu/Hủy.
+- Người dùng đã xác nhận rõ “Cho phép triển khai rules” cho thay đổi khóa lịch sau khi bộ duyệt tự động yêu cầu quyền triển khai production riêng. Không thay billing/secret hoặc triển khai Functions LLM.
