@@ -10,6 +10,7 @@ import '../utils/app_error.dart';
 import 'family_repository.dart';
 import 'habit_repository.dart';
 import 'task_repository.dart';
+import 'schedule_limits.dart';
 
 class FirebaseUserData {
   FirebaseUserData(this.db, this.auth);
@@ -19,6 +20,52 @@ class FirebaseUserData {
     final uid = auth.currentUser?.uid;
     if (uid == null) throw const AppException('Bác cần đăng nhập trước.');
     return db.collection('users').doc(uid).collection(name);
+  }
+
+  Future<void Function()> checkSchedule(
+      String uid, Map<String, TaskItem?> changes,
+      {List<TaskReschedule> replaceMoves = const [],
+      Set<String> removeMoves = const {},
+      DateTime? from,
+      Transaction? transaction}) async {
+    final root = db.collection('users').doc(uid);
+    final lock = root.collection('scheduleState').doc('current');
+    final previousLock =
+        transaction == null ? null : await transaction.get(lock);
+    final snapshots = await Future.wait([
+      root.collection('tasks').get(const GetOptions(source: Source.server)),
+      root
+          .collection('taskReschedules')
+          .get(const GetOptions(source: Source.server))
+    ]);
+    final tasks = {
+      for (final d in snapshots[0].docs) d.id: TaskItem.fromMap(d.id, d.data())
+    };
+    for (final e in changes.entries) {
+      if (e.value == null) {
+        tasks.remove(e.key);
+      } else {
+        tasks[e.key] = e.value!;
+      }
+    }
+    final moves = {
+      for (final d in snapshots[1].docs) d.id: TaskReschedule.fromMap(d.data())
+    };
+    for (final key in removeMoves) {
+      moves.remove(key);
+    }
+    for (final move in replaceMoves) {
+      moves[move.key] = move;
+    }
+    await validateScheduleLimitsAsync(
+        tasks.values.toList(),
+        moves.values.toList(),
+        changes.keys.toSet(),
+        from ?? DateTime.now().toUtc().add(const Duration(hours: 7)));
+    return () {
+      transaction?.set(lock,
+          {'revision': (previousLock?.data()?['revision'] as int? ?? -1) + 1});
+    };
   }
 
   Future<T> run<T>(Future<T> Function() operation) async {
@@ -173,6 +220,10 @@ class FirebaseTaskRepository
           final revision = existing.exists
               ? (existing.data()?['revision'] as int? ?? 0) + 1
               : 0;
+          final commit = await data.checkSchedule(
+              data.auth.currentUser!.uid, {normalized.id: normalized},
+              transaction: tx);
+          commit();
           tx.set(doc, normalized.copyWith(revision: revision).toMap());
         });
       });
@@ -247,6 +298,10 @@ class FirebaseTaskRepository
                   'fromMinute': before?.minute ?? task.minute
                 },
               ]);
+          final commit = await data.checkSchedule(
+              data.auth.currentUser!.uid, {template.id: template},
+              replaceMoves: [next], from: targetDay, transaction: tx);
+          commit();
           tx.set(doc,
               {...next.toMap(), 'updatedAt': FieldValue.serverTimestamp()});
           tx.update(taskRef, {'revision': template.revision + 1});
@@ -291,6 +346,12 @@ class FirebaseTaskRepository
                 DateTime.parse(change.before?.targetDate ?? current.sourceDate),
                 all.docs.map((d) => TaskReschedule.fromMap(d.data())));
           }
+          final commit = await data.checkSchedule(
+              data.auth.currentUser!.uid, {template.id: template},
+              removeMoves: {change.key},
+              replaceMoves: [if (change.before != null) change.before!],
+              transaction: tx);
+          commit();
           if (change.before == null) {
             tx.delete(doc);
           } else {
