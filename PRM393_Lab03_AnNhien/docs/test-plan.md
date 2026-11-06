@@ -31,15 +31,15 @@ Loại: `Chính` (happy path) · `Lỗi` (nhánh lỗi + phục hồi) · `Nativ
 
 | ID | Flow | Điều kiện đầu | Bước | Kết quả mong đợi (giá trị agent phải báo lại) | Loại | Người | Kết quả |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| TC-01 | Đăng nhập | Cài app, chưa đăng nhập | Mở app → "Tiếp tục với Google" → chọn tài khoản test | Vào C01 (lần đầu) hoặc Hôm nay + 4 tab; báo dòng "Đã xong x/y việc" | Native | Hiếu | |
+| TC-01 | Đăng nhập | Cài app, chưa đăng nhập | Mở app → "Tiếp tục với Google" → chọn tài khoản test | Vào C01 (lần đầu); tài khoản Bác đã onboarding vào Trang chủ, có lời chào và 5 mục Trang chủ / Khám phá / Thói quen / Gia đình / Cá nhân | Native | Hiếu | |
 | TC-02 | Đăng nhập | Chưa đăng nhập | Bấm Google → huỷ | Thấy câu "Bác chưa đăng nhập…" | Lỗi | Hiếu | |
 | TC-03 | Thêm việc | Đã đăng nhập | Thêm "Đi bộ" 6:00 mỗi ngày | Việc có trong Hôm nay; báo tổng số việc | Chính | Khang | |
 | TC-04 | Thêm việc | Đã đăng nhập | Lưu khi chưa nhập tên → nhập tên → lưu | Thấy lỗi có ví dụ (S06e), sau đó ST-Saved | Lỗi | Khang | |
 | TC-05 | Làm xong | Có việc chưa làm | Bấm Đã xong → Đúng, đã xong → Hoàn tác | Trạng thái quay về "Chưa làm"; báo số việc xong; đếm số chạm ≤ 2 (M1) | Chính | Khang | |
 | TC-06 | Giọng nói | Quyền micro đã cho | V01 → nói "Đi bộ 6 giờ sáng mỗi ngày" → V03 → Lưu | V05 hiện tên việc + giờ | Chính | Khang | |
-| TC-07 | Điều hướng | Đã đăng nhập | Mở lần lượt 4 tab + 1 màn chi tiết mỗi tab | Báo tiêu đề từng màn; nhãn tab không xuống dòng | Chính | Sanh | |
+| TC-07 | Điều hướng | Đã đăng nhập | Mở lần lượt 5 mục điều hướng + màn chi tiết | Báo tiêu đề từng màn; nhãn đầy đủ, cỡ chữ lớn dùng menu Chuyển mục | Chính | Sanh | |
 | TC-08 | Gia đình | Đã đăng nhập | Thêm người thân số sai → sửa → lưu | Thấy S12e có ví dụ, rồi người thân có trong danh sách (S09b) | Lỗi | Hương | |
-| TC-09 | Xuất PDF | Có việc trong tuần | S07 → Xuất PDF | Thấy tiến độ 100 % và link tải; file trong Storage `reports/{uid}/` | Export | Hương | |
+| TC-09 | Xuất PDF | Có việc trong tuần | Trang chủ → Lưu lịch tuần PDF → Tạo và lưu PDF | Android mở chọn nơi lưu; PDF có đủ 7 ngày và trạng thái thật; hủy không báo thành công, đổi tài khoản thì dừng (luồng hiện hành thay Storage) | Export | Hương | |
 | TC-10 | Remote Config | `snooze_minutes` = 15 trên console | Mở S14 | Báo số phút trên nút = 15 | RC | Khang | |
 | TC-11 | Thông báo | App đã tắt | Gửi FCM từ console → bấm ở khay thông báo | Mở đúng màn lời nhắc S14 | Native | Hiếu | |
 | TC-12 | Mất mạng | Tắt Wi-Fi + dữ liệu | Lưu việc | Thấy ST-Loading-offline rồi ST-Saved khi có mạng, hoặc ST-Error có "Thử lại"; nội dung không mất | Lỗi | Khang | |

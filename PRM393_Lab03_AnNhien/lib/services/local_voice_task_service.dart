@@ -332,11 +332,43 @@ const _afterHabitKey = {
   'ngu trua': 'downshift',
 };
 
+// Match separate timed actions, preserving a time range inside one clause.
+bool _hasMultipleTimedActivities(String utterance) {
+  final clauses =
+      foldVietnamese(utterance).split(RegExp(r'[,;]|\s+(?:va|roi|sau do)\s+'));
+  final time = RegExp(
+      r'(?:\d{1,2}\s*(?:gio|h)(?:\s*[0-5]?\d\s*(?:phut)?)?|\d{1,2}:[0-5]\d)');
+  return clauses.where((clause) {
+        final match = time.firstMatch(clause);
+        if (match == null) return false;
+        final action = clause
+            .substring(match.end)
+            .replaceFirst(
+                RegExp(
+                    r'^(?:\s*(?:buoi|sang|trua|chieu|toi|dem|nhac|bac|chau|luc|nua))+(?=\s|$)'),
+                '')
+            .trim();
+        return RegExp('[a-z]').hasMatch(action);
+      }).length >
+      1;
+}
+
 /// Hiểu một chuỗi lời nói (câu đầu + các câu trả lời bổ sung).
 VoiceTaskInterpretation interpretVietnamese(List<String> utterances,
     {required DateTime now,
     VoiceUserContext context = const VoiceUserContext()}) {
-  final parts = utterances.map(_parseOne).toList();
+  // Discard the ambiguous multi-task draft when Bác chooses a single task.
+  final conversation = _hasMultipleTimedActivities(utterances.first)
+      ? utterances.skip(1).toList()
+      : utterances;
+  if (conversation.isEmpty || conversation.any(_hasMultipleTimedActivities)) {
+    return const VoiceTaskInterpretation(
+        draft: VoiceTaskDraft(
+            repeat: RepeatRule.once, weekdays: [], habitKey: 'purpose'),
+        question: 'Bác nói từng việc một nhé. Bác muốn thêm việc nào trước?',
+        onDevice: true);
+  }
+  final parts = conversation.map(_parseOne).toList();
   final p = _Parsed();
   for (final part in parts) {
     p.title ??= part.title;

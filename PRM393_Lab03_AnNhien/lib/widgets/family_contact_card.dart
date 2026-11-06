@@ -30,17 +30,19 @@ class FamilyContactCard extends ConsumerWidget {
           try {
             await vm.undo(change);
           } catch (_) {
-            if (messenger.mounted)
+            if (messenger.mounted) {
               messenger.showSnackBar(const SnackBar(
                   content: Text('Chưa hoàn tác được. Bác thử lại nhé.')));
+            }
           }
         });
       } catch (e) {
-        if (context.mounted)
+        if (context.mounted) {
           messenger.showSnackBar(SnackBar(
               content: Text(e is AppException
                   ? e.userMessage
                   : 'Chưa lưu được lựa chọn. Bác thử lại nhé.')));
+        }
       }
     }
 
@@ -60,11 +62,12 @@ class FamilyContactCard extends ConsumerWidget {
                 try {
                   await vm.call(person);
                 } catch (e) {
-                  if (context.mounted)
+                  if (context.mounted) {
                     ScaffoldMessenger.of(context).showSnackBar(SnackBar(
                         content: Text(e is AppException
                             ? e.userMessage
                             : 'Chưa mở được màn hình gọi.')));
+                  }
                 }
               }),
           TextButton.icon(
@@ -82,9 +85,10 @@ class FamilyContactCard extends ConsumerWidget {
           TextButton.icon(
               onPressed: () async {
                 await Clipboard.setData(ClipboardData(text: person.phone));
-                if (context.mounted)
+                if (context.mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
                       content: Text('Đã sao chép số điện thoại.')));
+                }
               },
               icon: const Icon(Icons.copy_rounded),
               label: const Text('Sao chép số')),

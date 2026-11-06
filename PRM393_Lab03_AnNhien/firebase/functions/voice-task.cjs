@@ -84,8 +84,26 @@ Không tự dời giờ để tránh trùng với busy; app sẽ tự báo trùn
 Luôn trả đúng schema JSON, các trường chưa biết là null; issue=none khi không còn mơ hồ.`;
 }
 
+// Separate timed actions are not a single draft. Keep this narrow: a time
+// range in one clause or a follow-up correction must still reach the model.
+function hasMultipleTimedActivities(input) {
+  if (input.utterances?.length !== 1) return false;
+  const clauses = input.utterances[0].toLowerCase().split(/[,;]|\s+(?:và|rồi|sau đó)\s+/u);
+  return clauses.filter(clause => {
+    const time = /(?:\d{1,2}\s*(?:giờ|h)(?:\s*[0-5]?\d\s*(?:phút)?)?|\d{1,2}:[0-5]\d)/u.exec(clause);
+    if (!time) return false;
+    const action = clause.slice(time.index + time[0].length)
+      .replace(/^(?:\s*(?:buổi|sáng|trưa|chiều|tối|đêm|nhắc|bác|tôi|cháu|lúc|nữa))+(?=\s|$)/u, '').trim();
+    return /\p{L}/u.test(action);
+  }).length > 1;
+}
+
 async function callGroq(input, {apiKey,model='openai/gpt-oss-20b',fetchImpl=fetch,now=Date.now()}) {
   if (!apiKey?.trim()) fail('failed-precondition','Hiểu lời nói chưa được bật. Bác có thể nhập tay.');
+  if (hasMultipleTimedActivities(input)) {
+    return normalizeResult({title:null,date:null,hour:null,minute:null,repeat:'once',
+      weekdays:[],habitKey:'purpose',issue:'multiple'},now);
+  }
   let response;
   try {
     response = await fetchImpl('https://api.groq.com/openai/v1/chat/completions', {

@@ -15,13 +15,30 @@ async function main() {
   const apiKey=process.env.GROQ_API_KEY;
   if(!apiKey || apiKey==='replace_with_your_groq_key') throw new Error('Configure GROQ_API_KEY on this machine before running live evaluation.');
   let failures=0;
-  for(const c of cases) {
+  for(const [index,c] of cases.entries()) {
+    // Pace the live suite so provider TPM/RPM limits are not semantic failures.
+    if(index) await new Promise(resolve=>setTimeout(resolve,12000));
     try {
-      const result=await callGroq(validateInput({utterances:c.utterances}),{
-        apiKey,model:process.env.GROQ_VOICE_MODEL||'openai/gpt-oss-20b',now:c.now});
+      let result;
+      for(let attempt=0;attempt<3;attempt++) {
+        try {
+          result=await callGroq(validateInput({utterances:c.utterances}),{
+            apiKey,model:process.env.GROQ_VOICE_MODEL||'openai/gpt-oss-20b',now:c.now});
+          break;
+        } catch(error) {
+          if(error.code!=='resource-exhausted' || attempt===2) throw error;
+          console.log(`WAIT ${c.id} (provider rate limit)`);
+          await new Promise(resolve=>setTimeout(resolve,30000));
+        }
+      }
       const passed=c.check(result);if(!passed)failures++;
       console.log(`${passed?'PASS':'FAIL'} ${c.id}`);
-    } catch (_) {failures++;console.log(`FAIL ${c.id} (request or validation failed)`);}
+    } catch (error) {
+      failures++;
+      // Only expose an allowlisted code; provider responses and keys stay private.
+      const code=['unavailable','resource-exhausted','data-loss','invalid-argument','failed-precondition'].includes(error.code) ? error.code : 'unknown';
+      console.log(`FAIL ${c.id} (${code})`);
+    }
   }
   console.log(`${cases.length-failures}/${cases.length} live cases passed; no tasks written.`);
   process.exitCode=failures?1:0;

@@ -184,8 +184,9 @@ class TaskFormViewModel extends Notifier<TaskFormState> {
     final now = DateTime.now(), selected = state.date!;
     final originalTime = DateTime(
         selected.year, selected.month, selected.day, task.hour, task.minute);
-    if (originalTime.isAfter(now))
+    if (originalTime.isAfter(now)) {
       setTime(hour: task.hour, minute: task.minute, isAm: task.hour < 12);
+    }
     setRemind(task.remind);
     setWeekdays(
         task.weekdays.isEmpty ? {selected.weekday} : task.weekdays.toSet());
@@ -232,8 +233,9 @@ class TaskFormViewModel extends Notifier<TaskFormState> {
   void setRepeat(RepeatRule value) => state = state.copyWith(repeat: value);
   void setWeekdays(Set<int> value) => state = state.copyWith(weekdays: value);
   void setDuration(int value) {
-    if (value >= 1 && value <= 240)
+    if (value >= 1 && value <= 240) {
       state = state.copyWith(durationMinutes: value);
+    }
   }
 
   void setRemind(bool value) => state = state.copyWith(remind: value);

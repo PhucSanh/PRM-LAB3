@@ -12,6 +12,7 @@ import 'package:an_nhien/viewmodels/calm_feature_providers.dart';
 import 'package:an_nhien/viewmodels/caregiver_schedule_view_model.dart';
 import 'package:an_nhien/widgets/botanical_scene.dart';
 import 'package:an_nhien/widgets/confirm_dialog.dart';
+import 'package:an_nhien/widgets/velora_home_parts.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -160,6 +161,9 @@ void main() {
   testReferenceWidgets('TalkBack opens a home category', (tester) async {
     final handle = tester.ensureSemantics();
     final c = await pumpApp(tester, '/calendar');
+    await tester.scrollUntilVisible(find.text('Vận động'), 300,
+        scrollable: find.byType(Scrollable).first);
+    await tester.pumpAndSettle();
     final node =
         tester.getSemantics(find.bySemanticsLabel('Vận động tự nhiên').last);
     expect(node.getSemanticsData().hasAction(SemanticsAction.tap), isTrue);
@@ -306,9 +310,9 @@ void main() {
     final container = await pumpApp(tester, '/week/2026-11-06');
     final router = container.read(routerProvider);
     expect(router.routeInformationProvider.value.uri.path, '/calendar');
-    await tester.scrollUntilVisible(find.text(task.title), 250,
+    await tester.scrollUntilVisible(find.text(task.title).last, 250,
         scrollable: find.byType(Scrollable).first);
-    expect(find.text(task.title), findsOneWidget);
+    expect(find.text(task.title), findsNWidgets(2));
     router.go('/week/2026-11-06/task/${task.id}');
     await tester.pumpAndSettle();
     expect(find.text(task.title), findsOneWidget);
@@ -448,7 +452,9 @@ void main() {
   ]) {
     testReferenceWidgets('Calm screen golden $name', (tester) async {
       await pumpApp(tester, route, role: role);
-      if (!['settings', 'suggestion', 'habits'].contains(name)) {
+      if (name == 'calendar') {
+        expect(find.byType(VeloraGreeting), findsOneWidget);
+      } else if (!['settings', 'suggestion', 'habits'].contains(name)) {
         expect(find.byType(BotanicalScene), findsWidgets);
       }
       await expectLater(

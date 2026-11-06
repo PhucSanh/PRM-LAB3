@@ -28,11 +28,13 @@ async def artemis():
         pytest.skip(f"Không kết nối được ARTEMIS tại {base_url}: {error}")
 
     class ArtemisSession:
-        async def run(self, instruction: str):
+        async def run(self, instruction: str, *, expected_output: str | None = None):
             return await client.run(
                 instruction,
                 profile=profile,
                 device_serial=serial,
+                expected_output=expected_output,
+                enable_outputter=True if expected_output is not None else None,
             )
 
     yield ArtemisSession()

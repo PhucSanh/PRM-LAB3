@@ -30,19 +30,21 @@ class QuickTaskActions extends ConsumerWidget {
           try {
             await vm.undo(change);
           } catch (e) {
-            if (messenger.mounted)
+            if (messenger.mounted) {
               messenger.showSnackBar(SnackBar(
                   content: Text(e is AppException
                       ? e.userMessage
                       : 'Chưa hoàn tác được. Bác thử lại nhé.')));
+            }
           }
         });
       } catch (e) {
-        if (messenger.mounted)
+        if (messenger.mounted) {
           messenger.showSnackBar(SnackBar(
               content: Text(e is AppException
                   ? e.userMessage
                   : 'Chưa cập nhật được. Bác thử lại nhé.')));
+        }
       }
     }
 

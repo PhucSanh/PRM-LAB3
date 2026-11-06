@@ -47,6 +47,31 @@ Future<ProviderContainer> setup(VoiceTaskService service,
 }
 
 void main() {
+  test(
+      'local voice asks for one task when separate clauses have separate times',
+      () {
+    for (final text in [
+      'Mai 8 giờ sáng tưới cây, 9 giờ sáng đi bộ.',
+      'Mai 8:00 tưới cây và 9:00 đi bộ',
+      '8 giờ sáng uống trà; 10 giờ sáng gọi con',
+    ]) {
+      final r = interpretVietnamese([text], now: DateTime(2026, 11, 6, 11, 30));
+      expect(r.ready, isFalse);
+      expect(r.question, contains('từng việc một'));
+      expect(r.draft.title, isNull);
+    }
+  });
+  test('choosing one task discards the previous multi-task draft', () {
+    final r = interpretVietnamese([
+      'Mai 8 giờ sáng tưới cây, 9 giờ sáng đi bộ.',
+      'Mai 8 giờ sáng tưới cây',
+    ], now: DateTime(2026, 11, 6, 11, 30));
+    expect(r.ready, isTrue);
+    expect(r.draft.title!.toLowerCase(), contains('tưới cây'));
+    expect(r.draft.title!.toLowerCase(), isNot(contains('đi bộ')));
+    expect(r.draft.hour, 8);
+  });
+
   group('bộ hiểu lời nói trên máy', () {
     test('đủ tên việc, ngày, giờ và lặp thì sẵn sàng', () {
       final r = say(['Mai lúc 8 giờ sáng nhắc bác tưới cây, mỗi ngày']);

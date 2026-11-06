@@ -42,9 +42,10 @@ class FamilyActionsViewModel extends Notifier<bool> {
   }
 
   Future<void> undo(FavoriteChange change) async {
-    if (ref.read(sessionProvider).value?.uid != change.uid)
+    if (ref.read(sessionProvider).value?.uid != change.uid) {
       throw const AppException(
           'Tài khoản đã thay đổi. Bác mở lại Gia đình nhé.');
+    }
     await _setFavorite(change.person, change.person.favorite);
     ref.invalidate(familyListProvider);
   }

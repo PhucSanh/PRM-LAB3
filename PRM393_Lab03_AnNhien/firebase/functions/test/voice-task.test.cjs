@@ -77,3 +77,23 @@ test('voice userContext carries only honorific, wake time and untitled busy slot
     assert.throws(()=>validateInput({utterances:['mai tập'],userContext:bad}),e=>e.code==='invalid-argument');
   assert.match(systemPrompt(now),/wakeTime \+ 60/);
 });
+
+test('separate timed actions ask for one task without letting the model pick one', async()=>{
+  for(const utterance of ['Mai 8 giờ sáng tưới cây, 9 giờ sáng đi bộ.',
+    'Mai 8:00 tưới cây và 9:00 đi bộ', '8 giờ sáng uống trà; 10 giờ sáng gọi con']) {
+    const result=await callGroq(validateInput({utterances:[utterance]}),{
+      apiKey:'test-key',now,fetchImpl:()=>{throw new Error('must not call provider');}});
+    assert.equal(result.ready,false);
+    assert.match(result.question,/từng việc một/);
+    assert.equal(result.draft.title,null);
+  }
+});
+test('one time range and a follow-up time correction still reach the provider',async()=>{
+  for(const utterances of [['Mai từ 8 giờ sáng đến 9 giờ sáng đi bộ'],
+    ['Mai 8 giờ sáng tưới cây, 9 giờ sáng đi bộ.', 'Chỉ tưới cây lúc 8 giờ sáng thôi']]) {
+    let called=false;
+    await callGroq(validateInput({utterances}),{apiKey:'test-key',now,
+      fetchImpl:async()=>{called=true;return response(proposal);}});
+    assert.equal(called,true);
+  }
+});

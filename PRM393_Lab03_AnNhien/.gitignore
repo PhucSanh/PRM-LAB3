@@ -67,3 +67,6 @@ node_modules/
 .secret.local
 .env.*
 !firebase/functions/.env.example
+
+# Generated golden-test diff images
+test/failures/

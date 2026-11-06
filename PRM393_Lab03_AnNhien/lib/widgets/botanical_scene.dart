@@ -32,10 +32,14 @@ class _BotanicalPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final w = size.width, h = size.height;
+    final diameter =
+        math.min(w * (welcome ? .78 : 1), h * (welcome ? .88 : 1));
+    // Keep the entire circle inside the painted background, including its top.
+    final centerY = math.max(h * .47, diameter / 2);
     final circle = Rect.fromCenter(
-        center: Offset(w * .5, h * .47),
-        width: math.min(w * (welcome ? .78 : 1), h * (welcome ? .88 : 1)),
-        height: math.min(w * (welcome ? .78 : 1), h * (welcome ? .88 : 1)));
+        center: Offset(w * .5, centerY),
+        width: diameter,
+        height: diameter);
     canvas.save();
     if (round || welcome) {
       canvas.clipPath(Path()..addOval(circle));
