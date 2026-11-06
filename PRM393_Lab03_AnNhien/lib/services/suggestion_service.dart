@@ -39,6 +39,9 @@ abstract interface class SuggestionService {
   Future<void> undoDismiss(String momUid, String id);
 }
 
+/// Acceptance creates the tasks in the same server transaction.
+abstract interface class AtomicSuggestionService implements SuggestionService {}
+
 /// Bản giả trong bộ nhớ, theo `momUid`. Một instance dùng chung được cho
 /// "máy con cháu gửi" và "máy Bác nhận" trong cùng một test.
 class FakeSuggestionService implements SuggestionService {

@@ -100,7 +100,7 @@ void main() {
           }
 
           final onboarding = c.read(onboardingViewModelProvider.notifier);
-          await check('S01', 'Chào mừng Bác!');
+          await check('S01', 'An Nhiên');
 
           router.go('/setup');
           await check('S02 xác nhận tên', 'Bác là Lan, đúng không?');

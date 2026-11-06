@@ -129,7 +129,10 @@ service cloud.firestore {
       match /suggestions/{id} {
         // Dismiss/partial state is private to Bác. Child has no status readback.
         allow read: if owner(uid);
-        allow write: if false; // trusted callables ensure atomic, idempotent acceptance
+        allow update: if owner(uid)
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['popupShown'])
+          && request.resource.data.popupShown == true;
+        allow create, delete: if false; // acceptance stays in trusted callables
       }
 
     }

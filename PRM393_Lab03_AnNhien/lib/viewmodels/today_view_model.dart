@@ -1,3 +1,4 @@
+import '../utils/app_error.dart';
 import 'dart:async';
 
 import '../models/task_item.dart';
@@ -50,6 +51,7 @@ class TodayData {
 /// F3 Hôm nay – MVVM: màn hình chỉ gọi các thao tác này, không sửa repository trực tiếp.
 class TodayViewModel extends Notifier<UiState<TodayData>> {
   _TodayMutation? _lastMutation;
+  String? actionError;
   int _loadGeneration = 0;
 
   @override
@@ -123,6 +125,7 @@ class TodayViewModel extends Notifier<UiState<TodayData>> {
 
   Future<bool> postpone(String taskId, PostponeOption option,
       {DateTime? targetDay, int? targetHour, int? targetMinute}) async {
+    actionError = null;
     final task = taskById(taskId);
     if (task == null) return false;
     final now = DateTime.now();
@@ -169,6 +172,7 @@ class TodayViewModel extends Notifier<UiState<TodayData>> {
       await load(showLoading: false);
       return true;
     } catch (error, stackTrace) {
+      actionError = error is AppException ? error.userMessage : null;
       await ref
           .read(crashServiceProvider)
           .recordError(error, stackTrace, reason: 'today_postpone');
@@ -248,14 +252,13 @@ class TodayViewModel extends Notifier<UiState<TodayData>> {
     }
   }
 
-  Future<void> undo(String taskId) async {
+  Future<void> undo(String taskId,
+      {TaskStatus previousStatus = TaskStatus.pending}) async {
     if (_lastMutation?.before.id == taskId) {
       await undoLastAction();
       return;
     }
-    await ref
-        .read(taskRepositoryProvider)
-        .setStatus(taskId, TaskStatus.pending);
+    await ref.read(taskRepositoryProvider).setStatus(taskId, previousStatus);
     await load();
   }
 

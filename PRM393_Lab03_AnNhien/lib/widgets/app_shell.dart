@@ -1,134 +1,208 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-
 import '../screens/suggestion/suggestion_popup_listener.dart';
 import '../theme/app_icons.dart';
 import '../theme/app_spacing.dart';
+import 'app_button.dart';
 
-/// Bottom nav 4 tab: Hôm nay · Lịch tuần · Thói quen · Gia đình (rule.md R-NAV-01; Figma S03 › Nav `1:451`).
-/// Nền trắng, viền trên; 4 ô rộng đều cách nhau 20; mỗi ô icon 32 + nhãn 20 đậm **2 dòng** ("Hôm / nay") để
-/// 4 nhãn luôn cùng kiểu; tab đang chọn có pill nền nhạt quanh icon, chữ `primary`.
-/// Chữ phóng to quá thì nhãn thu nhỏ vừa ô (không cắt "…", không vỡ chữ giữa từ).
+/// Reference-style five-item navigation for Bác; caregiver keeps its work areas.
+/// Explorer and habits share their existing branch, with explicit query state.
 class AppShell extends StatelessWidget {
-  const AppShell({super.key, required this.navigationShell});
+  const AppShell(
+      {super.key,
+      required this.navigationShell,
+      this.caregiver = false,
+      this.legacyToday = false});
   final StatefulNavigationShell navigationShell;
-
-  /// (icon, nhãn hiển thị 2 dòng, nhãn đọc cho TalkBack)
-  static const _tabs = [
-    (AppIcons.tabToday, 'Hôm\nnay', 'Hôm nay'),
-    (AppIcons.tabWeek, 'Lịch\ntuần', 'Lịch tuần'),
-    (AppIcons.tabHabits, 'Thói\nquen', 'Thói quen'),
-    (AppIcons.tabFamily, 'Gia\nđình', 'Gia đình'),
-  ];
-
+  final bool caregiver, legacyToday;
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    // Không có AppBar riêng: "Tài khoản" gộp vào "Cài đặt" của từng tab
-    // (Hôm nay → Cài đặt → Tài khoản). TODO(Sanh, F8): S10 có lối vào /account.
-    return Scaffold(
-      // F12: popup G10 / G11 "có gợi ý mới" – chỉ hiện ở tab Hôm nay, một lần (người dùng đồng ý 04/11).
-      body: SuggestionPopupListener(
-        active: navigationShell.currentIndex == 0,
-        child: navigationShell,
-      ),
-      bottomNavigationBar: DecoratedBox(
-        decoration: BoxDecoration(
-          color: scheme.surface,
-          border: Border(top: BorderSide(color: scheme.outlineVariant)),
-        ),
-        child: SafeArea(
+    final colors = Theme.of(context).colorScheme;
+    final uri = GoRouterState.of(context).uri;
+    final destinations = caregiver
+        ? [
+            (AppIcons.tabWeek, 'Lịch'),
+            (Icons.lightbulb_outline_rounded, 'Gợi ý'),
+            (AppIcons.tabFamily, 'Gia đình'),
+          ]
+        : [
+            (Icons.home_rounded, 'Trang chủ'),
+            (Icons.search_rounded, 'Khám phá'),
+            (Icons.timer_outlined, 'Thói quen'),
+            (Icons.favorite_border_rounded, 'Gia đình'),
+            (Icons.account_circle_outlined, 'Cá nhân'),
+          ];
+    final selected = caregiver
+        ? navigationShell.currentIndex
+        : switch (navigationShell.currentIndex) {
+            1 => uri.queryParameters['section'] == 'habits' ||
+                    uri.path.contains('/habits/')
+                ? 2
+                : 1,
+            2 => 3,
+            _ => 0,
+          };
+    void select(int index) {
+      if (caregiver) {
+        navigationShell.goBranch(index,
+            initialLocation: index == navigationShell.currentIndex);
+      } else {
+        switch (index) {
+          case 0:
+            navigationShell.goBranch(0,
+                initialLocation: navigationShell.currentIndex == 0);
+          case 1:
+            context.go('/activities?section=explore');
+          case 2:
+            context.go('/activities?section=habits');
+          case 3:
+            navigationShell.goBranch(2,
+                initialLocation: navigationShell.currentIndex == 2);
+          case 4:
+            context.push('/account');
+        }
+      }
+    }
+
+    final content = caregiver
+        ? navigationShell
+        : SuggestionPopupListener(active: legacyToday, child: navigationShell);
+    if (uri.path.startsWith('/activities/habits/') ||
+        uri.path.startsWith('/calendar/task/') ||
+        uri.path.startsWith('/today/task/')) {
+      return content;
+    }
+    if (MediaQuery.sizeOf(context).width >= 600) {
+      return Scaffold(
+          body: Row(children: [
+        SafeArea(
+            child: NavigationRail(
+                selectedIndex: selected,
+                onDestinationSelected: select,
+                labelType: NavigationRailLabelType.all,
+                destinations: [
+              for (final (icon, label) in destinations)
+                NavigationRailDestination(icon: Icon(icon), label: Text(label))
+            ])),
+        const VerticalDivider(width: 1),
+        Expanded(child: content)
+      ]));
+    }
+    if (!caregiver && MediaQuery.textScalerOf(context).scale(20) > 32) {
+      return Scaffold(
+        body: content,
+        bottomNavigationBar: SafeArea(
           top: false,
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(minHeight: AppSizes.navBar),
-            child: Padding(
-              padding: const EdgeInsets.symmetric(
-                  horizontal: AppSpacing.xs, vertical: AppSpacing.xs),
-              child: Row(children: [
-                for (final (i, (icon, label, spoken)) in _tabs.indexed) ...[
-                  if (i > 0) const SizedBox(width: AppSpacing.betweenTargets),
-                  Expanded(
-                    child: _NavTab(
-                      icon: icon,
-                      label: label,
-                      semanticLabel: spoken,
-                      selected: i == navigationShell.currentIndex,
-                      onTap: () => navigationShell.goBranch(i),
+          child: Padding(
+            padding: const EdgeInsets.all(AppSpacing.sm),
+            child: AppButton(
+              label: 'Menu: ${destinations[selected].$2}',
+              icon: Icons.menu_rounded,
+              kind: AppButtonKind.secondary,
+              onPressed: () async {
+                final index = await showModalBottomSheet<int>(
+                  context: context,
+                  isScrollControlled: true,
+                  useSafeArea: true,
+                  builder: (sheetContext) => SafeArea(
+                    child: ConstrainedBox(
+                      constraints: BoxConstraints(
+                          maxHeight:
+                              MediaQuery.sizeOf(sheetContext).height * .8),
+                      child: ListView(
+                        shrinkWrap: true,
+                        padding: const EdgeInsets.all(AppSpacing.base),
+                        children: [
+                          Text('Chuyển mục',
+                              style:
+                                  Theme.of(sheetContext).textTheme.titleLarge),
+                          for (final (index, (icon, label))
+                              in destinations.indexed)
+                            ListTile(
+                              leading: Icon(icon),
+                              title: Text(label),
+                              selected: index == selected,
+                              trailing: index == selected
+                                  ? const Icon(Icons.check_rounded)
+                                  : null,
+                              onTap: () => Navigator.pop(sheetContext, index),
+                            ),
+                          TextButton(
+                              onPressed: () => Navigator.pop(sheetContext),
+                              child: const Text('Đóng menu')),
+                        ],
+                      ),
                     ),
                   ),
-                ],
-              ]),
+                );
+                if (context.mounted && index != null) select(index);
+              },
             ),
           ),
         ),
-      ),
-    );
-  }
-}
-
-class _NavTab extends StatelessWidget {
-  const _NavTab({
-    required this.icon,
-    required this.label,
-    required this.semanticLabel,
-    required this.selected,
-    required this.onTap,
-  });
-
-  final IconData icon;
-  final String label;
-  final String semanticLabel;
-  final bool selected;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final scheme = theme.colorScheme;
-    final color = selected ? scheme.primary : scheme.onSurfaceVariant;
-    return Semantics(
-      button: true,
-      selected: selected,
-      label: semanticLabel,
-      excludeSemantics: true,
-      onTap: onTap,
-      child: Material(
-        color: scheme.surface,
-        borderRadius: AppRadius.mdAll,
-        clipBehavior: Clip.antiAlias,
-        child: InkWell(
-          onTap: onTap,
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(minHeight: AppSizes.minTarget),
-            child: Padding(
-              padding: const EdgeInsets.symmetric(vertical: AppSpacing.xs),
-              child: Column(mainAxisSize: MainAxisSize.min, children: [
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: AppSpacing.md, vertical: AppSpacing.xs),
-                  decoration: BoxDecoration(
-                    color: selected ? scheme.primaryContainer : scheme.surface,
-                    borderRadius: AppRadius.buttonAll,
-                  ),
-                  child: Icon(icon, size: AppSizes.icon, color: color),
-                ),
-                const SizedBox(height: AppSpacing.xs),
-                FittedBox(
-                  fit: BoxFit.scaleDown,
-                  child: Text(
-                    label,
-                    textAlign: TextAlign.center,
-                    style: theme.textTheme.labelMedium?.copyWith(
-                        color: color,
-                        fontWeight:
-                            selected ? FontWeight.w700 : FontWeight.w600),
-                  ),
-                ),
-              ]),
-            ),
-          ),
-        ),
-      ),
-    );
+      );
+    }
+    return Scaffold(
+        body: content,
+        bottomNavigationBar: Material(
+            color: Theme.of(context).scaffoldBackgroundColor,
+            child: SafeArea(
+                top: false,
+                child: Padding(
+                    padding:
+                        const EdgeInsets.symmetric(vertical: AppSpacing.sm),
+                    child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          for (final (index, (icon, label))
+                              in destinations.indexed)
+                            Expanded(
+                                child: Semantics(
+                                    button: true,
+                                    selected: index == selected,
+                                    label: label,
+                                    onTap: () => select(index),
+                                    excludeSemantics: true,
+                                    child: InkWell(
+                                        onTap: () => select(index),
+                                        borderRadius: AppRadius.mdAll,
+                                        child: ConstrainedBox(
+                                            constraints: const BoxConstraints(
+                                                minHeight: AppSizes.minTarget),
+                                            child: Padding(
+                                                padding:
+                                                    const EdgeInsets.symmetric(
+                                                        horizontal:
+                                                            AppSpacing.xs),
+                                                child: Column(
+                                                    mainAxisSize:
+                                                        MainAxisSize.min,
+                                                    children: [
+                                                      Icon(icon,
+                                                          color: index ==
+                                                                  selected
+                                                              ? colors.primary
+                                                              : colors
+                                                                  .onSurfaceVariant,
+                                                          size: AppSizes.icon),
+                                                      const SizedBox(
+                                                          height:
+                                                              AppSpacing.sm),
+                                                      Text(label,
+                                                          textAlign:
+                                                              TextAlign.center,
+                                                          style: Theme.of(
+                                                                  context)
+                                                              .textTheme
+                                                              .bodySmall
+                                                              ?.copyWith(
+                                                                  color: index ==
+                                                                          selected
+                                                                      ? colors
+                                                                          .primary
+                                                                      : colors
+                                                                          .onSurfaceVariant)),
+                                                    ])))))),
+                        ])))));
   }
 }

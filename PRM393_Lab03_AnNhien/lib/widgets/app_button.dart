@@ -33,7 +33,8 @@ class AppButton extends StatelessWidget {
     required this.onPressed,
     this.kind = AppButtonKind.primary,
     this.busy = false,
-    this.wrapLabel = false,
+    this.wrapLabel = true,
+    this.trailingIcon = false,
   });
 
   final String label;
@@ -41,33 +42,42 @@ class AppButton extends StatelessWidget {
   final VoidCallback? onPressed;
   final AppButtonKind kind;
   final bool busy;
+
+  /// Compatibility with existing callers; TYPE-01 always wraps essential labels.
   final bool wrapLabel;
+  final bool trailingIcon;
 
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    final child = busy
-        ? const SizedBox.square(
+    final child = Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        if (busy) ...[
+          const SizedBox.square(
             dimension: AppSizes.spinnerInButton,
-            child: CircularProgressIndicator(strokeWidth: AppSizes.spinnerStroke),
-          )
-        : Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(icon, size: AppSizes.icon),
-              const SizedBox(width: AppSpacing.md),
-              Flexible(
-                  child: Text(label,
-                      textAlign: TextAlign.center,
-                      overflow: wrapLabel ? null : TextOverflow.ellipsis,
-                      softWrap: wrapLabel ? true : null)),
-            ],
-          );
+            child:
+                CircularProgressIndicator(strokeWidth: AppSizes.spinnerStroke),
+          ),
+          const SizedBox(width: AppSpacing.md),
+        ] else if (!trailingIcon) ...[
+          Icon(icon, size: AppSizes.icon),
+          const SizedBox(width: AppSpacing.md),
+        ],
+        Flexible(
+            child: Text(label, textAlign: TextAlign.center, softWrap: true)),
+        if (trailingIcon && !busy) ...[
+          const SizedBox(width: AppSpacing.lg),
+          Icon(icon, size: AppSizes.icon),
+        ],
+      ],
+    );
     final action = busy ? null : onPressed;
     final button = switch (kind) {
       AppButtonKind.primary => FilledButton(onPressed: action, child: child),
-      AppButtonKind.secondary => OutlinedButton(onPressed: action, child: child),
+      AppButtonKind.secondary =>
+        OutlinedButton(onPressed: action, child: child),
       AppButtonKind.tonal => FilledButton.tonal(
           onPressed: action,
           style: FilledButton.styleFrom(
@@ -79,7 +89,8 @@ class AppButton extends StatelessWidget {
       AppButtonKind.text => TextButton(onPressed: action, child: child),
       AppButtonKind.danger => FilledButton(
           onPressed: action,
-          style: FilledButton.styleFrom(backgroundColor: scheme.error, foregroundColor: scheme.onError),
+          style: FilledButton.styleFrom(
+              backgroundColor: scheme.error, foregroundColor: scheme.onError),
           child: child,
         ),
       AppButtonKind.dangerOutline => OutlinedButton(
@@ -95,6 +106,9 @@ class AppButton extends StatelessWidget {
       button: true,
       enabled: action != null,
       label: label,
+      value: busy ? 'Đang xử lý' : null,
+      liveRegion: busy,
+      onTap: action,
       excludeSemantics: true,
       child: SizedBox(width: double.infinity, child: button),
     );

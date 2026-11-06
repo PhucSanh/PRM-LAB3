@@ -51,7 +51,7 @@ class _SuggestionDemoScreenState extends ConsumerState<SuggestionDemoScreen> {
                       : all.where((s) => s.id == widget.suggestionId).toList();
                   return list.isEmpty
                       ? const EmptyView(
-                          icon: Icons.event_available,
+                          icon: Icons.event_available_rounded,
                           title: 'Chưa có gợi ý mới')
                       : Column(children: [
                           for (final suggestion in list)
@@ -110,7 +110,7 @@ class _SuggestionDemoScreenState extends ConsumerState<SuggestionDemoScreen> {
                               if (reviewing.contains(suggestion.id))
                                 AppButton(
                                     label: 'Thêm việc đã chọn vào lịch',
-                                    icon: Icons.check,
+                                    icon: Icons.check_rounded,
                                     wrapLabel: true,
                                     busy: s.busy,
                                     onPressed: () async {
@@ -148,7 +148,7 @@ class _SuggestionDemoScreenState extends ConsumerState<SuggestionDemoScreen> {
                                     }),
                               AppButton(
                                   label: 'Bỏ qua',
-                                  icon: Icons.close,
+                                  icon: Icons.close_rounded,
                                   kind: AppButtonKind.secondary,
                                   wrapLabel: true,
                                   onPressed: s.busy

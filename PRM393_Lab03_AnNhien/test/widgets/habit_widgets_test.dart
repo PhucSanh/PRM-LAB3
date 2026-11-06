@@ -7,7 +7,17 @@ import 'package:flutter_test/flutter_test.dart';
 
 import 'harness.dart';
 
-const _keys = ['move', 'purpose', 'downshift', 'eighty', 'plant', 'tea', 'belong', 'family', 'tribe'];
+const _keys = [
+  'move',
+  'purpose',
+  'downshift',
+  'eighty',
+  'plant',
+  'tea',
+  'belong',
+  'family',
+  'tribe'
+];
 
 void main() {
   group('HabitStyle', () {
@@ -38,44 +48,61 @@ void main() {
   });
 
   group('HabitBadge', () {
-    testWidgets('đủ 9 khoá không lỗi: nền dịu + icon đậm + TalkBack đọc tên', (tester) async {
+    testWidgets('đủ 9 khoá không lỗi: nền dịu + icon đậm + TalkBack đọc tên',
+        (tester) async {
       final semantics = tester.ensureSemantics();
       await pumpHarness(
         tester,
-        Wrap(spacing: AppSpacing.sm, children: [for (final k in _keys) HabitBadge(habitKey: k)]),
+        Wrap(
+            spacing: AppSpacing.sm,
+            children: [for (final k in _keys) HabitBadge(habitKey: k)]),
       );
       expect(tester.takeException(), isNull);
       for (final k in _keys) {
-        final badge = find.byWidgetPredicate((w) => w is HabitBadge && w.habitKey == k);
-        final box = tester.widget<Container>(find.descendant(of: badge, matching: find.byType(Container)));
-        expect((box.decoration! as BoxDecoration).color, HabitPalette.of(k).bg, reason: k);
-        final icon = tester.widget<Icon>(find.descendant(of: badge, matching: find.byType(Icon)));
+        final badge =
+            find.byWidgetPredicate((w) => w is HabitBadge && w.habitKey == k);
+        final box = tester.widget<Container>(
+            find.descendant(of: badge, matching: find.byType(Container)));
+        expect((box.decoration! as BoxDecoration).color, HabitPalette.of(k).bg,
+            reason: k);
+        final icon = tester.widget<Icon>(
+            find.descendant(of: badge, matching: find.byType(Icon)));
         expect(icon.icon, HabitStyle.iconOf(k));
         expect(icon.color, HabitPalette.of(k).fg);
         expect(tester.getSize(badge), const Size.square(AppSizes.habitIcon));
-        expect(tester.getSemantics(badge), isSemantics(label: HabitStyle.nameOf(k), isImage: true));
+        expect(tester.getSemantics(badge),
+            isSemantics(label: HabitStyle.nameOf(k), isImage: true));
       }
       semantics.dispose();
     });
 
-    testWidgets('size 72 → icon 48 (S16)', (tester) async {
-      await pumpHarness(tester, const Center(child: HabitBadge(habitKey: 'tea', size: AppSizes.minTarget)));
-      expect(tester.widget<Icon>(find.byType(Icon)).size, 48);
+    testWidgets('large badge keeps icon proportional to the touch target',
+        (tester) async {
+      await pumpHarness(
+          tester,
+          const Center(
+              child: HabitBadge(habitKey: 'tea', size: AppSizes.minTarget)));
+      expect(
+          tester.widget<Icon>(find.byType(Icon)).size, AppSizes.minTarget / 2);
     });
   });
 
   group('HabitTile', () {
     testWidgets('S08: tên mặc định + mũi tên ›, bấm gọi onTap', (tester) async {
       var taps = 0;
-      await pumpHarness(tester, HabitTile(habitKey: 'plant', onTap: () => taps++));
+      await pumpHarness(
+          tester, HabitTile(habitKey: 'plant', onTap: () => taps++));
       expect(find.text('Ăn nhiều rau, đậu'), findsOneWidget);
       expect(find.byIcon(AppIcons.chevronRight), findsOneWidget);
-      expect(tester.getSize(find.byType(HabitTile)).height, greaterThanOrEqualTo(AppSizes.minTarget));
+      expect(tester.getSize(find.byType(HabitTile)).height,
+          greaterThanOrEqualTo(AppSizes.minTarget));
       await tester.tap(find.text('Ăn nhiều rau, đậu'));
       expect(taps, 1);
     });
 
-    testWidgets('S05: selected có dấu + "Đã chọn", không chọn có "Chọn"; Semantics checked', (tester) async {
+    testWidgets(
+        'S05: selected có dấu + "Đã chọn", không chọn có "Chọn"; Semantics checked',
+        (tester) async {
       final semantics = tester.ensureSemantics();
       await pumpHarness(
         tester,
@@ -87,7 +114,12 @@ void main() {
             selected: true,
             onTap: () {},
           ),
-          HabitTile(habitKey: 'family', name: 'Gọi người thân', icon: AppIcons.phone, selected: false, onTap: () {}),
+          HabitTile(
+              habitKey: 'family',
+              name: 'Gọi người thân',
+              icon: AppIcons.phone,
+              selected: false,
+              onTap: () {}),
         ]),
       );
       expect(find.text('Đã chọn'), findsOneWidget);
@@ -95,14 +127,19 @@ void main() {
       expect(find.byIcon(AppIcons.phone), findsOneWidget);
       expect(
         tester.getSemantics(find.byType(HabitTile).first),
-        isSemantics(label: 'Đi bộ nhẹ nhàng', hint: 'Vận động theo sức của Bác', isChecked: true, isButton: true),
+        isSemantics(
+            label: 'Đi bộ nhẹ nhàng',
+            hint: 'Vận động theo sức của Bác',
+            isChecked: true,
+            isButton: true),
       );
       semantics.dispose();
     });
   });
 
   for (final (width, scale) in [(360.0, 1.3), (360.0, 2.0), (412.0, 2.0)]) {
-    testWidgets('$width dp × $scale: 9 HabitTile có mô tả không tràn', (tester) async {
+    testWidgets('$width dp × $scale: 9 HabitTile có mô tả không tràn',
+        (tester) async {
       await pumpHarness(
         tester,
         ListView(padding: AppSpacing.screenPadding, children: [

@@ -34,7 +34,9 @@ List<PlannedReminder> planReminders(
     final t = o.task;
     if (!t.remind ||
         [TaskStatus.done, TaskStatus.skipped].contains(t.status) ||
-        !t.occursOn(o.date)) {
+        (!t.occursOn(o.date) &&
+            !(t.occurrenceDate == dateKey(o.date) &&
+                t.rescheduleSourceDate != null))) {
       continue;
     }
     final time = DateTime.utc(
@@ -55,6 +57,19 @@ List<PlannedReminder> planReminders(
   return result;
 }
 
+/// Android channels are immutable once created: use one stable channel per
+/// vibration choice so changing preference affects new/rescheduled reminders.
+NotificationDetails reminderNotificationDetails(bool vibrate) =>
+    NotificationDetails(
+        android: AndroidNotificationDetails(
+            vibrate ? 'an_nhien_reminders' : 'an_nhien_reminders_no_vibration',
+            vibrate ? 'Nhắc việc An Nhiên' : 'Nhắc việc không rung',
+            channelDescription: 'Lời nhắc sinh hoạt và lời nhắc thử',
+            enableVibration: vibrate,
+            importance: Importance.high,
+            priority: Priority.high,
+            icon: 'ic_notification'));
+
 /// Android native notification service. Inexact alarms avoid a special alarm
 /// permission; Android may delay delivery under battery saving.
 class LocalReminderService implements ReminderService {
@@ -69,13 +84,8 @@ class LocalReminderService implements ReminderService {
   Future<void> _queue = Future.value();
   Future<void> Function()? onPermissionGranted;
   int _generation = 0;
-  static const _details = NotificationDetails(
-      android: AndroidNotificationDetails(
-          'an_nhien_reminders', 'Nhắc việc An Nhiên',
-          channelDescription: 'Lời nhắc sinh hoạt và lời nhắc thử',
-          importance: Importance.high,
-          priority: Priority.high,
-          icon: 'ic_notification'));
+  bool vibrate = true;
+  NotificationDetails get _details => reminderNotificationDetails(vibrate);
   Future<void> init() => _ready ??= (() async {
         tzdata.initializeTimeZones();
         await sdk.initialize(
@@ -113,8 +123,9 @@ class LocalReminderService implements ReminderService {
           title: 'Lời nhắc',
           body: 'Đến giờ xem việc của Bác.',
           receivedAt: DateTime.now(),
-          route:
-              id == 'test' ? '/inbox' : '/reminder/${Uri.encodeComponent(id)}');
+          route: id == 'test'
+              ? '/inbox'
+              : '/reminder/${Uri.encodeComponent(id)}${data['date'] is String ? '?date=${Uri.encodeComponent(data['date'] as String)}' : ''}');
       if (_opened.hasListener) {
         _opened.add(item);
       } else {

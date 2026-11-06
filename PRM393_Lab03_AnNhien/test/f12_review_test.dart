@@ -311,6 +311,7 @@ void main() {
                           entry: SuggestionEntry.fromQuery(
                               s.uri.queryParameters['from']))),
                 ]),
+            GoRoute(path: '/calendar', builder: (_, __) => const Text('S03')),
             GoRoute(path: '/family', builder: (_, __) => const Text('S09')),
             GoRoute(
                 path: '/week/:date',

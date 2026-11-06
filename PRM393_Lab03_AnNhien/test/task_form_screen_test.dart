@@ -1,3 +1,5 @@
+import 'package:an_nhien/services/providers.dart';
+import 'package:an_nhien/services/remote_config_service.dart';
 import 'package:an_nhien/screens/tasks/task_form_screens.dart';
 import 'package:an_nhien/theme/app_theme.dart';
 import 'package:flutter/material.dart';
@@ -10,6 +12,10 @@ void main() {
       await tester.binding.setSurfaceSize(Size(width, 800));
       addTearDown(() => tester.binding.setSurfaceSize(null));
       await tester.pumpWidget(ProviderScope(
+          overrides: [
+            remoteConfigServiceProvider
+                .overrideWithValue(FakeRemoteConfigService())
+          ],
           child: MaterialApp(
               theme: AppTheme.light(), home: const ActivitySelectionScreen())));
       await tester.pump();
@@ -30,7 +36,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Đã lưu xong!'), findsOneWidget);
-    expect(find.text('Về trang Hôm nay'), findsOneWidget);
+    expect(find.text('Về trang chủ'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 }

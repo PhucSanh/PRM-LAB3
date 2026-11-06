@@ -2,10 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../theme/app_spacing.dart';
+import '../../theme/app_typography.dart';
 import '../../viewmodels/sign_in_view_model.dart';
 import '../../viewmodels/account_view_model.dart';
 import '../../widgets/app_button.dart';
-import '../../widgets/brand_mark.dart';
+import '../../widgets/botanical_scene.dart';
 
 /// A01 (đã đổi theo đề Lab 3: đăng nhập Google) – chủ: B – Hiếu.
 /// Ghi thay đổi này vào docs/design-traceability.md và sửa Figma.
@@ -30,9 +31,9 @@ class SignInScreen extends ConsumerWidget {
               child: IntrinsicHeight(
                 child: Column(children: [
                   const Spacer(),
-                  const BrandMark(),
+                  const BotanicalScene(height: 260, welcome: true),
                   const SizedBox(height: AppSpacing.base),
-                  Text('An Nhiên', style: t.displaySmall),
+                  const Text('An Nhiên', style: AppTypography.welcomeWordmark),
                   const SizedBox(height: AppSpacing.sm),
                   Text('Nhẹ nhàng chăm sóc mỗi ngày.',
                       style: t.bodyMedium?.copyWith(
@@ -53,7 +54,7 @@ class SignInScreen extends ConsumerWidget {
                   AppButton(
                     label: 'Tiếp tục với Google',
                     wrapLabel: true,
-                    icon: Icons.login,
+                    icon: Icons.login_rounded,
                     busy: state.busy || signOut.busy,
                     onPressed: () => ref
                         .read(signInViewModelProvider.notifier)

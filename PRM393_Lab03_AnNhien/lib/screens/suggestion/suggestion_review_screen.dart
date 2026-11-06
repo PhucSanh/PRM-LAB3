@@ -9,11 +9,12 @@ import '../../theme/app_spacing.dart';
 import '../../viewmodels/suggestion_review_view_model.dart';
 import '../../viewmodels/ui_state.dart';
 import '../../widgets/app_back_bar.dart';
+import '../../widgets/velora_parts.dart';
 import '../../widgets/app_button.dart';
 import '../../widgets/choice_group.dart';
 import '../../widgets/form_parts.dart';
 import '../../widgets/habit_widgets.dart';
-import '../../widgets/read_aloud_button.dart';
+import '../../widgets/read_aloud_control.dart';
 import '../../widgets/state_views.dart';
 import '../../widgets/task_widgets.dart';
 import '../../widgets/time_field.dart';
@@ -38,7 +39,7 @@ class SuggestionReviewScreen extends ConsumerWidget {
     final fromFamily = entry == SuggestionEntry.family;
 
     /// Mở từ Gia đình → về Gia đình (chữ Figma); nơi khác → về Hôm nay (DT-31).
-    void leave() => context.go(fromFamily ? '/family' : '/today');
+    void leave() => context.go(fromFamily ? '/family' : '/calendar');
 
     // Màn kết quả (G05 / G07 / G09) ghi "Quay lại Gia đình", màn xem / chọn ghi "Gia đình".
     final result = switch (state) {
@@ -53,7 +54,7 @@ class SuggestionReviewScreen extends ConsumerWidget {
         fromFamily ? (result ? 'Quay lại Gia đình' : 'Gia đình') : 'Quay lại';
 
     return Scaffold(
-      appBar: AppBackBar(backLabel: backLabel, onBack: leave),
+      appBar: AppBackBar.adaptive(context, backLabel: backLabel, onBack: leave),
       body: SafeArea(
         child: switch (state) {
           UiLoading() => const LoadingView(message: 'Đang mở gợi ý…'),
@@ -64,9 +65,9 @@ class SuggestionReviewScreen extends ConsumerWidget {
               title: 'Gợi ý này không còn',
               message: 'Có thể Bác đã nhận rồi, hoặc gợi ý đã bị xoá.',
               action: AppButton(
-                  label: 'Về Hôm nay',
+                  label: 'Về trang chủ',
                   icon: AppIcons.tabToday,
-                  onPressed: () => context.go('/today')),
+                  onPressed: () => context.go('/calendar')),
             ),
           UiData(:final data) => switch (data.step) {
               SuggestionReviewStep.changingTime =>
@@ -91,8 +92,8 @@ class SuggestionReviewScreen extends ConsumerWidget {
   }
 }
 
-/// Nội dung cuộn + thanh đáy ghim. Thanh đáy = lỗi (cuộn) · nút chính (luôn thấy) · nút phụ (cuộn khi
-/// chữ lớn). Bottom nav do shell vẽ.
+/// Nội dung, lỗi và hành động phụ cuộn cùng nhau; chỉ ghim CTA chính để
+/// chữ lớn vẫn còn không gian đọc và thao tác. Bottom nav do shell vẽ.
 class _Layout extends StatelessWidget {
   const _Layout(
       {required this.body,
@@ -112,73 +113,31 @@ class _Layout extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    return LayoutBuilder(
-      builder: (context, constraints) => Column(children: [
-        Expanded(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.all(AppSpacing.screen),
-            child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  for (final (i, child) in body.indexed) ...[
-                    if (i > 0)
-                      const SizedBox(height: AppSpacing.betweenTargets),
-                    child,
-                  ],
-                ]),
-          ),
+    return Column(children: [
+      Expanded(
+        child: VeloraDetailBody(children: [
+          for (final (i, child) in [...body, ...secondary].indexed) ...[
+            if (i > 0) const SizedBox(height: AppSpacing.betweenTargets),
+            child,
+          ],
+          if (error != null) ...[
+            const SizedBox(height: AppSpacing.sm),
+            FieldMessage.error(error!),
+            if (errorHint != null) FieldMessage.hint(errorHint!),
+          ],
+        ]),
+      ),
+      DecoratedBox(
+        decoration: BoxDecoration(
+          color: theme.scaffoldBackgroundColor,
         ),
-        DecoratedBox(
-          decoration: BoxDecoration(
-            color: theme.scaffoldBackgroundColor,
-            border: Border(
-                top: BorderSide(color: theme.colorScheme.outlineVariant)),
-          ),
-          child: ConstrainedBox(
-            constraints: BoxConstraints(maxHeight: constraints.maxHeight * 0.6),
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(AppSpacing.screen,
-                  AppSpacing.md, AppSpacing.screen, AppSpacing.md),
-              child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    if (error != null) ...[
-                      Flexible(
-                          child: SingleChildScrollView(
-                              child: Column(
-                                  crossAxisAlignment:
-                                      CrossAxisAlignment.stretch,
-                                  children: [
-                            FieldMessage.error(error!),
-                            if (errorHint != null) ...[
-                              const SizedBox(height: AppSpacing.xs),
-                              FieldMessage.hint(errorHint!),
-                            ],
-                          ]))),
-                      const SizedBox(height: AppSpacing.sm),
-                    ],
-                    primary,
-                    if (secondary.isNotEmpty)
-                      Flexible(
-                        child: SingleChildScrollView(
-                          child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.stretch,
-                              children: [
-                                for (final child in secondary) ...[
-                                  const SizedBox(
-                                      height: AppSpacing.betweenTargets),
-                                  child,
-                                ],
-                              ]),
-                        ),
-                      ),
-                  ]),
-            ),
-          ),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(
+              horizontal: AppSpacing.screen, vertical: AppSpacing.md),
+          child: primary,
         ),
-      ]),
-    );
+      ),
+    ]);
   }
 }
 
@@ -200,9 +159,8 @@ class _Quote extends StatelessWidget {
     final scheme = theme.colorScheme;
     return DecoratedBox(
       decoration: BoxDecoration(
-        color: scheme.surface,
+        color: scheme.secondaryContainer,
         borderRadius: AppRadius.cardAll,
-        border: Border.all(color: scheme.outlineVariant),
       ),
       child: Padding(
         padding: const EdgeInsets.all(AppSpacing.base),
@@ -233,8 +191,7 @@ List<Widget> _head(BuildContext context, SuggestionReview data, String title) {
         header: true,
         child: Text(title, style: theme.textTheme.headlineMedium)),
     _Quote(data.suggestion),
-    // TODO(F5 – Khang): nối SpeechService để đọc to; chưa có TTS nên nút tạm tắt (DT-31).
-    const ReadAloudButton(onPressed: null),
+    ReadAloudControl(text: _spokenSuggestion(data)),
     Text('${data.remaining.length} việc gợi ý',
         style: theme.textTheme.titleMedium),
   ];
@@ -381,8 +338,7 @@ class _Accepted extends StatelessWidget {
             textAlign: TextAlign.center,
             style: theme.textTheme.bodyLarge
                 ?.copyWith(color: scheme.onSurfaceVariant)),
-        // TODO(F5 – Khang): nối SpeechService (DT-31).
-        const ReadAloudButton(onPressed: null),
+        ReadAloudControl(text: _spokenSuggestion(data)),
         Text('$n việc đã nhận', style: theme.textTheme.titleMedium),
         for (final i in data.acceptedNow)
           TaskRow(
@@ -488,8 +444,7 @@ class _Choose extends StatelessWidget {
             child:
                 Text('Chọn từng việc', style: theme.textTheme.headlineMedium)),
         _Quote(s),
-        // TODO(F5 – Khang): nối SpeechService (DT-31).
-        const ReadAloudButton(onPressed: null),
+        ReadAloudControl(text: _spokenSuggestion(data)),
         Text('Bác muốn nhận việc nào?', style: theme.textTheme.titleMedium),
         for (final i in data.remaining)
           HabitTile(
@@ -555,8 +510,7 @@ class _Dismissed extends StatelessWidget {
             textAlign: TextAlign.center,
             style: theme.textTheme.bodyLarge
                 ?.copyWith(color: scheme.onSurfaceVariant)),
-        // TODO(F5 – Khang): nối SpeechService (DT-31).
-        const ReadAloudButton(onPressed: null),
+        ReadAloudControl(text: _spokenSuggestion(data)),
         Text('$n việc đã bỏ qua', style: theme.textTheme.titleMedium),
         for (final i in data.remaining)
           TaskRow(
@@ -589,3 +543,9 @@ class _Dismissed extends StatelessWidget {
     );
   }
 }
+
+String _spokenSuggestion(SuggestionReview data) => [
+      'Gợi ý của ${data.suggestion.fromName}. ${data.suggestion.message}',
+      for (var i = 0; i < data.suggestion.items.length; i++)
+        '${data.itemAt(i).title}, ${data.times[i].hour} giờ ${data.times[i].minute} phút, ${data.dayLabel}.',
+    ].join(' ');

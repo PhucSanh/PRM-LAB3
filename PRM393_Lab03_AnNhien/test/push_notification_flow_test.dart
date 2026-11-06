@@ -1,12 +1,12 @@
+import 'package:an_nhien/services/suggestion_service.dart' as incoming;
+import 'package:an_nhien/models/suggestion.dart';
 import 'dart:async';
 import 'package:an_nhien/app.dart';
 import 'package:an_nhien/models/app_notification.dart';
 import 'package:an_nhien/models/notification_target.dart';
-import 'package:an_nhien/models/task_item.dart';
 import 'package:an_nhien/router/app_router.dart';
 import 'package:an_nhien/screens/firebase_demo/inbox_screen.dart';
 import 'package:an_nhien/services/messaging_service.dart';
-import 'package:an_nhien/services/caregiver_suggestion_service.dart' as family;
 import 'package:an_nhien/theme/app_theme.dart';
 import 'package:an_nhien/viewmodels/caregiver_schedule_view_model.dart';
 import 'package:an_nhien/viewmodels/inbox_view_model.dart';
@@ -148,26 +148,28 @@ void main() {
   testWidgets(
       'real suggestion push opens matching backend flow, not F12 sample',
       (tester) async {
-    final suggestions = family.FakeSuggestionService();
-    await suggestions.send('demo-mom', 'real', [
-      TaskItem(
-          id: 'walk',
-          title: 'Lịch thật từ con',
-          habitKey: 'move',
-          hour: 8,
-          minute: 0,
-          startDate: dateKey(vietnamToday()))
-    ]);
-    await suggestions.send('demo-mom', 'other', [
-      TaskItem(
-          id: 'tea',
-          title: 'Gợi ý khác',
-          habitKey: 'tea',
-          hour: 15,
-          minute: 0,
-          startDate: dateKey(vietnamToday()))
-    ]);
-    final c = demoContainer(suggestions: suggestions);
+    final suggestions = incoming.FakeSuggestionService(delay: Duration.zero);
+    for (final (id, title) in [
+      ('real', 'Lịch thật từ con'),
+      ('other', 'Gợi ý khác')
+    ]) {
+      await suggestions.send(
+          'demo-user',
+          Suggestion(
+              id: id,
+              fromUid: 'child',
+              fromName: 'Mai',
+              createdAt: vietnamToday(),
+              items: [
+                SuggestionItem(
+                    title: title,
+                    habitKey: 'move',
+                    date: vietnamToday(),
+                    hour: 8,
+                    minute: 0)
+              ]));
+    }
+    final c = demoContainer(incomingSuggestions: suggestions);
     await tester.pumpWidget(
         UncontrolledProviderScope(container: c, child: const AnNhienApp()));
     await tester.pumpAndSettle();
@@ -175,20 +177,15 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('Lịch thật từ con'), findsOneWidget);
     expect(find.text('Gợi ý khác'), findsNothing);
-    final review = find.text('Xem lại lựa chọn');
-    await tester.scrollUntilVisible(review, 150,
-        scrollable: find.byType(Scrollable).first);
-    await tester.pumpAndSettle();
-    await tester.tap(review);
-    await tester.pumpAndSettle();
-    expect(suggestions.acceptedTasks, isEmpty);
-    final accept = find.text('Thêm việc đã chọn vào lịch');
-    await tester.scrollUntilVisible(accept, 150,
-        scrollable: find.byType(Scrollable).first);
+    final accept = find.text('Thêm vào lịch');
+    await tester.ensureVisible(accept);
     await tester.pumpAndSettle();
     await tester.tap(accept);
     await tester.pumpAndSettle();
-    expect(suggestions.acceptedTasks.single.title, 'Lịch thật từ con');
+    expect((await suggestions.byId('demo-user', 'real'))!.status,
+        SuggestionStatus.accepted);
+    expect((await suggestions.byId('demo-user', 'other'))!.status,
+        SuggestionStatus.pending);
     await tester.pumpWidget(const SizedBox.shrink());
     c.dispose();
     await suggestions.dispose();

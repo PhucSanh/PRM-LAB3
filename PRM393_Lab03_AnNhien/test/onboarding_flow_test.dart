@@ -72,7 +72,7 @@ void main() {
       GoRoute(
           path: '/setup/first-task',
           builder: (_, __) => const FirstTaskScreen()),
-      GoRoute(path: '/today', builder: (_, __) => const Text('S03 Hôm nay')),
+      GoRoute(path: '/calendar', builder: (_, __) => const Text('S03 Hôm nay')),
     ]);
     addTearDown(router.dispose);
 
@@ -92,7 +92,7 @@ void main() {
 
   /// S01 → S02 xác nhận tên.
   Future<void> throughWelcome(WidgetTester tester) async {
-    expect(find.text('Chào mừng Bác!'), findsOneWidget);
+    expect(find.text('An Nhiên'), findsOneWidget);
     await tapText(tester, 'Bắt đầu');
     expect(find.text('Bác là Lan, đúng không?'), findsOneWidget);
   }

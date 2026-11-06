@@ -1,3 +1,5 @@
+import '../services/suggestion_service.dart';
+import 'calm_feature_providers.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../models/suggestion.dart';
@@ -304,9 +306,11 @@ class SuggestionReviewViewModel extends Notifier<UiState<SuggestionReview>> {
     ];
     final saved = <TaskItem>[];
     try {
-      for (final task in toSave) {
-        await tasks.save(task);
-        saved.add(task);
+      if (ref.read(suggestionServiceProvider) is! AtomicSuggestionService) {
+        for (final task in toSave) {
+          await tasks.save(task);
+          saved.add(task);
+        }
       }
       await ref
           .read(suggestionServiceProvider)
@@ -325,6 +329,7 @@ class SuggestionReviewViewModel extends Notifier<UiState<SuggestionReview>> {
       return false;
     }
     if (!ref.mounted) return false;
+    ref.invalidate(calendarTasksProvider);
     final next = [
       for (var i = 0; i < s.items.length; i++)
         indexes.contains(i)
@@ -344,7 +349,9 @@ class SuggestionReviewViewModel extends Notifier<UiState<SuggestionReview>> {
               : SuggestionReviewStep.acceptedPartial,
           acceptedNow: indexes,
         ));
-    await _scheduleReminders(toSave);
+    if (ref.read(suggestionServiceProvider) is! AtomicSuggestionService) {
+      await _scheduleReminders(toSave);
+    }
     await _log('accept_suggestion', {
       'count': indexes.length,
       'changed_time': indexes.any(data.changedTime),

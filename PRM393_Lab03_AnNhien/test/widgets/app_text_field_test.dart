@@ -2,6 +2,7 @@ import 'package:an_nhien/theme/app_spacing.dart';
 import 'package:an_nhien/theme/app_icons.dart';
 import 'package:an_nhien/widgets/app_text_field.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/semantics.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'harness.dart';
@@ -32,11 +33,12 @@ class _FormState extends State<_Form> {
         hint: 'Đi bộ buổi sáng',
         controller: _controller,
         errorText: _error,
-        icon: Icons.edit_outlined,
+        icon: Icons.edit_rounded,
         onChanged: (_) => setState(() => _error = null),
       ),
       TextButton(
-        onPressed: () => setState(() => _error = _controller.text.trim().isEmpty ? 'Bác chưa nhập tên việc.' : null),
+        onPressed: () => setState(() => _error =
+            _controller.text.trim().isEmpty ? 'Bác chưa nhập tên việc.' : null),
         child: const Text('Kiểm tra'),
       ),
     ]);
@@ -45,20 +47,41 @@ class _FormState extends State<_Form> {
 
 void main() {
   group('AppTextField', () {
-    testWidgets('nhãn trên ô, gợi ý tự thêm "Ví dụ: ", ô cao ≥ 72', (tester) async {
+    testWidgets('nhãn trên ô, gợi ý tự thêm "Ví dụ: ", ô cao ≥ 72',
+        (tester) async {
       await pumpHarness(tester, const _Form());
       expect(find.text('Tên việc'), findsOneWidget);
       expect(find.text('Ví dụ: Đi bộ buổi sáng'), findsOneWidget);
-      expect(tester.getSize(find.byType(TextField)).height, greaterThanOrEqualTo(AppSizes.minTarget));
-      expect(tester.getTopLeft(find.text('Tên việc')).dy, lessThan(tester.getTopLeft(find.byType(TextField)).dy));
+      expect(tester.getSize(find.byType(TextField)).height,
+          greaterThanOrEqualTo(AppSizes.minTarget));
+      expect(tester.getTopLeft(find.text('Tên việc')).dy,
+          lessThan(tester.getTopLeft(find.byType(TextField)).dy));
+    });
+
+    testWidgets('editable semantics carries its visible field label',
+        (tester) async {
+      final handle = tester.ensureSemantics();
+      await pumpHarness(tester, const AppTextField(label: 'Tên việc'));
+      await tester.tap(find.byType(TextField));
+      await tester.pumpAndSettle();
+      final node = tester.getSemantics(find.bySemanticsLabel('Tên việc').last);
+      expect(node.label, contains('Tên việc'));
+      expect(
+          node.getSemanticsData().hasAction(SemanticsAction.setText), isTrue);
+      handle.dispose();
     });
 
     testWidgets('không lặp "Ví dụ" khi gợi ý đã có sẵn', (tester) async {
-      await pumpHarness(tester, const AppTextField(label: 'Số điện thoại', hint: 'Ví dụ: 0912 345 678'));
+      await pumpHarness(
+          tester,
+          const AppTextField(
+              label: 'Số điện thoại', hint: 'Ví dụ: 0912 345 678'));
       expect(find.text('Ví dụ: 0912 345 678'), findsOneWidget);
     });
 
-    testWidgets('nhập lỗi → hiện errorText có icon, liveRegion; gõ lại thì hết lỗi', (tester) async {
+    testWidgets(
+        'nhập lỗi → hiện errorText có icon, liveRegion; gõ lại thì hết lỗi',
+        (tester) async {
       final semantics = tester.ensureSemantics();
       await pumpHarness(tester, const _Form());
       await tester.tap(find.text('Kiểm tra'));
@@ -79,14 +102,16 @@ void main() {
     });
 
     for (final (width, scale) in [(360.0, 1.3), (360.0, 2.0), (412.0, 2.0)]) {
-      testWidgets('$width dp × $scale: có lỗi + gợi ý không tràn', (tester) async {
+      testWidgets('$width dp × $scale: có lỗi + gợi ý không tràn',
+          (tester) async {
         await pumpHarness(
           tester,
           ListView(padding: AppSpacing.screenPadding, children: const [
             AppTextField(
               label: 'Số điện thoại người thân (không bắt buộc)',
               hint: '0912 345 678',
-              errorText: 'Bác chưa nhập số điện thoại. Bấm “Chọn từ danh bạ” ở trên cho nhanh.',
+              errorText:
+                  'Bác chưa nhập số điện thoại. Bấm “Chọn từ danh bạ” ở trên cho nhanh.',
               keyboardType: TextInputType.phone,
             ),
           ]),

@@ -7,6 +7,7 @@ environment:
   sdk: ^3.5.0
 
 dependencies:
+  clock: ^1.1.2
   cloud_firestore: ^7.1.0
   cloud_functions: ^7.0.1
   firebase_analytics: ^13.0.1
@@ -44,9 +45,19 @@ flutter:
           weight: 600
         - asset: assets/fonts/BeVietnamPro-Bold.ttf
           weight: 700
+    - family: NotoSerif
+      fonts:
+        - asset: assets/fonts/NotoSerif-Regular.ttf
+    - family: NotoSerifDisplay
+      fonts:
+        - asset: assets/fonts/NotoSerifDisplay-Regular.ttf
+          weight: 400
+        - asset: assets/fonts/NotoSerifDisplay-Bold.ttf
+          weight: 700
   assets:
     - assets/caregiver/
     - assets/fonts/DejaVuSans.ttf
+    - assets/fonts/NotoSerifDisplay-LICENSE.txt
   # TODO(A – Sanh, F0): thêm font Be Vietnam Pro vào assets/fonts/ rồi mở khối dưới.
   # fonts:
   #   - family: BeVietnamPro

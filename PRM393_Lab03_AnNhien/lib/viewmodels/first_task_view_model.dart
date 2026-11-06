@@ -1,3 +1,4 @@
+import 'calm_feature_providers.dart';
 import 'package:flutter/material.dart' show TimeOfDay;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -140,6 +141,7 @@ class FirstTaskViewModel extends Notifier<UiState<FirstTaskData>> {
       return false;
     }
     if (!ref.mounted) return false;
+    ref.invalidate(calendarTasksProvider);
     _hasFirstTask = true;
     _update((d) => d.copyWith(saving: false, step: FirstTaskStep.saved));
     await _scheduleReminder(task);

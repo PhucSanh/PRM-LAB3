@@ -14,7 +14,12 @@ enum ChoiceLayout {
 
 /// Một lựa chọn trong [ChoiceGroup].
 class ChoiceOption<T> {
-  const ChoiceOption({required this.value, required this.label, this.description, this.icon, this.previewScale});
+  const ChoiceOption(
+      {required this.value,
+      required this.label,
+      this.description,
+      this.icon,
+      this.previewScale});
 
   final T value;
   final String label;
@@ -60,7 +65,8 @@ class ChoiceGroup<T> extends StatelessWidget {
         ),
     ];
     return switch (layout) {
-      ChoiceLayout.list => Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+      ChoiceLayout.list =>
+        Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
           for (final (i, tile) in tiles.indexed) ...[
             if (i > 0) const SizedBox(height: AppSpacing.betweenTargets),
             tile,
@@ -79,7 +85,11 @@ class ChoiceGroup<T> extends StatelessWidget {
 }
 
 class _ChoiceTile<T> extends StatelessWidget {
-  const _ChoiceTile({required this.option, required this.selected, required this.segmented, required this.onTap});
+  const _ChoiceTile(
+      {required this.option,
+      required this.selected,
+      required this.segmented,
+      required this.onTap});
 
   final ChoiceOption<T> option;
   final bool selected;
@@ -100,17 +110,22 @@ class _ChoiceTile<T> extends StatelessWidget {
     );
     Widget label = Text(
       option.label,
-      style: (option.previewScale != null ? theme.textTheme.bodyMedium : theme.textTheme.titleMedium)
-          ?.copyWith(color: fg, fontWeight: FontWeight.w700),
+      style: (option.previewScale != null
+              ? theme.textTheme.bodyMedium
+              : theme.textTheme.titleMedium)
+          ?.copyWith(color: fg, fontWeight: FontWeight.w600),
       textAlign: segmented ? TextAlign.center : TextAlign.start,
     );
     if (option.previewScale != null) {
       label = MediaQuery(
-        data: MediaQuery.of(context).copyWith(textScaler: TextScaler.linear(option.previewScale!)),
+        data: MediaQuery.of(context)
+            .copyWith(textScaler: TextScaler.linear(option.previewScale!)),
         child: label,
       );
     }
-    final icon = option.icon == null ? null : Icon(option.icon, size: AppSizes.icon, color: fg);
+    final icon = option.icon == null
+        ? null
+        : Icon(option.icon, size: AppSizes.icon, color: fg);
 
     final Widget content;
     if (segmented) {
@@ -126,7 +141,8 @@ class _ChoiceTile<T> extends StatelessWidget {
         const SizedBox(width: AppSpacing.md),
         if (icon != null) ...[icon, const SizedBox(width: AppSpacing.md)],
         Expanded(
-          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          child:
+              Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
             // Nhãn bên trái, "Đang chọn" bên phải; hẹp quá thì "Đang chọn" xuống dòng.
             SizedBox(
               width: double.infinity,
@@ -137,13 +153,16 @@ class _ChoiceTile<T> extends StatelessWidget {
                 children: [
                   label,
                   if (selected)
-                    Text('Đang chọn', style: theme.textTheme.labelMedium?.copyWith(color: scheme.onPrimaryContainer)),
+                    Text('Đang chọn',
+                        style: theme.textTheme.labelMedium
+                            ?.copyWith(color: scheme.onPrimaryContainer)),
                 ],
               ),
             ),
             if (option.description != null) ...[
               const SizedBox(height: AppSpacing.xs),
-              Text(option.description!, style: theme.textTheme.bodyMedium?.copyWith(color: sub)),
+              Text(option.description!,
+                  style: theme.textTheme.bodyMedium?.copyWith(color: sub)),
             ],
           ]),
         ),
@@ -163,7 +182,9 @@ class _ChoiceTile<T> extends StatelessWidget {
         color: selected ? scheme.primaryContainer : scheme.surface,
         shape: RoundedRectangleBorder(
           borderRadius: AppRadius.cardAll,
-          side: BorderSide(color: selected ? scheme.primary : scheme.outline, width: AppSizes.border),
+          side: selected
+              ? BorderSide(color: scheme.primary, width: 1.5)
+              : BorderSide.none,
         ),
         clipBehavior: Clip.antiAlias,
         child: InkWell(
@@ -171,7 +192,8 @@ class _ChoiceTile<T> extends StatelessWidget {
           child: ConstrainedBox(
             constraints: const BoxConstraints(minHeight: AppSizes.minTarget),
             child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.base, vertical: AppSpacing.md),
+              padding: const EdgeInsets.symmetric(
+                  horizontal: AppSpacing.base, vertical: AppSpacing.md),
               child: Center(widthFactor: 1, child: content),
             ),
           ),

@@ -163,6 +163,8 @@ void main() {
     await pumpSetup(tester);
     await tester.tap(find.text('Đúng rồi'));
     await tester.pumpAndSettle();
+    await tester.ensureVisible(find.text('6:00 sáng'));
+    await tester.pumpAndSettle();
     await tester.tap(find.text('6:00 sáng'));
     await tester.pumpAndSettle();
     expect(find.text('Bác thường thức dậy lúc mấy giờ?'), findsOneWidget);

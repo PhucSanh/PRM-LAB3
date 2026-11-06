@@ -37,6 +37,11 @@ class PushMessages extends FakeMessagingService {
 }
 
 void main() {
+  test('real login is enabled without opt-in flags', () {
+    final container = ProviderContainer();
+    addTearDown(container.dispose);
+    expect(container.read(authGuardEnabledProvider), isTrue);
+  });
   testWidgets(
       'notification opens approved destination and never bypasses signed-out gate',
       (tester) async {
@@ -72,6 +77,26 @@ void main() {
     await push.opened.close();
   });
   testWidgets(
+      'public introduction CTA still requires sign-in for protected home',
+      (tester) async {
+    final container = makeContainer(FakeAuthService(), FakeProfileService(),
+        initialRoute: '/intro');
+    addTearDown(container.dispose);
+    await tester.pumpWidget(UncontrolledProviderScope(
+        container: container, child: const AnNhienApp()));
+    await tester.pumpAndSettle();
+    expect(
+        container.read(routerProvider).routeInformationProvider.value.uri.path,
+        '/intro');
+    await tester.tap(find.text('Bắt đầu'));
+    await tester.pumpAndSettle();
+    expect(
+        container.read(routerProvider).routeInformationProvider.value.uri.path,
+        '/sign-in');
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.pumpAndSettle();
+  });
+  testWidgets(
       'profile failure stays behind gate; retry reaches role at large text',
       (tester) async {
     tester.view.physicalSize = const Size(360, 800);
@@ -105,7 +130,7 @@ void main() {
     const UserProfile(uid: 'u'): '/role',
     const UserProfile(uid: 'u', role: UserRole.elder): '/welcome',
     const UserProfile(uid: 'u', role: UserRole.elder, onboarded: true):
-        '/today',
+        '/calendar',
     const UserProfile(uid: 'u', role: UserRole.caregiver): '/caregiver/pair',
     const UserProfile(uid: 'u', role: UserRole.caregiver, pairedMomUid: 'mom'):
         '/caregiver/schedule',
@@ -179,13 +204,15 @@ void main() {
 }
 
 ProviderContainer makeContainer(FakeAuthService auth, ProfileService profiles,
-        {FakeSessionDataService? cache, MessagingService? messages}) =>
+        {FakeSessionDataService? cache,
+        MessagingService? messages,
+        String initialRoute = '/calendar'}) =>
     ProviderContainer(overrides: [
+      initialRouteProvider.overrideWithValue(initialRoute),
       settingsServiceProvider.overrideWithValue(FakeSettingsService()),
       suggestionServiceProvider
           .overrideWithValue(FakeSuggestionService(delay: Duration.zero)),
       reminderServiceProvider.overrideWithValue(FakeReminderService()),
-      authGuardEnabledProvider.overrideWithValue(true),
       caregiverScheduleServiceProvider
           .overrideWithValue(FakeCaregiverScheduleService()),
       authServiceProvider.overrideWithValue(auth),

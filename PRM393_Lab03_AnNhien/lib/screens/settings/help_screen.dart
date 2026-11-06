@@ -30,7 +30,7 @@ class HelpScreen extends StatelessWidget {
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
     return Scaffold(
-      appBar: const AppBackBar(),
+      appBar: AppBackBar.adaptive(context),
       body: SafeArea(
         top: false,
         child:
@@ -123,21 +123,19 @@ class _StepCard extends StatelessWidget {
       child: SectionCard(
         child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
           Container(
-            width: AppSizes.habitIcon,
-            height: AppSizes.habitIcon,
+            width:
+                AppSizes.habitIcon * MediaQuery.textScalerOf(context).scale(1),
+            height:
+                AppSizes.habitIcon * MediaQuery.textScalerOf(context).scale(1),
             alignment: Alignment.center,
             decoration: BoxDecoration(
               color: scheme.primaryContainer,
               shape: BoxShape.circle,
               border: Border.all(color: scheme.primary),
             ),
-            child: FittedBox(
-              fit: BoxFit.scaleDown,
-              child: Text('$number',
-                  style: theme.textTheme.labelMedium?.copyWith(
-                      color: scheme.onPrimaryContainer,
-                      fontWeight: FontWeight.w800)),
-            ),
+            child: Text('$number',
+                style: theme.textTheme.labelMedium
+                    ?.copyWith(color: scheme.onPrimaryContainer)),
           ),
           const SizedBox(width: AppSpacing.md),
           Expanded(

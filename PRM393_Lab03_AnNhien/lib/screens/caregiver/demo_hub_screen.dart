@@ -13,19 +13,31 @@ class DemoHubScreen extends StatelessWidget {
             const Text(
                 'Bản demo dùng dữ liệu mẫu trên máy. Thay đổi tại đây không gửi cho người dùng thật.'),
             for (final item in const <(String, String, IconData)>[
-              ('Hôm nay', '/today', Icons.today),
-              ('Chọn vai trò', '/role', Icons.people),
-              ('Onboarding của Bác', '/welcome', Icons.waving_hand),
-              ('Mã ghép nối của Bác', '/pairing/code', Icons.phonelink_setup),
-              ('Nhập mã từ máy mẹ', '/caregiver/pair', Icons.phonelink),
-              ('Lịch của mẹ', '/caregiver/schedule', Icons.calendar_month),
-              ('Tài khoản', '/account', Icons.account_circle),
+              ('Hôm nay', '/today', Icons.today_rounded),
+              ('Chọn vai trò', '/role', Icons.people_rounded),
+              ('Onboarding của Bác', '/welcome', Icons.waving_hand_rounded),
+              (
+                'Mã ghép nối của Bác',
+                '/pairing/code',
+                Icons.phonelink_setup_rounded
+              ),
+              ('Nhập mã từ máy mẹ', '/caregiver/pair', Icons.phonelink_rounded),
+              (
+                'Lịch của mẹ',
+                '/caregiver/schedule',
+                Icons.calendar_month_rounded
+              ),
+              ('Tài khoản', '/account', Icons.account_circle_rounded),
               (
                 'Nhận lịch gợi ý',
                 '/settings/firebase-demo/suggestions',
-                Icons.inbox
+                Icons.inbox_rounded
               ),
-              ('Khu thử Firebase', '/settings/firebase-demo', Icons.science),
+              (
+                'Khu thử Firebase',
+                '/settings/firebase-demo',
+                Icons.science_rounded
+              ),
             ])
               AppButton(
                   label: item.$1,

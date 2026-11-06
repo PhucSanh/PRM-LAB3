@@ -58,4 +58,22 @@ void main() {
     expect(plans.length, 128);
     expect(plans.map((p) => p.id).toSet().length, 128);
   });
+  test(
+      'a moved one-off task plans on its target day even outside original recurrence',
+      () {
+    final now = DateTime.utc(2026, 11, 6);
+    final task = const TaskItem(
+            id: 'moved',
+            title: 'Đi bộ',
+            habitKey: 'move',
+            hour: 10,
+            minute: 30,
+            repeat: RepeatRule.once,
+            startDate: '2026-11-05')
+        .copyWith(
+            occurrenceDate: '2026-11-07', rescheduleSourceDate: '2026-11-05');
+    final plans = planReminders(
+        'user', [ScheduleOccurrence(task, DateTime(2026, 11, 7))], now);
+    expect(plans.single.time, DateTime.utc(2026, 11, 7, 3, 30));
+  });
 }

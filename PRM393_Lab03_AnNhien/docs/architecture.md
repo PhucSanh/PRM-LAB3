@@ -140,7 +140,7 @@ Màn dùng `switch (state)` để vẽ đủ 4 trạng thái. Hành động mộ
 | `/caregiver/suggest` | G01 → G01b → G02 (state của một màn `SuggestionComposeScreen`) | F12 | có |
 | `/dev/widgets` | Trang xem thử widget F0 (`WidgetGallery`) – **chỉ khai báo khi `kDebugMode`**; khi bật `redirect` thì phải đăng nhập mới vào được | F0 | có (debug) |
 
-Việc của F0 (Sanh) – đã làm ở bước 01 (02/11/2026): mọi route trên đã khai báo trong `app_router.dart`, màn chưa làm là `FeaturePlaceholder` ghi mã màn · feature · người theo bản chia task 02/11; nhóm route theo feature bằng comment `// F<số> <tên> – <người>`. `/caregiver/schedule` chọn C03 / C04 / C05 theo query `view`. Kiểm tra bằng `test/router_test.dart`. Khối `redirect` (chưa đăng nhập → `/sign-in`, đã đăng nhập ở `/sign-in` → `/today`) **đang tạm comment** để test UI không cần đăng nhập Google; bỏ comment trước khi nộp (đề chấm: chưa đăng nhập không vào được app). Khi còn comment thì `test/auth_routing_test.dart` fail.
+Việc của F0 (Sanh) – đã làm ở bước 01 (02/11/2026): mọi route trên đã khai báo trong `app_router.dart`, màn chưa làm là `FeaturePlaceholder` ghi mã màn · feature · người theo bản chia task 02/11; nhóm route theo feature bằng comment `// F<số> <tên> – <người>`. `/caregiver/schedule` chọn C03 / C04 / C05 theo query `view`. Kiểm tra bằng `test/router_test.dart`. Khối `redirect` hiện bật mặc định: chưa đăng nhập → `/sign-in`, đã có phiên → kiểm tra role/onboarding/pairing trước khi vào màn chính. `/intro` là màn giới thiệu public; Bắt đầu vẫn qua guard. Fixture UI tắt guard tường minh; `test/auth_routing_test.dart` dùng mặc định thật và kiểm tra chống bypass.
 
 Quy tắc điều hướng từ handoff: tab dùng `StatefulShellRoute`; Back hệ thống ở S03 thoát app; kết quả lưu (`/today/add/result`) dùng `go` (thay thế, không chồng); màn con N11–N13 trả kết quả bằng `pop(result)`; S04 mở từ 2 nơi nên nút Back ghi "Quay lại".
 
@@ -353,7 +353,7 @@ Nguồn chi tiết và cách chạy: [hieu-implementation-guide.md](hieu-impleme
 - Task v2: startDate/endDate `YYYY-MM-DD`, weekly (weekdays 1–7), monthly (monthDays 1–31 và lastDayOfMonth), excludedDates, durationMinutes, revision, timezone UTC+7. Status thực theo ngày ở completions; status trên template luôn pending. `setStatus(id,status)` cũ chỉ tác động hôm nay UTC+7.
 - V1 đọc tương thích có giới hạn được ghi trong guide; chưa migration cloud tự động. Settings/ProfileSetup đã có adapter Firebase, merge trên users/{uid}, không đổi chữ ký F2.
 - Điểm vào: `/pairing/code` (Bác), `/caregiver/pair`, `/caregiver/schedule?view=day|week|month`, wizard `/caregiver/task/new[/repeat|/review]`, `/caregiver/task/sent`, `/caregiver/task/:id?date=YYYY-MM-DD`.
-- Guard mặc định **tắt** theo yêu cầu demo; kiểm thử opt-in qua AUTH_GUARD. Rules không đổi thành public.
+- Guard mặc định **bật** theo yêu cầu mới nhất. `main.dart` và `main_dev.dart` mặc định dùng đăng nhập Google/Firebase thật; Fake đăng nhập sẵn chỉ bật tường minh với `--dart-define=UI_PREVIEW=true`. Rules giữ nguyên.
 
 ### Nhắc việc native — 04/11
 
@@ -364,3 +364,29 @@ trong guide. Đăng xuất huỷ pending/active và chặn tap UID cũ. Fake gi�
 Template sau split có completionSourceId trỏ cha; đọc status theo ancestry có
 chống vòng lặp, ưu tiên status trực tiếp của ID mới. Completions vẫn ở collection
 cũ, không copy lịch sử và không mất trạng thái đã xong chỉ vì ID chuỗi đổi.
+
+### Auth enabled — yêu cầu mới nhất
+
+`authGuardEnabledProvider` mặc định true. Mở `/intro` vẫn được xem giới thiệu, nhưng Bắt đầu và mọi route dữ liệu đi qua auth/role/onboarding guard. Người dùng chưa đăng nhập đi `/sign-in`; Google sign-in dùng service Firebase hiện có. Cả entry `lib/main.dart` và `lib/main_dev.dart` mặc định dùng production bootstrap. Chỉ dùng Fake tự đăng nhập khi chỉ định `--dart-define=UI_PREVIEW=true`; fixture UI override guard false riêng để kiểm tra từng màn. Các mô tả guard bị tắt/comment trước đây là lịch sử.
+
+Kiểm chứng bản bật đăng nhập: `flutter test` 779 passed; `flutter analyze` sạch; APK debug build từ `lib/main.dart` thành công. Chưa chạy đăng nhập Google với tài khoản thật trong phiên này vì không có thiết bị adb kết nối.
+
+
+### Hoàn thiện luồng giao diện mới — 06/11/2026
+
+- `suggestionServiceProvider` production dùng `FirebaseFamilySuggestionService`; adapter cho contract màn G đọc schema backend `tasks/acceptedIds`. `AtomicSuggestionService` báo cho ViewModel không ghi việc thêm lần nữa. Inbox suggestion mở cùng `SuggestionReviewScreen`.
+- `DeviceAccessService` qua MethodChannel `an_nhien/device_access`: Android RecognizerIntent, TTS tiếng Việt, cài đặt thông báo và ACTION_CREATE_DOCUMENT. `VoiceInputViewModel`, `SpeechViewModel`, `ReminderSettingsViewModel` giữ logic; widget chỉ gửi sự kiện.
+- `ScopedTaskRepository` production ủy quyền transaction cho `FirebaseCaregiverScheduleService` khi sửa/xóa occurrence; ngày được truyền từ chi tiết. Scheduler theo dõi reschedules bên cạnh template/completion.
+- `reportServiceProvider` dùng `WeeklyReportService` lấy đủ bảy ngày qua TaskRepository, render PDF bằng font nhúng và lưu bằng document picker. FirebaseReportService/PDF mẫu vẫn chỉ phục vụ khu demo. Đây thay mô tả F7 chưa có renderer ở tài liệu cũ.
+- Routes mới/hoàn thiện: `/today/voice`, `/settings/reminders`, `/calendar/export`; không còn FeaturePlaceholder trong router. Chức năng giọng nói vẫn theo cờ Remote Config.
+- Xem `flow-completion-implementation.md` cho phạm vi triển khai, kiểm chứng và bước deploy/thiết bị còn cần nghiệm thu.
+
+
+### Sửa các ca biên lịch và nhắc việc — 06/11/2026
+
+- Scope edit hỗ trợ một lần → lặp; sửa lần đã dời dùng reschedule snapshot trong `ScheduleUndo`, phục hồi cùng template trong transaction.
+- Chính sách identity vẫn là task/ngày: từ chối dời sang ngày đã có lần khác của cùng việc, kèm hướng dẫn cụ thể. Mọi transaction dời cập nhật revision template; Undo từ chối ghi đè lần dời mới.
+- `ReminderRuntime` lắng cài đặt rung theo UID và lên lịch lại khi đổi. Hai kênh Android tách biệt lựa chọn rung vì thuộc tính channel không thay sau khi tạo.
+- Route `/reminder/:taskId?date=YYYY-MM-DD` giữ ngày; khi mở, `ReminderReadAloudControl` đọc nếu cài đặt readAloud bật. UI nêu rõ đọc khi mở, nhắc vào giờ làm; không hứa đọc TTS tự động từ nền.
+- Lỗi tải edit có retry/not-found/lối về lịch; không giữ spinner vô hạn.
+- Rules production đã deploy; Functions bị chặn do yêu cầu gói Blaze. Chi tiết bằng chứng: `readiness-fixes-2026-11-06.md`.

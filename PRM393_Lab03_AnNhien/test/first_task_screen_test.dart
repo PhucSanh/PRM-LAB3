@@ -56,7 +56,7 @@ void main() {
       GoRoute(
           path: '/setup/first-task',
           builder: (_, __) => const FirstTaskScreen()),
-      GoRoute(path: '/today', builder: (_, __) => const Text('S03')),
+      GoRoute(path: '/calendar', builder: (_, __) => const Text('S03')),
       GoRoute(path: '/today/add', builder: (_, __) => const Text('S05')),
     ]);
     addTearDown(router.dispose);
