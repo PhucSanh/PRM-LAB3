@@ -133,7 +133,7 @@ class _SettingsBody extends ConsumerWidget {
             SwitchRow(
               icon: AppIcons.volume,
               title: 'Đọc to nội dung',
-              subtitle: 'Điện thoại đọc lời nhắc',
+              subtitle: 'Đọc khi Bác mở lời nhắc',
               value: settings.readAloud,
               onChanged: (on) async => announce(await vm.setReadAloud(on)),
             ),

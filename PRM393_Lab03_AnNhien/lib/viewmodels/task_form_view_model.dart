@@ -163,7 +163,7 @@ class TaskFormViewModel extends Notifier<TaskFormState> {
       hour: task.hour,
       minute: task.minute,
       isAm: task.hour < 12,
-      repeat: task.repeat,
+      repeat: task.isRescheduled ? RepeatRule.once : task.repeat,
       weekdays: task.weekdays.toSet(),
       remind: task.remind,
       editingId: task.id,
@@ -207,6 +207,8 @@ class TaskFormViewModel extends Notifier<TaskFormState> {
       hour: state.hour,
       minute: state.minute,
       repeat: state.repeat,
+      clearEndDate:
+          before?.repeat == RepeatRule.once && state.repeat != RepeatRule.once,
       remind: state.remind,
       status: before?.status ?? TaskStatus.pending,
       startDate: before?.startDate ??
@@ -221,14 +223,18 @@ class TaskFormViewModel extends Notifier<TaskFormState> {
     try {
       final repository = ref.read(taskRepositoryProvider);
       if (before != null && repository is ScopedTaskRepository) {
-        _scopedUndo = await (repository as ScopedTaskRepository)
-            .changeOccurrence(
+        _scopedUndo =
+            await (repository as ScopedTaskRepository).changeOccurrence(
                 before,
                 _editDay!,
                 task,
-                before.repeat == RepeatRule.once || scope == ChangeScope.once
+                before.isRescheduled
                     ? schedule.ChangeScope.occurrence
-                    : schedule.ChangeScope.future);
+                    : before.repeat == RepeatRule.once
+                        ? schedule.ChangeScope.all
+                        : scope == ChangeScope.once
+                            ? schedule.ChangeScope.occurrence
+                            : schedule.ChangeScope.future);
       } else {
         await repository.save(task);
       }

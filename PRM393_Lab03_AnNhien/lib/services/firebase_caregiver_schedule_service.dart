@@ -68,7 +68,8 @@ class FirebaseCaregiverScheduleService implements CaregiverScheduleService {
                     status: statuses!['${task.id}_${change.targetDate}'] ??
                         TaskStatus.pending,
                     occurrenceDate: change.targetDate,
-                    rescheduleSourceDate: change.sourceDate),
+                    rescheduleSourceDate: change.sourceDate,
+                    isRescheduled: true),
                 day));
           }
           list.sort((a, b) {
@@ -156,12 +157,26 @@ class FirebaseCaregiverScheduleService implements CaregiverScheduleService {
             throw const AppException(
                 'Lịch đã được sửa trên máy khác. Tải lại rồi thử lại.');
           }
-          final plan =
-              planScheduleChange(current, day, replacement, scope, newId);
+          final moveKey =
+              '${original.id}_${original.rescheduleSourceDate ?? dateKey(day)}';
+          final moveRef =
+              tasks.parent!.collection('taskReschedules').doc(moveKey);
+          final moveSnapshot = await tx.get(moveRef);
+          final candidate = moveSnapshot.exists
+              ? TaskReschedule.fromMap(moveSnapshot.data()!)
+              : null;
+          final moved =
+              candidate?.targetDate == dateKey(day) ? candidate : null;
+          final plan = planScheduleChange(
+              current, day, replacement, scope, newId,
+              moved: moved);
           for (final e in plan.after.entries) {
             tx.set(tasks.doc(e.key), e.value!.toMap());
           }
-          return ScheduleUndo(momUid, plan.before, plan.after);
+          if (moved != null) tx.delete(moveRef);
+          return ScheduleUndo(momUid, plan.before, plan.after,
+              reschedulesBefore: {if (moved != null) moveKey: moved},
+              reschedulesAfter: {if (moved != null) moveKey: null});
         });
       });
   @override
@@ -184,6 +199,14 @@ class FirebaseCaregiverScheduleService implements CaregiverScheduleService {
             }
             snapshots[e.key] = current;
           }
+          for (final e in change.reschedulesAfter.entries) {
+            final doc = await tx
+                .get(tasks.parent!.collection('taskReschedules').doc(e.key));
+            if (e.value == null && doc.exists) {
+              throw const AppException(
+                  'Lần việc đã được dời tiếp. Không thể hoàn tác.');
+            }
+          }
           for (final e in change.before.entries) {
             if (e.value == null) {
               tx.delete(tasks.doc(e.key));
@@ -193,6 +216,17 @@ class FirebaseCaregiverScheduleService implements CaregiverScheduleService {
                   e.value!
                       .copyWith(revision: snapshots[e.key]!.revision + 1)
                       .toMap());
+            }
+          }
+          for (final e in change.reschedulesBefore.entries) {
+            final doc = tasks.parent!.collection('taskReschedules').doc(e.key);
+            if (e.value == null) {
+              tx.delete(doc);
+            } else {
+              tx.set(doc, {
+                ...e.value!.toMap(),
+                'updatedAt': FieldValue.serverTimestamp()
+              });
             }
           }
         });

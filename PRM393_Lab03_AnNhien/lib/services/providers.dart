@@ -138,7 +138,9 @@ final reminderRuntimeProvider = Provider<ReminderRuntime>((ref) {
       ref.watch(authSdkProvider),
       ref.watch(caregiverScheduleServiceProvider),
       ref.watch(reminderServiceProvider) as LocalReminderService,
-      ref.watch(crashServiceProvider), onNativePermissionGranted: () async {
+      ref.watch(crashServiceProvider),
+      settings: ref.watch(settingsServiceProvider),
+      onNativePermissionGranted: () async {
     final messaging = ref.read(messagingServiceProvider);
     if (messaging is FirebaseMessagingService) {
       try {

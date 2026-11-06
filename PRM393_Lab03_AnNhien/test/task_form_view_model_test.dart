@@ -153,4 +153,30 @@ void main() {
     expect(task.weekdays.toSet(), {DateTime.monday, DateTime.friday});
     expect(task.occursOn(DateTime(2099, 11, 8)), false);
   });
+  test('one-off can become a daily series and Undo restores one-off', () async {
+    const task = TaskItem(
+        id: 'once',
+        title: 'Đi bộ',
+        habitKey: 'move',
+        hour: 8,
+        minute: 0,
+        repeat: RepeatRule.once,
+        startDate: '2099-11-07',
+        endDate: '2099-11-07');
+    final repository = ScopedTestRepository([task]);
+    final c = ProviderContainer(overrides: [
+      taskRepositoryProvider.overrideWithValue(repository),
+      analyticsServiceProvider.overrideWithValue(FakeAnalyticsService()),
+      crashServiceProvider.overrideWithValue(FakeCrashService()),
+    ]);
+    addTearDown(c.dispose);
+    final vm = c.read(taskFormViewModelProvider.notifier);
+    await vm.startEdit('once', day: DateTime(2099, 11, 7));
+    vm.setRepeat(RepeatRule.daily);
+    expect(await vm.save(scope: ChangeScope.thisAndFollowing), true);
+    expect(repository.schedules.tasks['once']!.occursOn(DateTime(2099, 11, 8)),
+        true);
+    await vm.undoLastMutation();
+    expect(repository.schedules.tasks['once']!.repeat, RepeatRule.once);
+  });
 }
