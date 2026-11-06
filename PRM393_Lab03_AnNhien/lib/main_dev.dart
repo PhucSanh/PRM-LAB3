@@ -6,6 +6,7 @@ import 'services/profile_service.dart';
 import 'services/profile_setup_service.dart';
 import 'services/settings_service.dart';
 import 'services/reminder_service.dart';
+import 'services/local_reminder_service.dart';
 import 'services/session_data_service.dart';
 import 'services/caregiver_schedule_service.dart';
 import 'services/caregiver_suggestion_service.dart';
@@ -16,10 +17,13 @@ import 'viewmodels/caregiver_schedule_view_model.dart';
 //
 //   flutter run -d emulator-5554 -t lib/main_dev.dart
 // Xem UI không đăng nhập: thêm --dart-define=UI_PREVIEW=true
+// Test notification Android thật với dữ liệu giả: thêm
+// --dart-define=NATIVE_REMINDERS=true (chỉ dành cho thiết bị/emulator Android).
 //
 // Chọn vai trò demo: --dart-define=DEMO_ROLE=elder|caregiver.
 // Mở thẳng màn: --dart-define=INITIAL_ROUTE=/caregiver/schedule. Bản thật vẫn chạy bằng lib/main.dart.
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart' show defaultTargetPlatform, kIsWeb;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'app.dart';
@@ -45,6 +49,17 @@ Future<void> main() async {
     return;
   }
   WidgetsFlutterBinding.ensureInitialized();
+  const requestNativeReminders =
+      bool.fromEnvironment('NATIVE_REMINDERS', defaultValue: false);
+  final useNativeReminders = requestNativeReminders &&
+      !kIsWeb &&
+      defaultTargetPlatform == TargetPlatform.android;
+  ReminderService reminders = FakeReminderService();
+  if (useNativeReminders) {
+    final local = LocalReminderService(() => 'dev-uid');
+    await local.init();
+    reminders = local;
+  }
   const roleName = String.fromEnvironment('DEMO_ROLE', defaultValue: 'elder');
   final demoRole = UserRole.values.byName(roleName);
   final schedules = FakeCaregiverScheduleService([
@@ -82,7 +97,9 @@ Future<void> main() async {
       sessionDataServiceProvider.overrideWithValue(FakeSessionDataService()),
       settingsServiceProvider.overrideWithValue(FakeSettingsService()),
       profileSetupServiceProvider.overrideWithValue(FakeProfileSetupService()),
-      reminderServiceProvider.overrideWithValue(FakeReminderService()),
+      reminderServiceProvider.overrideWithValue(reminders),
+      nativeReminderEventsEnabledProvider
+          .overrideWithValue(reminders is LocalReminderService),
       pairedMomUidProvider.overrideWithValue('demo-mom'),
       pairingServiceProvider.overrideWithValue(FakePairingService()),
       caregiverScheduleServiceProvider.overrideWithValue(schedules),
