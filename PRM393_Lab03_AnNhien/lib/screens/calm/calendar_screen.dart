@@ -1,3 +1,6 @@
+import '../../widgets/upcoming_activity_card.dart';
+import '../../widgets/quick_task_actions.dart';
+import '../../viewmodels/daily_actions_view_model.dart';
 import '../../widgets/read_aloud_control.dart';
 import '../today/task_detail_screen.dart' show runTaskAction;
 import '../../viewmodels/today_view_model.dart';
@@ -76,6 +79,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
                 AppSpacing.screen, AppSpacing.sm),
             child: AppButton(
               label: 'Thêm hoạt động',
+              kind: AppButtonKind.tonal,
               icon: Icons.add_rounded,
               onPressed: () async {
                 await context.push('/today/add?date=$key');
@@ -92,8 +96,17 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
               children: [
                 const VeloraGreeting(),
                 const SizedBox(height: AppSpacing.lg),
-                const VeloraHomeDiscovery(),
-                const SizedBox(height: AppSpacing.base),
+                if (tasks.asData?.value case final items?)
+                  if (nextPendingTask(items, date, vietnamNow())
+                      case final task?) ...[
+                    UpcomingActivityCard(
+                        task: task,
+                        day: date,
+                        canComplete: key == dateKey(vietnamToday()),
+                        onOpen: () => context.push(
+                            '/calendar/task/${Uri.encodeComponent(task.id)}?date=$key')),
+                    const SizedBox(height: AppSpacing.lg),
+                  ],
                 LayoutBuilder(builder: (context, box) {
                   final action = TextButton(
                       style: TextButton.styleFrom(
@@ -190,6 +203,8 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
                 ),
                 const SizedBox(height: AppSpacing.lg),
                 const SizedBox(height: AppSpacing.base),
+                const VeloraHomeDiscovery(),
+                const SizedBox(height: AppSpacing.lg),
                 AppButton(
                     label: 'Lưu lịch tuần PDF',
                     icon: Icons.picture_as_pdf_rounded,
@@ -231,6 +246,47 @@ class CalmTaskDetailScreen extends ConsumerWidget {
                   onPressed: () => context.go('/calendar?date=$key')));
         }
         final today = key == dateKey(vietnamToday());
+        if (autoRead) {
+          return ListView(
+              padding: const EdgeInsets.all(AppSpacing.screen),
+              children: [
+                Align(
+                    alignment: AlignmentDirectional.centerStart,
+                    child: TextButton.icon(
+                        onPressed: () => context.canPop()
+                            ? context.pop()
+                            : context.go('/calendar'),
+                        icon: const Icon(Icons.arrow_back_rounded),
+                        label: const Text('Quay lại'))),
+                Text('Đến giờ của Bác', style: text.titleMedium),
+                const SizedBox(height: AppSpacing.md),
+                Text(task.title, style: text.headlineMedium),
+                Text(
+                    '${task.hour.toString().padLeft(2, '0')}:${task.minute.toString().padLeft(2, '0')} · ${calendarLabel(day)}',
+                    style: text.titleMedium),
+                const SizedBox(height: AppSpacing.lg),
+                ReminderReadAloudControl(
+                    identity: '${task.id}-$key',
+                    text:
+                        '${task.title}. ${task.hour} giờ ${task.minute} phút.'),
+                const SizedBox(height: AppSpacing.lg),
+                if (today && !task.isDone && task.status != TaskStatus.skipped)
+                  QuickTaskActions(task: task, day: day)
+                else
+                  Text(
+                      task.isDone
+                          ? 'Bác đã làm xong việc này.'
+                          : 'Lời nhắc này thuộc ngày khác hoặc việc đã được bỏ qua. Bác xem lại lịch nhé.',
+                      style: text.bodyLarge),
+                const SizedBox(height: AppSpacing.lg),
+                AppButton(
+                    label: 'Xem lịch',
+                    icon: AppIcons.tabWeek,
+                    kind: AppButtonKind.secondary,
+                    onPressed: () => context.go('/calendar?date=$key')),
+              ]);
+        }
+
         return VeloraDetailBody(
             onBack: () => context.canPop()
                 ? context.pop()
