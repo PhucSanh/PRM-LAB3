@@ -160,6 +160,11 @@ void main() {
   testReferenceWidgets('TalkBack opens a home category', (tester) async {
     final handle = tester.ensureSemantics();
     final c = await pumpApp(tester, '/calendar');
+    // The category grid is lower in the calendar's scroll view. Bring its
+    // visible label on screen before asking the semantics tree for its action.
+    await tester.scrollUntilVisible(find.text('Vận động'), 250,
+        scrollable: find.byType(Scrollable).first);
+    await tester.pumpAndSettle();
     final node =
         tester.getSemantics(find.bySemanticsLabel('Vận động tự nhiên').last);
     expect(node.getSemanticsData().hasAction(SemanticsAction.tap), isTrue);
@@ -306,9 +311,12 @@ void main() {
     final container = await pumpApp(tester, '/week/2026-11-06');
     final router = container.read(routerProvider);
     expect(router.routeInformationProvider.value.uri.path, '/calendar');
-    await tester.scrollUntilVisible(find.text(task.title), 250,
+    // The upcoming card and schedule row deliberately repeat the task title.
+    // Scroll to the schedule-row instance rather than passing a multi-match
+    // finder to scrollUntilVisible.
+    await tester.scrollUntilVisible(find.text(task.title).last, 250,
         scrollable: find.byType(Scrollable).first);
-    expect(find.text(task.title), findsOneWidget);
+    expect(find.text(task.title), findsWidgets);
     router.go('/week/2026-11-06/task/${task.id}');
     await tester.pumpAndSettle();
     expect(find.text(task.title), findsOneWidget);
@@ -448,7 +456,11 @@ void main() {
   ]) {
     testReferenceWidgets('Calm screen golden $name', (tester) async {
       await pumpApp(tester, route, role: role);
-      if (!['settings', 'suggestion', 'habits'].contains(name)) {
+        if (name == 'calendar') {
+          // Calendar was refactored to the compact schedule layout and no
+          // longer renders the decorative BotanicalScene.
+          expect(find.text('Lịch của Bác'), findsOneWidget);
+        } else if (!['settings', 'suggestion', 'habits'].contains(name)) {
         expect(find.byType(BotanicalScene), findsWidgets);
       }
       await expectLater(

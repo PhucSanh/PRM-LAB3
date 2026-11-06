@@ -81,8 +81,11 @@ void main() {
         ])
     ];
     final bytes = await renderWeeklyReport(days);
-    final file = File('/tmp/annhien-weekly-report-qa.pdf');
+    final directory = await Directory.systemTemp.createTemp('annhien-weekly-');
+    addTearDown(() => directory.delete(recursive: true));
+    final file = File('${directory.path}${Platform.pathSeparator}report.pdf');
     await file.writeAsBytes(bytes);
+    expect(await file.exists(), isTrue);
     expect(bytes.length, greaterThan(5000));
   });
 }
