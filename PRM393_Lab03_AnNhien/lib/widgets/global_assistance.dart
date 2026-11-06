@@ -8,6 +8,7 @@ import '../viewmodels/assistant_view_model.dart';
 import '../viewmodels/device_access_view_model.dart';
 import '../viewmodels/family_actions_view_model.dart';
 import 'app_button.dart';
+import 'assistant_mascot.dart';
 import 'form_parts.dart';
 import 'voice_task_review.dart';
 import 'undo_snackbar.dart';
@@ -165,15 +166,18 @@ class _GlobalAssistanceState extends ConsumerState<GlobalAssistance> {
                                   child: FloatingActionButton(
                                       backgroundColor: colors.primaryContainer,
                                       foregroundColor: colors.primary,
-                                      shape: const CircleBorder(),
+                                      elevation: 0,
+                                      highlightElevation: 0,
+                                      shape: CircleBorder(
+                                          side: BorderSide(
+                                              color: colors.outlineVariant)),
                                       heroTag: 'global-assistant-pet',
                                       tooltip: 'Nói chuyện với trợ lý An Nhiên',
                                       onPressed: () {
                                         setState(() => _open = true);
                                         _backDispatcher?.takePriority();
                                       },
-                                      child: const Icon(Icons.face_rounded,
-                                          size: AppSizes.habitIcon)))))),
+                                      child: const AssistantMascot()))))),
                 if (_open) ...[
                   ModalBarrier(
                       dismissible: true,

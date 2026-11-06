@@ -431,3 +431,7 @@ Loa đặt theo khung/ô nhập: `ReadAloudRegion` đọc chữ và giá trị m
 Giới hạn lịch: không trùng giờ/phút bắt đầu trong cùng ngày; tên hoạt động chuẩn hóa chữ hoa/thường và khoảng trắng, tối đa 2 lần/ngày (không tính gộp theo nhóm thói quen). Kiểm tra occurrence thực tế của lịch lặp, ngày loại trừ và lần dời; các bản app mới dùng chung khóa transaction khi tạo/sửa/dời/hoàn tác. Không xoá hoặc tự sắp lại lịch cũ. Cần cập nhật APK để nhận các giới hạn/giao diện mới.
 
 Kiểm chứng: 24 ca tính năng cuối qua; 25 ca UI/TaskForm/dời lịch qua; 9 ca màn chính/giọng nói qua; rules 16/16 qua Firebase Emulator; phân tích lib sạch. Ba ảnh chuẩn giọng nói được cập nhật và xem lại. Chưa coi unit/widget test là đã nghiệm thu STT/TTS hoặc thao tác trên điện thoại thật. Không chỉnh Figma trong lượt này.
+
+### DT-ASSISTANT-MASCOT — 06/11/2026
+
+Biểu tượng mặt mặc định được thay bằng mascot mầm lá hai lá, mặt hạt tròn, mắt cười và má dịu. Vector vẽ trực tiếp trong Flutter bằng palette theme An Nhiên, không tải ảnh ngoài; nút nền xanh dịu, viền nhẹ, bỏ bóng đen. Giữ kích thước chạm và thao tác kéo/mở trợ lý. Sáu ca màn giọng nói qua, ba ảnh chuẩn cập nhật; có ảnh preview xuất từ chính widget.
