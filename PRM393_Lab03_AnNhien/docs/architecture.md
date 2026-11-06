@@ -370,3 +370,13 @@ cũ, không copy lịch sử và không mất trạng thái đã xong chỉ vì 
 `authGuardEnabledProvider` mặc định true. Mở `/intro` vẫn được xem giới thiệu, nhưng Bắt đầu và mọi route dữ liệu đi qua auth/role/onboarding guard. Người dùng chưa đăng nhập đi `/sign-in`; Google sign-in dùng service Firebase hiện có. Cả entry `lib/main.dart` và `lib/main_dev.dart` mặc định dùng production bootstrap. Chỉ dùng Fake tự đăng nhập khi chỉ định `--dart-define=UI_PREVIEW=true`; fixture UI override guard false riêng để kiểm tra từng màn. Các mô tả guard bị tắt/comment trước đây là lịch sử.
 
 Kiểm chứng bản bật đăng nhập: `flutter test` 779 passed; `flutter analyze` sạch; APK debug build từ `lib/main.dart` thành công. Chưa chạy đăng nhập Google với tài khoản thật trong phiên này vì không có thiết bị adb kết nối.
+
+
+### Hoàn thiện luồng giao diện mới — 06/11/2026
+
+- `suggestionServiceProvider` production dùng `FirebaseFamilySuggestionService`; adapter cho contract màn G đọc schema backend `tasks/acceptedIds`. `AtomicSuggestionService` báo cho ViewModel không ghi việc thêm lần nữa. Inbox suggestion mở cùng `SuggestionReviewScreen`.
+- `DeviceAccessService` qua MethodChannel `an_nhien/device_access`: Android RecognizerIntent, TTS tiếng Việt, cài đặt thông báo và ACTION_CREATE_DOCUMENT. `VoiceInputViewModel`, `SpeechViewModel`, `ReminderSettingsViewModel` giữ logic; widget chỉ gửi sự kiện.
+- `ScopedTaskRepository` production ủy quyền transaction cho `FirebaseCaregiverScheduleService` khi sửa/xóa occurrence; ngày được truyền từ chi tiết. Scheduler theo dõi reschedules bên cạnh template/completion.
+- `reportServiceProvider` dùng `WeeklyReportService` lấy đủ bảy ngày qua TaskRepository, render PDF bằng font nhúng và lưu bằng document picker. FirebaseReportService/PDF mẫu vẫn chỉ phục vụ khu demo. Đây thay mô tả F7 chưa có renderer ở tài liệu cũ.
+- Routes mới/hoàn thiện: `/today/voice`, `/settings/reminders`, `/calendar/export`; không còn FeaturePlaceholder trong router. Chức năng giọng nói vẫn theo cờ Remote Config.
+- Xem `flow-completion-implementation.md` cho phạm vi triển khai, kiểm chứng và bước deploy/thiết bị còn cần nghiệm thu.

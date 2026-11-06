@@ -1,5 +1,7 @@
 # Kiểm tra độ hoàn chỉnh luồng — 06/11/2026
 
+> Báo cáo dưới đây ghi trạng thái trước khi sửa. Bốn nhóm thiếu đã được triển khai ở lượt tiếp theo; xem [kết quả triển khai](flow-completion-implementation.md). Nghiệm thu cloud/thiết bị thật vẫn chưa thực hiện.
+
 Kết luận: chưa hoàn chỉnh end-to-end. Các luồng chính có route, ViewModel và test, nhưng còn điểm đứt tích hợp trong giao diện đang dùng. Đây là kiểm tra code và kiểm thử tự động, chưa phải nghiệm thu trên thiết bị với Firebase production.
 
 ## Các điểm cần xử lý
