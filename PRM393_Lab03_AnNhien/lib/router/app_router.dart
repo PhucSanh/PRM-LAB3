@@ -1,3 +1,4 @@
+import '../screens/calm/guided_activity_screen.dart';
 import '../viewmodels/task_form_view_model.dart';
 import '../screens/calm/weekly_report_screen.dart';
 import '../screens/voice/voice_input_screen.dart';
@@ -378,6 +379,10 @@ final routerProvider = Provider<GoRouter>((ref) {
                 builder: (_, state) => ActivitiesScreen(
                     section: state.uri.queryParameters['section'] ?? 'explore'),
                 routes: [
+                  GoRoute(
+                      path: 'guides/:id',
+                      builder: (_, state) => GuidedActivityScreen(
+                          id: state.pathParameters['id']!)),
                   GoRoute(
                       path: 'habits/:key',
                       builder: (_, state) => HabitDetailScreen(

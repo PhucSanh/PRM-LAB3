@@ -1,3 +1,4 @@
+import '../../viewmodels/calm_feature_providers.dart';
 import '../../widgets/state_views.dart';
 import '../../utils/app_error.dart';
 import '../../viewmodels/device_access_view_model.dart'
@@ -22,15 +23,16 @@ import '../../widgets/confirm_dialog.dart';
 import '../../widgets/form_parts.dart';
 
 const _activities = <_Activity>[
-  _Activity('move', 'Đi bộ nhẹ nhàng', Icons.directions_walk_rounded),
-  _Activity('plant', 'Chăm cây', Icons.local_florist_rounded),
-  _Activity('family', 'Gọi người thân', Icons.phone_in_talk_rounded),
+  _Activity('move', 'Đi bộ nhẹ nhàng', Icons.directions_walk_rounded, 10),
+  _Activity('plant', 'Chăm cây', Icons.local_florist_rounded, 10),
+  _Activity('family', 'Gọi người thân', Icons.phone_in_talk_rounded, 5),
   _Activity('eighty', 'Ăn sáng chậm rãi', Icons.restaurant_rounded),
   _Activity('tea', 'Uống trà với bạn', Icons.local_cafe_rounded),
 ];
 
 class _Activity {
-  const _Activity(this.key, this.name, this.icon);
+  const _Activity(this.key, this.name, this.icon, [this.minutes = 15]);
+  final int minutes;
   final String key;
   final String name;
   final IconData icon;
@@ -86,6 +88,24 @@ class _ActivitySelectionScreenState
       body: ListView(padding: AppSpacing.screenPadding, children: [
         const BotanicalScene(height: 140, branch: false),
         const SizedBox(height: AppSpacing.lg),
+        if (ref.watch(recentActivitiesProvider).asData?.value
+            case final recent?)
+          if (recent.isNotEmpty) ...[
+            Text('Dùng lại việc gần đây',
+                style: Theme.of(context).textTheme.titleLarge),
+            const Text(
+                'Các việc trong lịch 7 ngày gần đây. Bác vẫn kiểm tra lại ngày, giờ trước khi lưu.'),
+            for (final task in recent)
+              CalmListRow(
+                  title: task.title,
+                  subtitle: '${task.durationMinutes} phút · Chọn để điền sẵn',
+                  icon: HabitStyle.iconOf(task.habitKey),
+                  onTap: () {
+                    vm.startFromRecent(task, day: widget.initialDate);
+                    context.push('/today/add/time');
+                  }),
+            const SizedBox(height: AppSpacing.lg),
+          ],
         Text('Bác muốn làm gì?',
             style: Theme.of(context).textTheme.headlineMedium),
         const SizedBox(height: AppSpacing.xl),
@@ -93,8 +113,10 @@ class _ActivitySelectionScreenState
           _ActivityChoice(
               activity: activity,
               selected: activity.key == state.activity,
-              onTap: () => vm.selectActivity(activity.key,
-                  suggestedTitle: activity.name)),
+              onTap: () {
+                vm.selectActivity(activity.key, suggestedTitle: activity.name);
+                vm.setDuration(activity.minutes);
+              }),
           const SizedBox(height: AppSpacing.betweenTargets),
         ],
         Row(children: [
@@ -360,6 +382,28 @@ class _TaskConfigureScreenState extends ConsumerState<TaskConfigureScreen> {
                             }))
                         .toList())
           ],
+          const SizedBox(height: AppSpacing.lg),
+          const _SectionTitle(
+              icon: Icons.hourglass_bottom_rounded, text: 'Thời lượng'),
+          _PickerTile(
+              text: '${state.durationMinutes} phút',
+              onTap: () async {
+                final selected = await showDialog<int>(
+                    context: context,
+                    builder: (dialogContext) => SimpleDialog(
+                            title: const Text('Bác dành bao nhiêu phút?'),
+                            children: [
+                              for (final n in [5, 10, 15, 20, 30, 45, 60])
+                                SimpleDialogOption(
+                                    onPressed: () =>
+                                        Navigator.pop(dialogContext, n),
+                                    child: Padding(
+                                        padding:
+                                            const EdgeInsets.all(AppSpacing.md),
+                                        child: Text('$n phút')))
+                            ]));
+                if (selected != null) vm.setDuration(selected);
+              }),
           const SizedBox(height: AppSpacing.lg),
           _SectionTitle(
               key: _timeAnchor, icon: Icons.schedule_rounded, text: 'Giờ làm'),

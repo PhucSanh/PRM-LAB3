@@ -404,3 +404,8 @@ Các hàng `todo` ở bảng Lab 2 phía trên là trạng thái lịch sử. Y�
 | Sửa/dời/bỏ qua trên UI mới | `/calendar/task/:id` | TodayViewModel / TaskFormViewModel / ScopedTaskRepository | implemented local; đúng ngày, scope, xác nhận và Undo |
 
 Chi tiết và giới hạn nghiệm thu: `flow-completion-implementation.md`.
+
+
+### DT-GROQ-VOICE — 06/11/2026
+
+Yêu cầu người dùng: tích hợp LLM Groq cho Bác nói để thêm lịch, key bổ sung sau. `/today/voice` đổi từ chỉ nhận tên sang tách tên/ngày/giờ/lặp, hỏi lại khi thiếu, đọc và duyệt draft, chuyển F4 để lưu. ViewModel → VoiceTaskService → authenticated callable; không gọi HTTP/SDK từ widget. Dùng shared AppTextField/AppButton/VoiceTaskReview và tokens VELORA hiện tại. Backend có secret/validation/quota, không có tool ghi lịch cho LLM. 860 Flutter tests đã qua; chưa có key/endpoint deploy nên model thật và native Android chưa nghiệm thu. Xem `groq-voice-setup.md`. Đây là cập nhật theo yêu cầu trực tiếp; không chỉnh file Figma trong lượt này.

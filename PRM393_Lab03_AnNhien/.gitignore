@@ -62,3 +62,8 @@ ui-debug.log
 
 # Local rules test dependencies
 node_modules/
+
+# Local Groq / Firebase secret configuration
+.secret.local
+.env.*
+!firebase/functions/.env.example

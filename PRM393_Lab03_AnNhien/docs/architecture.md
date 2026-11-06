@@ -390,3 +390,11 @@ Kiểm chứng bản bật đăng nhập: `flutter test` 779 passed; `flutter an
 - Route `/reminder/:taskId?date=YYYY-MM-DD` giữ ngày; khi mở, `ReminderReadAloudControl` đọc nếu cài đặt readAloud bật. UI nêu rõ đọc khi mở, nhắc vào giờ làm; không hứa đọc TTS tự động từ nền.
 - Lỗi tải edit có retry/not-found/lối về lịch; không giữ spinner vô hạn.
 - Rules production đã deploy; Functions bị chặn do yêu cầu gói Blaze. Chi tiết bằng chứng: `readiness-fixes-2026-11-06.md`.
+
+
+### F5: hiểu lịch bằng Groq — 06/11/2026
+
+- `/today/voice` giữ Android STT/TTS. `VoiceInputViewModel` gọi `VoiceTaskService` sau hành động gửi chữ tường minh; production chọn `FirebaseVoiceTaskService` trong providers.dart. UI_PREVIEW và test mới dùng Fake.
+- `interpretVoiceTask` là callable có Auth, secret `GROQ_API_KEY`, model server parameter `GROQ_VOICE_MODEL`, quota transaction `voiceUsage/{uid}`. Chỉ trả draft/clarification, không ghi lịch. Không gửi transcript vào analytics/crash/Firestore.
+- `VoiceTaskDraft`/`VoiceTaskInterpretation` kiểm tra response; xác nhận chỉ điền TaskFormViewModel, giữ bước Lưu hiện tại. Session/generation bỏ kết quả về muộn. Chi tiết cấu hình, giới hạn và kiểm chứng ở [groq-voice-setup.md](groq-voice-setup.md).
+- Chưa có key/chưa deploy; Functions vẫn cần project đủ điều kiện Blaze. Không coi widget/mock tests là đã kiểm chứng model thật.

@@ -14,6 +14,7 @@ class AppTextField extends StatelessWidget {
     this.hint,
     this.controller,
     this.focusNode,
+    this.enabled = true,
     this.errorText,
     this.keyboardType,
     this.maxLength,
@@ -31,6 +32,7 @@ class AppTextField extends StatelessWidget {
   final String? hint;
   final TextEditingController? controller;
   final FocusNode? focusNode;
+  final bool enabled;
 
   /// Câu lỗi nói rõ thiếu gì, vd. "Bác chưa nhập tên việc." (AppStyleGuide › Lỗi nhập).
   final String? errorText;
@@ -67,6 +69,7 @@ class AppTextField extends StatelessWidget {
                 child: Semantics(
               label: label,
               child: TextField(
+                enabled: enabled,
                 onTapOutside: (_) =>
                     FocusManager.instance.primaryFocus?.unfocus(),
                 controller: controller,

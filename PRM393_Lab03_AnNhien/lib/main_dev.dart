@@ -1,3 +1,5 @@
+import 'services/contact_launcher_service.dart';
+import 'services/voice_task_service.dart';
 import 'main.dart' as production;
 import 'models/user_profile.dart';
 import 'models/task_item.dart';
@@ -67,6 +69,9 @@ Future<void> main() async {
   ]);
   runApp(ProviderScope(
     overrides: [
+      contactLauncherServiceProvider
+          .overrideWithValue(FakeContactLauncherService()),
+      voiceTaskServiceProvider.overrideWithValue(FakeVoiceTaskService()),
       authGuardEnabledProvider.overrideWithValue(false),
       initialRouteProvider.overrideWithValue(const String.fromEnvironment(
           'INITIAL_ROUTE',

@@ -7,7 +7,7 @@
   },
   "scripts": {
     "test": "node --test test/*.test.cjs",
-    "check": "node --check index.cjs && node --check domain.cjs && node --check notification-events.cjs && node --check push-delivery.cjs"
+    "check": "node --check index.cjs && node --check domain.cjs && node --check notification-events.cjs && node --check push-delivery.cjs && node --check voice-task.cjs && node --check evaluate-voice.cjs"
   },
   "dependencies": {
     "firebase-admin": "^14.5.0",

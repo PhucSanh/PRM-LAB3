@@ -67,7 +67,8 @@ class AppShell extends StatelessWidget {
     final content = caregiver
         ? navigationShell
         : SuggestionPopupListener(active: legacyToday, child: navigationShell);
-    if (uri.path.startsWith('/activities/habits/') ||
+    if (uri.path.startsWith('/activities/guides/') ||
+        uri.path.startsWith('/activities/habits/') ||
         uri.path.startsWith('/calendar/task/') ||
         uri.path.startsWith('/today/task/')) {
       return content;
