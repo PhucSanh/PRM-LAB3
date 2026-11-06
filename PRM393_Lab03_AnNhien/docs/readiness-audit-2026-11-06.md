@@ -1,5 +1,7 @@
 # Rà soát độ sẵn sàng sau khi hoàn thiện bốn nhóm luồng
 
+> Các mục code bên dưới đã được xử lý trong lượt tiếp theo: xem [kết quả sửa và triển khai](readiness-fixes-2026-11-06.md). Cloud Functions còn bị Firebase chặn bởi yêu cầu gói Blaze; chưa có thiết bị nghiệm thu.
+
 Ngày: 06/11/2026. Revision kiểm tra: `129cac6`. Không sửa code sản phẩm trong lượt rà soát này.
 
 Kết luận: chưa nên chốt hoàn thiện để dùng thực tế. Bộ 818 test trước đó đạt nhưng chưa phủ các ca lịch dưới đây. Ba ca đã tái hiện bằng kiểm thử chẩn đoán; các mục cài đặt và lỗi tải được xác nhận qua đường gọi trong code.

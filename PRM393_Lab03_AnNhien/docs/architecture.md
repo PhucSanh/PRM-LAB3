@@ -380,3 +380,13 @@ Kiểm chứng bản bật đăng nhập: `flutter test` 779 passed; `flutter an
 - `reportServiceProvider` dùng `WeeklyReportService` lấy đủ bảy ngày qua TaskRepository, render PDF bằng font nhúng và lưu bằng document picker. FirebaseReportService/PDF mẫu vẫn chỉ phục vụ khu demo. Đây thay mô tả F7 chưa có renderer ở tài liệu cũ.
 - Routes mới/hoàn thiện: `/today/voice`, `/settings/reminders`, `/calendar/export`; không còn FeaturePlaceholder trong router. Chức năng giọng nói vẫn theo cờ Remote Config.
 - Xem `flow-completion-implementation.md` cho phạm vi triển khai, kiểm chứng và bước deploy/thiết bị còn cần nghiệm thu.
+
+
+### Sửa các ca biên lịch và nhắc việc — 06/11/2026
+
+- Scope edit hỗ trợ một lần → lặp; sửa lần đã dời dùng reschedule snapshot trong `ScheduleUndo`, phục hồi cùng template trong transaction.
+- Chính sách identity vẫn là task/ngày: từ chối dời sang ngày đã có lần khác của cùng việc, kèm hướng dẫn cụ thể. Mọi transaction dời cập nhật revision template; Undo từ chối ghi đè lần dời mới.
+- `ReminderRuntime` lắng cài đặt rung theo UID và lên lịch lại khi đổi. Hai kênh Android tách biệt lựa chọn rung vì thuộc tính channel không thay sau khi tạo.
+- Route `/reminder/:taskId?date=YYYY-MM-DD` giữ ngày; khi mở, `ReminderReadAloudControl` đọc nếu cài đặt readAloud bật. UI nêu rõ đọc khi mở, nhắc vào giờ làm; không hứa đọc TTS tự động từ nền.
+- Lỗi tải edit có retry/not-found/lối về lịch; không giữ spinner vô hạn.
+- Rules production đã deploy; Functions bị chặn do yêu cầu gói Blaze. Chi tiết bằng chứng: `readiness-fixes-2026-11-06.md`.
