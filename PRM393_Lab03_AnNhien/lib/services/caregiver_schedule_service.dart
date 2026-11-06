@@ -1,3 +1,4 @@
+import 'task_repository.dart' show TaskReschedule;
 import 'dart:async';
 import '../models/task_item.dart';
 import '../utils/app_error.dart';
@@ -11,7 +12,9 @@ class ScheduleOccurrence {
 }
 
 class ScheduleUndo {
-  ScheduleUndo(this.momUid, this.before, this.after);
+  ScheduleUndo(this.momUid, this.before, this.after,
+      {this.reschedulesBefore = const {}, this.reschedulesAfter = const {}});
+  final Map<String, TaskReschedule?> reschedulesBefore, reschedulesAfter;
   final String momUid;
   final Map<String, TaskItem?> before, after;
   bool used = false;
@@ -30,7 +33,21 @@ abstract interface class CaregiverScheduleService {
 /// Cùng một thuật toán scope cho Fake và Firebase; không xoá completion lịch sử.
 ({Map<String, TaskItem?> before, Map<String, TaskItem?> after})
     planScheduleChange(TaskItem current, DateTime day, TaskItem? replacement,
-        ChangeScope scope, String newId) {
+        ChangeScope scope, String newId, {TaskReschedule? moved}) {
+  if (moved != null) {
+    if (moved.taskId != current.id || moved.targetDate != dateKey(day) ||
+        !current.occursOn(DateTime.parse(moved.sourceDate))) {
+      throw const AppException('Lần việc đã dời đã thay đổi. Bác tải lại lịch nhé.');
+    }
+    // Editing a moved occurrence detaches that occurrence; the series stays intact.
+    final recurring = current.repeat == RepeatRule.once && replacement?.repeat != RepeatRule.once;
+    return (before: {current.id: current, if (replacement != null) newId: null}, after: {
+      current.id: current.copyWith(excludedDates: {...current.excludedDates, moved.sourceDate}.toList(), revision: current.revision + 1),
+      if (replacement != null) newId: replacement.copyWith(id:newId, completionSourceId:current.id,
+        startDate:dateKey(day), endDate: recurring ? null : dateKey(day), clearEndDate:recurring,
+        repeat:recurring ? replacement.repeat : RepeatRule.once, excludedDates:[], revision:0),
+    });
+  }
   if (!current.occursOn(day)) {
     throw const AppException(
         'Lần nhắc này đã thay đổi. Tải lại lịch rồi thử lại.');
@@ -86,6 +103,7 @@ class FakeCaregiverScheduleService implements CaregiverScheduleService {
       : tasks = {for (final t in seed) t.id: t};
   final Map<String, TaskItem> tasks;
   final _changes = StreamController<void>.broadcast(sync: true);
+  final reschedules = <String, TaskReschedule>{};
   bool fail = false;
   void _check() {
     if (fail) throw AppException.network;
@@ -96,8 +114,15 @@ class FakeCaregiverScheduleService implements CaregiverScheduleService {
     for (var d = calendarDate(from);
         !d.isAfter(through);
         d = d.add(const Duration(days: 1))) {
-      for (final t in tasks.values.where((t) => t.occursOn(d))) {
+      for (final t in tasks.values.where((t) => t.occursOn(d) && !reschedules.containsKey('${t.id}_${dateKey(d)}'))) {
         list.add(ScheduleOccurrence(t, d));
+      }
+    }
+    for (final r in reschedules.values) {
+      final day = DateTime.parse(r.targetDate), task = tasks[r.taskId];
+      if (task != null && !day.isBefore(calendarDate(from)) && !day.isAfter(calendarDate(through))) {
+        list.add(ScheduleOccurrence(task.copyWith(hour:r.hour, minute:r.minute,
+          occurrenceDate:r.targetDate, rescheduleSourceDate:r.sourceDate, isRescheduled:true), day));
       }
     }
     list.sort((a, b) =>
@@ -158,8 +183,11 @@ class FakeCaregiverScheduleService implements CaregiverScheduleService {
     if (current == null || current.revision != original.revision) {
       throw const AppException('Lịch đã thay đổi. Tải lại rồi thử lại.');
     }
+    final movedKey = '${original.id}_${original.rescheduleSourceDate ?? dateKey(day)}';
+    final candidate = reschedules[movedKey];
+    final moved = candidate?.targetDate == dateKey(day) ? candidate : null;
     final plan = planScheduleChange(current, day, replacement, scope,
-        '${current.id}-${DateTime.now().microsecondsSinceEpoch}');
+        '${current.id}-${DateTime.now().microsecondsSinceEpoch}', moved:moved);
     for (final e in plan.after.entries) {
       if (e.value == null) {
         tasks.remove(e.key);
@@ -168,7 +196,10 @@ class FakeCaregiverScheduleService implements CaregiverScheduleService {
       }
     }
     _changes.add(null);
-    return ScheduleUndo(momUid, plan.before, plan.after);
+    if (moved != null) reschedules.remove(movedKey);
+    return ScheduleUndo(momUid, plan.before, plan.after,
+      reschedulesBefore: {if(moved != null) movedKey:moved},
+      reschedulesAfter: {if(moved != null) movedKey:null});
   }
 
   @override
@@ -186,6 +217,9 @@ class FakeCaregiverScheduleService implements CaregiverScheduleService {
       } else {
         tasks[e.key] = e.value!.copyWith(revision: tasks[e.key]!.revision + 1);
       }
+    }
+    for (final e in change.reschedulesBefore.entries) {
+      if(e.value == null) { reschedules.remove(e.key); } else { reschedules[e.key] = e.value!; }
     }
     change.used = true;
     _changes.add(null);
