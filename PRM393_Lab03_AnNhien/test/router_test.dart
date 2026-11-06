@@ -9,7 +9,7 @@ import 'package:flutter_test/flutter_test.dart';
 /// Mọi route placeholder trong architecture.md mục 7.2: path mẫu → mã màn hiện trên `FeaturePlaceholder`.
 const _placeholders = {
   '/today/voice': 'Nói để thêm việc',
-  '/settings/reminders': 'Cài đặt nhắc việc',
+  '/settings/reminders': 'Lời nhắc',
 };
 
 const _migratedRoutes = {

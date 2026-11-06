@@ -1,3 +1,5 @@
+import 'caregiver_schedule_service.dart' as schedule;
+import 'firebase_caregiver_schedule_service.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
@@ -80,7 +82,7 @@ class FirebaseHabitRepository implements HabitRepository {
 }
 
 /// Giữ contract F3/F4; trạng thái hiện tại luôn thuộc ngày UTC+7 hôm nay.
-class FirebaseTaskRepository implements TaskRepository {
+class FirebaseTaskRepository implements TaskRepository, ScopedTaskRepository {
   FirebaseTaskRepository(this.data);
   final FirebaseUserData data;
   DateTime get today => DateTime.now().toUtc().add(const Duration(hours: 7));
@@ -133,6 +135,19 @@ class FirebaseTaskRepository implements TaskRepository {
         return scheduled;
       });
   @override
+  Future<schedule.ScheduleUndo> changeOccurrence(TaskItem original,
+          DateTime day, TaskItem? replacement, schedule.ChangeScope scope) =>
+      FirebaseCaregiverScheduleService(data).change(
+          data.auth.currentUser!.uid, original, day, replacement, scope);
+  @override
+  Future<void> undoOccurrence(schedule.ScheduleUndo change) async {
+    if (data.auth.currentUser?.uid != change.momUid) {
+      throw const AppException('Tài khoản đã thay đổi. Bác mở lại lịch nhé.');
+    }
+    await FirebaseCaregiverScheduleService(data).undo(change);
+  }
+
+  @override
   Future<void> save(TaskItem task) => data.run(() async {
         final normalized =
             task.copyWith(startDate: task.startDate ?? dateKey(today));
@@ -151,9 +166,17 @@ class FirebaseTaskRepository implements TaskRepository {
       data.run(() async {
         final key = dateKey(today);
         final task = await data.collection('tasks').doc(taskId).get();
-        if (!task.exists ||
-            !TaskItem.fromMap(taskId, task.data()!).occursOn(today)) {
+        if (!task.exists) {
           throw const AppException('Việc này không nằm trong lịch hôm nay.');
+        }
+        if (!TaskItem.fromMap(taskId, task.data()!).occursOn(today)) {
+          final moved = await data
+              .collection('taskReschedules')
+              .where('taskId', isEqualTo: taskId)
+              .get();
+          if (!moved.docs.any((d) => d.data()['targetDate'] == key)) {
+            throw const AppException('Việc này không nằm trong lịch hôm nay.');
+          }
         }
         await data.collection('completions').doc('${taskId}_$key').set({
           'taskId': taskId,

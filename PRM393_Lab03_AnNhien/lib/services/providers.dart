@@ -1,3 +1,6 @@
+import 'weekly_report_service.dart';
+import 'device_access_service.dart';
+import 'firebase_family_suggestion_service.dart';
 import 'caregiver_suggestion_service.dart' as caregiver;
 import 'local_reminder_service.dart';
 import 'reminder_runtime.dart';
@@ -74,7 +77,10 @@ final messagingServiceProvider = Provider<MessagingService>((ref) {
   return service;
 });
 final reportServiceProvider = Provider<ReportService>((ref) =>
-    FirebaseReportService(FirebaseAuth.instance, FirebaseStorage.instance));
+    WeeklyReportService(
+        ref.watch(taskRepositoryProvider),
+        ref.watch(deviceAccessServiceProvider),
+        () => ref.read(authServiceProvider).currentUser?.uid));
 
 final _userDataProvider = Provider((ref) => FirebaseUserData(
     ref.watch(firestoreSdkProvider), ref.watch(authSdkProvider)));
@@ -106,11 +112,10 @@ final reminderServiceProvider = Provider<ReminderService>((ref) {
 final profileSetupServiceProvider = Provider<ProfileSetupService>(
     (ref) => FirebaseProfileSetupService(ref.watch(_userDataProvider)));
 
-// F12 retains its separate demo contract. Never synthesize sample family alerts
-// in production. main_dev opts into samples explicitly. Real incoming push opens
-// /inbox/suggestions/:id through caregiverSuggestionServiceProvider below.
-final suggestionServiceProvider = Provider<SuggestionService>(
-    (ref) => FakeSuggestionService(withSample: false, delay: Duration.zero));
+// Main family screens and inbox share the Firebase tasks/callables schema.
+final suggestionServiceProvider = Provider<SuggestionService>((ref) =>
+    FirebaseFamilySuggestionService(
+        ref.watch(_userDataProvider), ref.watch(callableClientProvider)));
 
 /// F10 uses a labelled test PDF; F7 retains its own renderer contract.
 final demoReportServiceProvider = Provider<ReportService>((ref) =>
@@ -146,3 +151,6 @@ final reminderRuntimeProvider = Provider<ReminderRuntime>((ref) {
   ref.onDispose(runtime.dispose);
   return runtime;
 });
+
+final deviceAccessServiceProvider =
+    Provider<DeviceAccessService>((ref) => AndroidDeviceAccessService());

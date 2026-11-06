@@ -1,3 +1,7 @@
+import '../viewmodels/task_form_view_model.dart';
+import '../screens/calm/weekly_report_screen.dart';
+import '../screens/voice/voice_input_screen.dart';
+import '../screens/settings/reminder_settings_screen.dart';
 import '../services/local_reminder_service.dart';
 import '../viewmodels/caregiver_schedule_view_model.dart';
 import '../screens/firebase_demo/suggestion_demo_screen.dart';
@@ -40,7 +44,6 @@ import '../screens/today/task_detail_screen.dart';
 import '../viewmodels/session_view_model.dart';
 import '../widgets/app_shell.dart';
 import '../widgets/dev/widget_gallery.dart';
-import '../widgets/feature_placeholder.dart';
 import '../screens/tasks/task_form_screens.dart';
 import '../screens/calm/calendar_screen.dart';
 import '../screens/calm/activities_screen.dart';
@@ -90,6 +93,7 @@ final routerProvider = Provider<GoRouter>((ref) {
       if (lastUid != user?.uid) {
         lastUid = user?.uid;
         ref.invalidate(todayViewModelProvider);
+        ref.invalidate(taskFormViewModelProvider);
         ref.invalidate(roleViewModelProvider);
         ref.invalidate(taskRepositoryProvider);
         ref.invalidate(familyRepositoryProvider);
@@ -102,15 +106,6 @@ final routerProvider = Provider<GoRouter>((ref) {
       fireImmediately: true);
   ref.listen(signOutViewModelProvider, (_, __) => refresh.value++);
   late final GoRouter router;
-
-  FeaturePlaceholder ph(String code, String title, String owner,
-          {bool back = true}) =>
-      FeaturePlaceholder(
-          code: code,
-          title: title,
-          owner: owner,
-          showBack: back,
-          onAccount: () => router.push('/account'));
 
   router = GoRouter(
     initialLocation: ref.read(initialRouteProvider),
@@ -190,6 +185,9 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
           path: '/setup/first-task',
           builder: (_, __) => const FirstTaskScreen()),
+      GoRoute(
+          path: '/calendar/export',
+          builder: (_, __) => const WeeklyReportScreen()),
       // F4 Thêm, sửa, xoá việc – Khang (màn con N11–N13, trả kết quả bằng pop(result))
       GoRoute(path: '/task/date', builder: (_, __) => const TaskDateScreen()),
       GoRoute(
@@ -203,7 +201,7 @@ final routerProvider = Provider<GoRouter>((ref) {
               : CalmTaskDetailScreen(id: state.pathParameters['taskId']!)),
       GoRoute(
           path: '/settings/reminders',
-          builder: (_, __) => ph('N07 · F6', 'Cài đặt nhắc việc', 'Khang')),
+          builder: (_, __) => const ReminderSettingsScreen()),
       // F8 Cài đặt & hồ sơ – Sanh (khu demo Firebase F10 – Hiếu)
       GoRoute(path: '/settings', builder: (_, __) => const SettingsScreen()),
       GoRoute(
@@ -217,8 +215,8 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(path: '/inbox', builder: (_, __) => const InboxScreen()),
       GoRoute(
           path: '/inbox/suggestions/:id',
-          builder: (_, state) =>
-              SuggestionDemoScreen(suggestionId: state.pathParameters['id']!)),
+          builder: (_, state) => SuggestionReviewScreen(
+              id: state.pathParameters['id']!, entry: SuggestionEntry.push)),
       // Chế độ Con cháu: editor/detail ở root, ba destination có shell riêng.
       // F13/F14 – Hiếu. Guard demo vẫn mặc định tắt.
       GoRoute(
@@ -341,7 +339,9 @@ final routerProvider = Provider<GoRouter>((ref) {
                   GoRoute(
                       path: 'task/:id/edit',
                       builder: (_, state) => TaskConfigureScreen(
-                          editId: state.pathParameters['id']!)),
+                          editId: state.pathParameters['id']!,
+                          day:
+                              parseDateKey(state.uri.queryParameters['date']))),
                   GoRoute(
                       path: 'add',
                       builder: (_, __) => const ActivitySelectionScreen()),
@@ -354,8 +354,7 @@ final routerProvider = Provider<GoRouter>((ref) {
                   // F5 Giọng nói – Khang
                   GoRoute(
                       path: 'voice',
-                      builder: (_, __) =>
-                          ph('V01 · F5', 'Nói để thêm việc', 'Khang')),
+                      builder: (_, __) => const VoiceInputScreen()),
                   // F7 Lịch tuần – Hương
                   GoRoute(
                       path: 'all', builder: (_, __) => const CalendarScreen()),

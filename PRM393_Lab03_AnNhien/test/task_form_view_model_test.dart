@@ -1,3 +1,4 @@
+import 'package:an_nhien/services/caregiver_schedule_service.dart' as scoped;
 import 'package:an_nhien/models/task_item.dart';
 import 'package:an_nhien/services/analytics_service.dart';
 import 'package:an_nhien/services/crash_service.dart';
@@ -6,6 +7,21 @@ import 'package:an_nhien/services/task_repository.dart';
 import 'package:an_nhien/viewmodels/task_form_view_model.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+
+class ScopedTestRepository extends FakeTaskRepository
+    implements ScopedTaskRepository {
+  ScopedTestRepository(List<TaskItem> tasks)
+      : schedules = scoped.FakeCaregiverScheduleService(tasks),
+        super(List.of(tasks));
+  final scoped.FakeCaregiverScheduleService schedules;
+  @override
+  Future<scoped.ScheduleUndo> changeOccurrence(TaskItem original, DateTime day,
+          TaskItem? replacement, scoped.ChangeScope scope) =>
+      schedules.change('owner', original, day, replacement, scope);
+  @override
+  Future<void> undoOccurrence(scoped.ScheduleUndo change) =>
+      schedules.undo(change);
+}
 
 void main() {
   late FakeTaskRepository repository;
@@ -87,5 +103,54 @@ void main() {
     expect(await vm.delete(ChangeScope.once), isTrue);
     expect(await repository.tasksForDay(DateTime.now()), isEmpty);
     expect(analytics.logged, containsAll(['edit_task', 'delete_task']));
+  });
+  test(
+      'future occurrence edit preserves other dates and Undo restores the series',
+      () async {
+    const original = TaskItem(
+        id: 'series',
+        title: 'Đi bộ',
+        habitKey: 'move',
+        hour: 8,
+        minute: 0,
+        startDate: '2026-11-01');
+    final scopedRepo = ScopedTestRepository([original]);
+    final c = ProviderContainer(overrides: [
+      taskRepositoryProvider.overrideWithValue(scopedRepo),
+      analyticsServiceProvider.overrideWithValue(FakeAnalyticsService()),
+      crashServiceProvider.overrideWithValue(FakeCrashService()),
+    ]);
+    addTearDown(c.dispose);
+    final vm = c.read(taskFormViewModelProvider.notifier);
+    final day = DateTime(2099, 11, 7);
+    expect(await vm.startEdit('series', day: day), true);
+    vm.setTitle('Đi bộ cùng con');
+    expect(await vm.save(scope: ChangeScope.once), true);
+    final tasks = scopedRepo.schedules.tasks.values.toList();
+    expect(tasks.where((t) => t.occursOn(day)).single.title, 'Đi bộ cùng con');
+    expect(
+        tasks
+            .where((t) => t.occursOn(day.add(const Duration(days: 1))))
+            .single
+            .title,
+        'Đi bộ');
+    await vm.undoLastMutation();
+    expect(scopedRepo.schedules.tasks.values.single.title, 'Đi bộ');
+    expect(scopedRepo.schedules.tasks.values.single.excludedDates, isEmpty);
+  });
+
+  test(
+      'create saves chosen date and weekly days instead of defaulting to today',
+      () async {
+    final vm = container.read(taskFormViewModelProvider.notifier);
+    vm.startCreate();
+    vm.setDate(DateTime(2099, 11, 9));
+    vm.setRepeat(RepeatRule.someDays);
+    vm.setWeekdays({DateTime.monday, DateTime.friday});
+    expect(await vm.save(), true);
+    final task = container.read(taskFormViewModelProvider).original!;
+    expect(task.startDate, '2099-11-09');
+    expect(task.weekdays.toSet(), {DateTime.monday, DateTime.friday});
+    expect(task.occursOn(DateTime(2099, 11, 8)), false);
   });
 }

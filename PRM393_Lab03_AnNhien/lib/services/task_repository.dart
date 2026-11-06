@@ -1,3 +1,4 @@
+import 'caregiver_schedule_service.dart' as schedule;
 import '../models/task_item.dart';
 
 /// Việc của Bác. Bản thật (Firestore users/{uid}/tasks): B – Hiếu, F1/F4.
@@ -13,6 +14,13 @@ abstract interface class TaskRepository {
 
   /// Hoàn tác chính xác một lần dời, kể cả khi occurrence đã từng được dời.
   Future<void> restoreReschedule(TaskRescheduleChange change);
+}
+
+/// Optional contract for atomic edits/deletes of recurring occurrences.
+abstract interface class ScopedTaskRepository {
+  Future<schedule.ScheduleUndo> changeOccurrence(TaskItem original,
+      DateTime day, TaskItem? replacement, schedule.ChangeScope scope);
+  Future<void> undoOccurrence(schedule.ScheduleUndo change);
 }
 
 /// Bản ghi dời của một occurrence. [history] chỉ lưu mốc thời gian, không có

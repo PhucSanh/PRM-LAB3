@@ -1,3 +1,5 @@
+import '../today/task_detail_screen.dart' show runTaskAction;
+import '../../viewmodels/today_view_model.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -174,6 +176,12 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
               await context.push('/today/add');
               if (mounted) ref.invalidate(calendarTasksProvider(key));
             }),
+        const SizedBox(height: AppSpacing.base),
+        AppButton(
+            label: 'Lưu lịch tuần PDF',
+            icon: Icons.picture_as_pdf_rounded,
+            kind: AppButtonKind.secondary,
+            onPressed: () => context.push('/calendar/export')),
       ]),
     )));
   }
@@ -266,7 +274,50 @@ class CalmTaskDetailScreen extends ConsumerWidget {
                         }
                       }
                     }),
-              if (today) ...[
+              if (today && !task.isDone) ...[
+                const SizedBox(height: AppSpacing.base),
+                AppButton(
+                    label: 'Dời lại',
+                    icon: AppIcons.later,
+                    kind: AppButtonKind.secondary,
+                    onPressed: busy
+                        ? null
+                        : () async {
+                            final vm =
+                                ref.read(todayViewModelProvider.notifier);
+                            await vm.load();
+                            if (!context.mounted) return;
+                            await runTaskAction(context, task,
+                                postpone: vm.postpone, undo: () async {
+                              final ok = await vm.undoLastAction();
+                              ref.invalidate(calendarTasksProvider);
+                              return ok;
+                            });
+                            ref.invalidate(calendarTasksProvider);
+                          }),
+                const SizedBox(height: AppSpacing.base),
+                AppButton(
+                    label: 'Bỏ qua hôm nay',
+                    icon: AppIcons.skipToday,
+                    kind: AppButtonKind.secondary,
+                    onPressed: busy
+                        ? null
+                        : () async {
+                            final vm =
+                                ref.read(todayViewModelProvider.notifier);
+                            await vm.load();
+                            if (!context.mounted) return;
+                            await runTaskAction(context, task,
+                                skip: () => vm.skip(task.id),
+                                undo: () async {
+                                  final ok = await vm.undoLastAction();
+                                  ref.invalidate(calendarTasksProvider);
+                                  return ok;
+                                });
+                            ref.invalidate(calendarTasksProvider);
+                          }),
+              ],
+              if (!day.isBefore(vietnamToday())) ...[
                 const SizedBox(height: AppSpacing.base),
                 AppButton(
                     label: 'Chỉnh sửa',
@@ -274,7 +325,7 @@ class CalmTaskDetailScreen extends ConsumerWidget {
                     kind: AppButtonKind.secondary,
                     onPressed: () async {
                       await context.push(
-                          '/today/task/${Uri.encodeComponent(task.id)}/edit');
+                          '/today/task/${Uri.encodeComponent(task.id)}/edit?date=$key');
                       if (context.mounted) {
                         ref.invalidate(calendarTasksProvider(key));
                       }
