@@ -1,4 +1,6 @@
 import 'package:clock/clock.dart';
+import 'package:flutter/semantics.dart';
+import 'package:an_nhien/viewmodels/task_form_view_model.dart';
 import 'package:an_nhien/app.dart';
 import 'package:an_nhien/models/task_item.dart';
 import 'package:an_nhien/models/user_profile.dart';
@@ -109,6 +111,94 @@ void main() {
     await icons.load();
   });
 
+  for (final scale in [1.0, 2.0]) {
+    testReferenceWidgets(
+        'sticky add preserves selected calendar day at scale $scale',
+        (tester) async {
+      final c = await pumpApp(tester, '/calendar?date=2030-02-03',
+          width: 360, scale: scale);
+      final button = find.text('Thêm hoạt động');
+      expect(button.hitTestable(), findsOneWidget);
+      await tester.tap(button);
+      await tester.pumpAndSettle();
+      expect(dateKey(c.read(taskFormViewModelProvider).date!), '2030-02-03');
+      await tester.tap(find.text('Tiếp tục'));
+      await tester.pumpAndSettle();
+      expect(dateKey(c.read(taskFormViewModelProvider).date!), '2030-02-03');
+      expect(tester.takeException(), isNull);
+      await closeApp(tester);
+    });
+  }
+  testReferenceWidgets('habit adds directly without reselecting the activity',
+      (tester) async {
+    final c = await pumpApp(tester, '/activities/habits/downshift',
+        width: 360, scale: 2);
+    await tester.tap(find.text('Thêm vào lịch'));
+    await tester.pumpAndSettle();
+    expect(find.text('Thêm việc'), findsOneWidget);
+    expect(c.read(taskFormViewModelProvider).activity, 'downshift');
+    expect(c.read(taskFormViewModelProvider).title, 'Thư giãn mỗi ngày');
+    expect(find.text('Đi bộ nhẹ nhàng'), findsNothing);
+    expect(tester.takeException(), isNull);
+    await closeApp(tester);
+  });
+  testReferenceWidgets('TalkBack navigation action changes the actual route',
+      (tester) async {
+    final handle = tester.ensureSemantics();
+    final c = await pumpApp(tester, '/calendar');
+    final node = tester.getSemantics(find.bySemanticsLabel('Gia đình').last);
+    tester.binding.performSemanticsAction(SemanticsActionEvent(
+        viewId: tester.view.viewId,
+        nodeId: node.id,
+        type: SemanticsAction.tap));
+    await tester.pumpAndSettle();
+    expect(c.read(routerProvider).routeInformationProvider.value.uri.path,
+        '/family');
+    await closeApp(tester);
+    handle.dispose();
+  });
+  testReferenceWidgets('TalkBack opens a home category', (tester) async {
+    final handle = tester.ensureSemantics();
+    final c = await pumpApp(tester, '/calendar');
+    final node =
+        tester.getSemantics(find.bySemanticsLabel('Vận động tự nhiên').last);
+    expect(node.getSemanticsData().hasAction(SemanticsAction.tap), isTrue);
+    tester.binding.performSemanticsAction(SemanticsActionEvent(
+        viewId: tester.view.viewId,
+        nodeId: node.id,
+        type: SemanticsAction.tap));
+    await tester.pumpAndSettle();
+    expect(find.text('Bắt đầu từ một việc nhỏ'), findsOneWidget);
+    expect(c.read(taskFormViewModelProvider).saveState, TaskSaveState.editing);
+    await closeApp(tester);
+    handle.dispose();
+  });
+  for (final role in UserRole.values) {
+    testReferenceWidgets('account shows pairing for the current role $role',
+        (tester) async {
+      await pumpApp(tester, '/account', role: role);
+      expect(find.text('Mã ghép nối của Bác'),
+          role == UserRole.elder ? findsOneWidget : findsNothing);
+      expect(find.text('Ghép nối và lịch của mẹ'),
+          role == UserRole.caregiver ? findsOneWidget : findsNothing);
+      await closeApp(tester);
+    });
+  }
+  testReferenceWidgets(
+      'large text navigation keeps complete labels and opens family',
+      (tester) async {
+    final c = await pumpApp(tester, '/calendar', width: 320, scale: 2);
+    expect(find.text('Menu: Trang chủ'), findsOneWidget);
+    await tester.tap(find.text('Menu: Trang chủ'));
+    await tester.pumpAndSettle();
+    expect(find.text('Chuyển mục'), findsOneWidget);
+    await tapText(tester, 'Gia đình');
+    expect(c.read(routerProvider).routeInformationProvider.value.uri.path,
+        '/family');
+    expect(find.text('Menu: Gia đình'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+    await closeApp(tester);
+  });
   test('production default is the reference introduction', () {
     final container = ProviderContainer();
     addTearDown(container.dispose);
@@ -216,6 +306,8 @@ void main() {
     final container = await pumpApp(tester, '/week/2026-11-06');
     final router = container.read(routerProvider);
     expect(router.routeInformationProvider.value.uri.path, '/calendar');
+    await tester.scrollUntilVisible(find.text(task.title), 250,
+        scrollable: find.byType(Scrollable).first);
     expect(find.text(task.title), findsOneWidget);
     router.go('/week/2026-11-06/task/${task.id}');
     await tester.pumpAndSettle();

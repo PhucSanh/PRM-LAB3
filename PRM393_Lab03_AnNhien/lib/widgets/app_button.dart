@@ -50,29 +50,29 @@ class AppButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    final child = busy
-        ? const SizedBox.square(
+    final child = Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        if (busy) ...[
+          const SizedBox.square(
             dimension: AppSizes.spinnerInButton,
             child:
                 CircularProgressIndicator(strokeWidth: AppSizes.spinnerStroke),
-          )
-        : Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              if (!trailingIcon) ...[
-                Icon(icon, size: AppSizes.icon),
-                const SizedBox(width: AppSpacing.md),
-              ],
-              Flexible(
-                  child:
-                      Text(label, textAlign: TextAlign.center, softWrap: true)),
-              if (trailingIcon) ...[
-                const SizedBox(width: AppSpacing.lg),
-                Icon(icon, size: AppSizes.icon),
-              ],
-            ],
-          );
+          ),
+          const SizedBox(width: AppSpacing.md),
+        ] else if (!trailingIcon) ...[
+          Icon(icon, size: AppSizes.icon),
+          const SizedBox(width: AppSpacing.md),
+        ],
+        Flexible(
+            child: Text(label, textAlign: TextAlign.center, softWrap: true)),
+        if (trailingIcon && !busy) ...[
+          const SizedBox(width: AppSpacing.lg),
+          Icon(icon, size: AppSizes.icon),
+        ],
+      ],
+    );
     final action = busy ? null : onPressed;
     final button = switch (kind) {
       AppButtonKind.primary => FilledButton(onPressed: action, child: child),
@@ -106,6 +106,9 @@ class AppButton extends StatelessWidget {
       button: true,
       enabled: action != null,
       label: label,
+      value: busy ? 'Đang xử lý' : null,
+      liveRegion: busy,
+      onTap: action,
       excludeSemantics: true,
       child: SizedBox(width: double.infinity, child: button),
     );

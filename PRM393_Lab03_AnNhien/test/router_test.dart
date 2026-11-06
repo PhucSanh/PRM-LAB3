@@ -63,6 +63,10 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(tester.takeException(), isNull);
+      if (code == 'Lịch của Bác') {
+        await tester.scrollUntilVisible(find.textContaining(code), 250,
+            scrollable: find.byType(Scrollable).first);
+      }
       expect(find.textContaining(code), findsWidgets);
 
       await tester.pumpWidget(const SizedBox.shrink());

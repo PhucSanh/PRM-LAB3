@@ -69,122 +69,134 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
     final key = dateKey(date), text = Theme.of(context).textTheme;
     final tasks = ref.watch(calendarTasksProvider(key));
     return Scaffold(
+        bottomNavigationBar: SafeArea(
+          top: false,
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(AppSpacing.screen, AppSpacing.sm,
+                AppSpacing.screen, AppSpacing.sm),
+            child: AppButton(
+              label: 'Thêm hoạt động',
+              icon: Icons.add_rounded,
+              onPressed: () async {
+                await context.push('/today/add?date=$key');
+                if (mounted) ref.invalidate(calendarTasksProvider(key));
+              },
+            ),
+          ),
+        ),
         body: SafeArea(
             child: RefreshIndicator(
-      onRefresh: () async => ref.refresh(calendarTasksProvider(key).future),
-      child:
-          ListView(padding: const EdgeInsets.all(AppSpacing.screen), children: [
-        const VeloraGreeting(),
-        const SizedBox(height: AppSpacing.lg),
-        const VeloraHomeDiscovery(),
-        const SizedBox(height: AppSpacing.base),
-        LayoutBuilder(builder: (context, box) {
-          final action = TextButton(
-              style: TextButton.styleFrom(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: AppSpacing.sm)),
-              onPressed: () async {
-                final picked = await showDatePicker(
-                    context: context,
-                    initialDate: date,
-                    firstDate: DateTime(2020),
-                    lastDate: DateTime(2100));
-                if (picked != null) vm.select(picked);
-              },
-              child: const Text('Xem lịch'));
-          if (MediaQuery.textScalerOf(context).scale(20) > 28) {
-            return Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text('Lịch của Bác', style: text.titleLarge),
-                  action
-                ]);
-          }
-          return Row(children: [
-            Expanded(child: Text('Lịch của Bác', style: text.titleLarge)),
-            action
-          ]);
-        }),
-        Text(calendarLabel(date), style: text.bodySmall),
-        const SizedBox(height: AppSpacing.sm),
-        tasks.when(
-          loading: () => const LoadingView(message: 'Đang tải hoạt động…'),
-          error: (_, __) => ErrorView(
-              message: 'Chưa thể tải lịch. Vui lòng thử lại.',
-              onRetry: () => ref.invalidate(calendarTasksProvider(key))),
-          data: (items) => items.isEmpty
-              ? EmptyView(
-                  icon: AppIcons.tabWeek,
-                  title: 'Chưa có hoạt động nào trong ngày này.',
-                  message: 'Các hoạt động đã lên lịch sẽ xuất hiện ở đây.',
-                  action: AppButton(
-                      label: 'Khám phá hoạt động',
-                      icon: AppIcons.tabHabits,
-                      kind: AppButtonKind.secondary,
-                      onPressed: () => context.go('/activities')))
-              : Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                      for (final task in items) ...[
-                        VeloraScheduleCard(
-                            task: task,
-                            onTap: () async {
-                              await context.push(
-                                  '/calendar/task/${Uri.encodeComponent(task.id)}?date=$key');
-                              if (mounted) {
-                                ref.invalidate(calendarTasksProvider(key));
-                              }
-                            }),
-                        const SizedBox(height: AppSpacing.md),
-                      ],
-                    ]),
-        ),
-        const SizedBox(height: AppSpacing.lg),
-        Row(children: [
-          IconButton(
-              tooltip: 'Ngày trước',
-              onPressed: () => vm.move(-1),
-              icon: const Icon(Icons.chevron_left_rounded)),
-          Expanded(
-              child: TextButton(
-                  onPressed: () async {
-                    final picked = await showDatePicker(
-                        context: context,
-                        initialDate: date,
-                        firstDate: DateTime(2020),
-                        lastDate: DateTime(2100));
-                    if (picked != null) vm.select(picked);
-                  },
-                  child:
-                      Text(calendarLabel(date), textAlign: TextAlign.center))),
-          IconButton(
-              tooltip: 'Ngày sau',
-              onPressed: () => vm.move(1),
-              icon: const Icon(Icons.chevron_right_rounded)),
-        ]),
-        if (key != dateKey(vietnamToday()))
-          Align(
-              alignment: AlignmentDirectional.centerStart,
-              child: TextButton.icon(
-                  onPressed: () => vm.select(vietnamToday()),
-                  icon: const Icon(AppIcons.tabToday),
-                  label: const Text('Về hôm nay'))),
-        const SizedBox(height: AppSpacing.base),
-        AppButton(
-            label: 'Thêm hoạt động',
-            icon: Icons.add_rounded,
-            onPressed: () async {
-              await context.push('/today/add');
-              if (mounted) ref.invalidate(calendarTasksProvider(key));
-            }),
-        const SizedBox(height: AppSpacing.base),
-        AppButton(
-            label: 'Lưu lịch tuần PDF',
-            icon: Icons.picture_as_pdf_rounded,
-            kind: AppButtonKind.secondary,
-            onPressed: () => context.push('/calendar/export')),
-      ]),
-    )));
+          onRefresh: () async => ref.refresh(calendarTasksProvider(key).future),
+          child: ListView(
+              padding: const EdgeInsets.all(AppSpacing.screen),
+              children: [
+                const VeloraGreeting(),
+                const SizedBox(height: AppSpacing.lg),
+                const VeloraHomeDiscovery(),
+                const SizedBox(height: AppSpacing.base),
+                LayoutBuilder(builder: (context, box) {
+                  final action = TextButton(
+                      style: TextButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: AppSpacing.sm)),
+                      onPressed: () async {
+                        final picked = await showDatePicker(
+                            context: context,
+                            initialDate: date,
+                            firstDate: DateTime(2020),
+                            lastDate: DateTime(2100));
+                        if (picked != null) vm.select(picked);
+                      },
+                      child: const Text('Xem lịch'));
+                  if (MediaQuery.textScalerOf(context).scale(20) > 28) {
+                    return Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text('Lịch của Bác', style: text.titleLarge),
+                          action
+                        ]);
+                  }
+                  return Row(children: [
+                    Expanded(
+                        child: Text('Lịch của Bác', style: text.titleLarge)),
+                    action
+                  ]);
+                }),
+                Row(children: [
+                  IconButton(
+                      tooltip: 'Ngày trước',
+                      onPressed: () => vm.move(-1),
+                      icon: const Icon(Icons.chevron_left_rounded)),
+                  Expanded(
+                      child: TextButton(
+                          onPressed: () async {
+                            final picked = await showDatePicker(
+                                context: context,
+                                initialDate: date,
+                                firstDate: DateTime(2020),
+                                lastDate: DateTime(2100));
+                            if (picked != null) vm.select(picked);
+                          },
+                          child: Text(calendarLabel(date),
+                              textAlign: TextAlign.center))),
+                  IconButton(
+                      tooltip: 'Ngày sau',
+                      onPressed: () => vm.move(1),
+                      icon: const Icon(Icons.chevron_right_rounded)),
+                ]),
+                if (key != dateKey(vietnamToday()))
+                  Align(
+                      alignment: AlignmentDirectional.centerStart,
+                      child: TextButton.icon(
+                          onPressed: () => vm.select(vietnamToday()),
+                          icon: const Icon(AppIcons.tabToday),
+                          label: const Text('Về hôm nay'))),
+                const SizedBox(height: AppSpacing.sm),
+                tasks.when(
+                  loading: () =>
+                      const LoadingView(message: 'Đang tải hoạt động…'),
+                  error: (_, __) => ErrorView(
+                      message: 'Chưa thể tải lịch. Vui lòng thử lại.',
+                      onRetry: () =>
+                          ref.invalidate(calendarTasksProvider(key))),
+                  data: (items) => items.isEmpty
+                      ? EmptyView(
+                          icon: AppIcons.tabWeek,
+                          title: 'Chưa có hoạt động nào trong ngày này.',
+                          message:
+                              'Bác chạm Thêm hoạt động bên dưới để lên lịch.',
+                          action: AppButton(
+                              label: 'Khám phá hoạt động',
+                              icon: AppIcons.tabHabits,
+                              kind: AppButtonKind.secondary,
+                              onPressed: () => context.go('/activities')))
+                      : Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                              for (final task in items) ...[
+                                VeloraScheduleCard(
+                                    task: task,
+                                    onTap: () async {
+                                      await context.push(
+                                          '/calendar/task/${Uri.encodeComponent(task.id)}?date=$key');
+                                      if (mounted) {
+                                        ref.invalidate(
+                                            calendarTasksProvider(key));
+                                      }
+                                    }),
+                                const SizedBox(height: AppSpacing.md),
+                              ],
+                            ]),
+                ),
+                const SizedBox(height: AppSpacing.lg),
+                const SizedBox(height: AppSpacing.base),
+                AppButton(
+                    label: 'Lưu lịch tuần PDF',
+                    icon: Icons.picture_as_pdf_rounded,
+                    kind: AppButtonKind.secondary,
+                    onPressed: () => context.push('/calendar/export')),
+              ]),
+        )));
   }
 }
 

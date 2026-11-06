@@ -50,6 +50,13 @@ class TaskFormState {
   final String? editingId;
   final TaskItem? original;
 
+  String? get titleError {
+    if (!showValidation) return null;
+    if (title.trim().isEmpty) return 'Bác chưa nhập tên việc.';
+    if (title.trim().length > 80) return 'Tên việc tối đa 80 ký tự.';
+    return null;
+  }
+
   /// Chỉ chặn giờ đã qua khi Bác đang đặt việc cho đúng ngày hôm nay.
   bool get isTimeInPastToday {
     final selectedDate = date;
@@ -132,19 +139,29 @@ class TaskFormViewModel extends Notifier<TaskFormState> {
 
   /// Khởi tạo F4 bằng việc mặc định và giờ tròn kế tiếp để Bác chỉ cần sửa khi
   /// muốn. Ví dụ 15:33 → 16:00; 23:33 → ngày kế tiếp lúc 0:00.
-  void startCreate() {
+  void startCreate(
+      {DateTime? day,
+      String activity = 'move',
+      String title = 'Đi bộ nhẹ nhàng'}) {
     _scopedUndo = null;
     _lastMutation = null;
     _editDay = null;
     final now = DateTime.now();
     final nextHour = DateTime(now.year, now.month, now.day, now.hour + 1);
+    final today = DateTime(now.year, now.month, now.day);
+    final requested =
+        day == null ? today : DateTime(day.year, day.month, day.day);
+    final future = requested.isAfter(today);
+    final hour = future ? 8 : nextHour.hour;
     state = TaskFormState(
-      activity: 'move',
-      title: 'Đi bộ nhẹ nhàng',
-      date: DateTime(nextHour.year, nextHour.month, nextHour.day),
-      hour: nextHour.hour,
+      activity: activity,
+      title: title,
+      date: future
+          ? requested
+          : DateTime(nextHour.year, nextHour.month, nextHour.day),
+      hour: hour,
       minute: 0,
-      isAm: nextHour.hour < 12,
+      isAm: hour < 12,
     );
   }
 
@@ -192,7 +209,10 @@ class TaskFormViewModel extends Notifier<TaskFormState> {
       state.copyWith(saveState: TaskSaveState.editing, clearError: true);
 
   Future<bool> save({ChangeScope? scope}) async {
-    if (state.title.trim().isEmpty || state.isTimeInPastToday) {
+    if (state.saveState == TaskSaveState.saving) return false;
+    if (state.title.trim().isEmpty ||
+        state.title.trim().length > 80 ||
+        state.isTimeInPastToday) {
       state = state.copyWith(showValidation: true);
       return false;
     }
@@ -260,7 +280,7 @@ class TaskFormViewModel extends Notifier<TaskFormState> {
       state = state.copyWith(
         saveState: offline ? TaskSaveState.offline : TaskSaveState.error,
         errorMessage: offline
-            ? 'Lưu trên điện thoại, không cần mạng'
+            ? 'Chưa lưu được. Bác kiểm tra kết nối rồi thử lại nhé.'
             : 'Chưa thể lưu trên điện thoại.',
       );
       return false;

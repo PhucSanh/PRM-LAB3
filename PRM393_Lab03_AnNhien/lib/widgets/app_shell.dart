@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import '../screens/suggestion/suggestion_popup_listener.dart';
 import '../theme/app_icons.dart';
 import '../theme/app_spacing.dart';
+import 'app_button.dart';
 
 /// Reference-style five-item navigation for Bác; caregiver keeps its work areas.
 /// Explorer and habits share their existing branch, with explicit query state.
@@ -87,6 +88,60 @@ class AppShell extends StatelessWidget {
         Expanded(child: content)
       ]));
     }
+    if (!caregiver && MediaQuery.textScalerOf(context).scale(20) > 32) {
+      return Scaffold(
+        body: content,
+        bottomNavigationBar: SafeArea(
+          top: false,
+          child: Padding(
+            padding: const EdgeInsets.all(AppSpacing.sm),
+            child: AppButton(
+              label: 'Menu: ${destinations[selected].$2}',
+              icon: Icons.menu_rounded,
+              kind: AppButtonKind.secondary,
+              onPressed: () async {
+                final index = await showModalBottomSheet<int>(
+                  context: context,
+                  isScrollControlled: true,
+                  useSafeArea: true,
+                  builder: (sheetContext) => SafeArea(
+                    child: ConstrainedBox(
+                      constraints: BoxConstraints(
+                          maxHeight:
+                              MediaQuery.sizeOf(sheetContext).height * .8),
+                      child: ListView(
+                        shrinkWrap: true,
+                        padding: const EdgeInsets.all(AppSpacing.base),
+                        children: [
+                          Text('Chuyển mục',
+                              style:
+                                  Theme.of(sheetContext).textTheme.titleLarge),
+                          for (final (index, (icon, label))
+                              in destinations.indexed)
+                            ListTile(
+                              leading: Icon(icon),
+                              title: Text(label),
+                              selected: index == selected,
+                              trailing: index == selected
+                                  ? const Icon(Icons.check_rounded)
+                                  : null,
+                              onTap: () => Navigator.pop(sheetContext, index),
+                            ),
+                          TextButton(
+                              onPressed: () => Navigator.pop(sheetContext),
+                              child: const Text('Đóng menu')),
+                        ],
+                      ),
+                    ),
+                  ),
+                );
+                if (context.mounted && index != null) select(index);
+              },
+            ),
+          ),
+        ),
+      );
+    }
     return Scaffold(
         body: content,
         bottomNavigationBar: Material(
@@ -106,6 +161,7 @@ class AppShell extends StatelessWidget {
                                     button: true,
                                     selected: index == selected,
                                     label: label,
+                                    onTap: () => select(index),
                                     excludeSemantics: true,
                                     child: InkWell(
                                         onTap: () => select(index),

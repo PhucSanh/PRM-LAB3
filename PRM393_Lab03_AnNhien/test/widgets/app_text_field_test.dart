@@ -2,6 +2,7 @@ import 'package:an_nhien/theme/app_spacing.dart';
 import 'package:an_nhien/theme/app_icons.dart';
 import 'package:an_nhien/widgets/app_text_field.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/semantics.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'harness.dart';
@@ -55,6 +56,19 @@ void main() {
           greaterThanOrEqualTo(AppSizes.minTarget));
       expect(tester.getTopLeft(find.text('Tên việc')).dy,
           lessThan(tester.getTopLeft(find.byType(TextField)).dy));
+    });
+
+    testWidgets('editable semantics carries its visible field label',
+        (tester) async {
+      final handle = tester.ensureSemantics();
+      await pumpHarness(tester, const AppTextField(label: 'Tên việc'));
+      await tester.tap(find.byType(TextField));
+      await tester.pumpAndSettle();
+      final node = tester.getSemantics(find.bySemanticsLabel('Tên việc').last);
+      expect(node.label, contains('Tên việc'));
+      expect(
+          node.getSemanticsData().hasAction(SemanticsAction.setText), isTrue);
+      handle.dispose();
     });
 
     testWidgets('không lặp "Ví dụ" khi gợi ý đã có sẵn', (tester) async {

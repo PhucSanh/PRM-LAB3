@@ -48,7 +48,8 @@ String _repeatText(TaskFormState state) => switch (state.repeat) {
     };
 
 class ActivitySelectionScreen extends ConsumerStatefulWidget {
-  const ActivitySelectionScreen({super.key});
+  const ActivitySelectionScreen({super.key, this.initialDate});
+  final DateTime? initialDate;
   @override
   ConsumerState<ActivitySelectionScreen> createState() =>
       _ActivitySelectionScreenState();
@@ -60,8 +61,9 @@ class _ActivitySelectionScreenState
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback(
-        (_) => ref.read(taskFormViewModelProvider.notifier).startCreate());
+    WidgetsBinding.instance.addPostFrameCallback((_) => ref
+        .read(taskFormViewModelProvider.notifier)
+        .startCreate(day: widget.initialDate));
   }
 
   @override
@@ -144,6 +146,9 @@ class TaskConfigureScreen extends ConsumerStatefulWidget {
 
 class _TaskConfigureScreenState extends ConsumerState<TaskConfigureScreen> {
   final _title = TextEditingController();
+  final _titleFocus = FocusNode();
+  final _titleAnchor = GlobalKey();
+  final _timeAnchor = GlobalKey();
   bool _loaded = false;
   String? _loadError;
   int _loadGeneration = 0;
@@ -192,6 +197,7 @@ class _TaskConfigureScreenState extends ConsumerState<TaskConfigureScreen> {
 
   @override
   void dispose() {
+    _titleFocus.dispose();
     _title.dispose();
     super.dispose();
   }
@@ -245,7 +251,8 @@ class _TaskConfigureScreenState extends ConsumerState<TaskConfigureScreen> {
     }
     final activity =
         _activities.where((item) => item.key == state.activity).firstOrNull ??
-            _activities.first;
+            _Activity(state.activity, HabitStyle.nameOf(state.activity),
+                HabitStyle.iconOf(state.activity));
     final edit = state.mode == TaskFormMode.edit;
     return PopScope(
       canPop: false,
@@ -279,7 +286,33 @@ class _TaskConfigureScreenState extends ConsumerState<TaskConfigureScreen> {
                         scope = await showScopeDialog(context, state.title);
                         if (scope == null || !context.mounted) return;
                       }
+                      FocusManager.instance.primaryFocus?.unfocus();
                       final saved = await vm.save(scope: scope);
+                      if (mounted &&
+                          ref.read(taskFormViewModelProvider).titleError !=
+                              null) {
+                        _titleFocus.requestFocus();
+                        WidgetsBinding.instance.addPostFrameCallback((_) {
+                          final field = _titleAnchor.currentContext;
+                          if (mounted && field != null) {
+                            Scrollable.ensureVisible(field, alignment: 0.1);
+                          }
+                        });
+                      }
+                      if (mounted &&
+                          !saved &&
+                          ref
+                              .read(taskFormViewModelProvider)
+                              .isTimeInPastToday &&
+                          ref.read(taskFormViewModelProvider).titleError ==
+                              null) {
+                        WidgetsBinding.instance.addPostFrameCallback((_) {
+                          final field = _timeAnchor.currentContext;
+                          if (mounted && field != null) {
+                            Scrollable.ensureVisible(field, alignment: 0.1);
+                          }
+                        });
+                      }
                       if (!context.mounted) return;
                       if (saved && edit) {
                         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
@@ -300,14 +333,16 @@ class _TaskConfigureScreenState extends ConsumerState<TaskConfigureScreen> {
             Text('Thêm việc',
                 style: Theme.of(context).textTheme.headlineMedium),
           AppTextField(
+              key: _titleAnchor,
+              focusNode: _titleFocus,
               label: 'Tên việc',
               icon: Icons.edit_rounded,
               hint: 'Đi bộ buổi sáng',
               controller: _title,
-              errorText:
-                  state.showValidation ? 'Bác chưa nhập tên việc.' : null,
+              maxLength: 80,
+              errorText: state.titleError,
               onChanged: vm.setTitle),
-          if (state.showValidation) ...[
+          if (state.titleError != null) ...[
             const SizedBox(height: AppSpacing.md),
             Text('Bác chạm để chọn nhanh:',
                 style: Theme.of(context).textTheme.bodyLarge),
@@ -326,7 +361,8 @@ class _TaskConfigureScreenState extends ConsumerState<TaskConfigureScreen> {
                         .toList())
           ],
           const SizedBox(height: AppSpacing.lg),
-          const _SectionTitle(icon: Icons.schedule_rounded, text: 'Giờ làm'),
+          _SectionTitle(
+              key: _timeAnchor, icon: Icons.schedule_rounded, text: 'Giờ làm'),
           _PickerTile(
               text: _time(state),
               onTap: () async {
@@ -337,11 +373,8 @@ class _TaskConfigureScreenState extends ConsumerState<TaskConfigureScreen> {
               }),
           if (state.showValidation && state.isTimeInPastToday) ...[
             const SizedBox(height: AppSpacing.sm),
-            Text('Bác chọn giờ sau thời điểm hiện tại nhé.',
-                style: Theme.of(context)
-                    .textTheme
-                    .bodyMedium
-                    ?.copyWith(color: Theme.of(context).colorScheme.error)),
+            const FieldMessage.error(
+                'Bác chọn giờ sau thời điểm hiện tại nhé.'),
           ],
           const SizedBox(height: AppSpacing.lg),
           const _SectionTitle(icon: Icons.repeat_rounded, text: 'Lặp lại'),
@@ -463,7 +496,7 @@ class _ActivitySummary extends StatelessWidget {
 }
 
 class _SectionTitle extends StatelessWidget {
-  const _SectionTitle({required this.icon, required this.text});
+  const _SectionTitle({super.key, required this.icon, required this.text});
   final IconData icon;
   final String text;
   @override
@@ -706,7 +739,8 @@ class TaskSavedScreen extends ConsumerWidget {
     final state = ref.watch(taskFormViewModelProvider);
     final activity =
         _activities.where((item) => item.key == state.activity).firstOrNull ??
-            _activities.first;
+            _Activity(state.activity, HabitStyle.nameOf(state.activity),
+                HabitStyle.iconOf(state.activity));
     return Scaffold(
         bottomNavigationBar: SafeArea(
             child: Padding(
