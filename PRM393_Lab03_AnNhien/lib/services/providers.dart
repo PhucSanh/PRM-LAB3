@@ -1,3 +1,4 @@
+import 'contact_launcher_service.dart';
 import 'voice_task_service.dart';
 import 'firebase_voice_task_service.dart';
 import 'weekly_report_service.dart';
@@ -161,3 +162,6 @@ final deviceAccessServiceProvider =
 
 final voiceTaskServiceProvider = Provider<VoiceTaskService>(
     (ref) => FirebaseVoiceTaskService(ref.watch(functionsSdkProvider)));
+
+final contactLauncherServiceProvider =
+    Provider<ContactLauncherService>((ref) => AndroidContactLauncherService());

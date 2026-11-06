@@ -99,7 +99,10 @@ bool sameReschedule(TaskReschedule? a, TaskReschedule? b) =>
     a?.minute == b?.minute &&
     a?.history.length == b?.history.length;
 
-class FakeTaskRepository implements TaskRepository {
+class FakeTaskRepository implements TaskRepository, RecentActivityRepository {
+  @override
+  Future<List<TaskItem>> recentActivities(DateTime today) async =>
+      selectRecentActivities(_tasks, today);
   FakeTaskRepository([List<TaskItem>? seed]) : _tasks = [...(seed ?? _sample)];
 
   final List<TaskItem> _tasks;
@@ -242,4 +245,30 @@ class FakeTaskRepository implements TaskRepository {
       _reschedules[change.key] = change.before!;
     }
   }
+}
+
+/// Reuse real activities present in the last seven calendar days; not analytics history.
+abstract interface class RecentActivityRepository {
+  Future<List<TaskItem>> recentActivities(DateTime today);
+}
+
+List<TaskItem> selectRecentActivities(List<TaskItem> tasks, DateTime today) {
+  final candidates = <({TaskItem task, int rank})>[];
+  for (final task in tasks) {
+    for (var offset = 0; offset < 7; offset++) {
+      final day = DateTime(today.year, today.month, today.day - offset);
+      if (task.occursOn(day)) {
+        candidates.add(
+            (task: task, rank: offset * 1440 - (task.hour * 60 + task.minute)));
+        break;
+      }
+    }
+  }
+  candidates.sort((a, b) => a.rank.compareTo(b.rank));
+  final seen = <String>{};
+  return [
+    for (final c in candidates)
+      if (seen.add('${c.task.habitKey}|${c.task.title.trim().toLowerCase()}'))
+        c.task
+  ].take(6).toList();
 }
