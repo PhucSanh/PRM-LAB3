@@ -358,8 +358,8 @@ Future<bool> runTaskAction(
       },
     );
   } else {
-    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-        content: Text('Chưa cập nhật được việc. Bác thử lại nhé.')));
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(
+      ProviderScope.containerOf(context).read(todayViewModelProvider.notifier).actionError ?? 'Chưa cập nhật được việc. Bác thử lại nhé.')));
   }
   return saved;
 }
