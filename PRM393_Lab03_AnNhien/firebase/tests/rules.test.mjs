@@ -48,6 +48,9 @@ test('trusted caregiver can manage v2 tasks; grants are server-only; suggestions
   await assertFails(getDoc(doc(db('child'), 'users/mom/suggestions/a')));
   await assertFails(setDoc(doc(db('child'), 'users/mom/suggestions/b'), {senderUid:'child',status:'pending'}));
   await assertFails(updateDoc(doc(db('mom'), 'users/mom/suggestions/a'), {status:'accepted'}));
+  await assertSucceeds(updateDoc(doc(db('mom'), 'users/mom/suggestions/a'), {popupShown:true}));
+  await assertFails(updateDoc(doc(db('child'), 'users/mom/suggestions/a'), {popupShown:true}));
+  await assertFails(updateDoc(doc(db('mom'), 'users/mom/suggestions/a'), {popupShown:false}));
   await env.withSecurityRulesDisabled(ctx => deleteDoc(doc(ctx.firestore(),'users/mom/caregivers/child')));
   await assertFails(getDoc(doc(db('child'), 'users/mom/tasks/a')));
   await assertFails(updateDoc(doc(db('child'), 'users/mom/tasks/a'), {title:'Again',revision:2}));

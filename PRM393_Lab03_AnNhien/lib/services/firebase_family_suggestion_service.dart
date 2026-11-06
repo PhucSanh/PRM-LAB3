@@ -1,4 +1,3 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/suggestion.dart';
 import '../models/task_item.dart';
 import '../utils/app_error.dart';
@@ -98,8 +97,9 @@ class FirebaseFamilySuggestionService implements AtomicSuggestionService {
     final times = <String, Object>{};
     for (final item in items) {
       final i = s.items.indexWhere((t) => t.sameTaskAs(item) && !t.accepted);
-      if (i < 0)
+      if (i < 0) {
         throw const AppException('Gợi ý đã thay đổi. Bác tải lại nhé.');
+      }
       selected.add(i);
       times['$i'] = {'hour': item.hour, 'minute': item.minute};
     }

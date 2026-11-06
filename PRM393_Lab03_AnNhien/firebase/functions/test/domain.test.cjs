@@ -139,3 +139,18 @@ test('pairing lifecycle creates two system inbox entries atomically and idempote
   await events.pairingChanged({...event,eventId:'unlink-'+mom,before:event.after,after:undefined});
   assert.equal((await db.collection(`users/${mom}/notifications`).get()).size,2);
 });
+
+test('partial can dismiss, undo and accept remaining without duplicating accepted tasks',async()=>{
+  const {domain,mom,child}=await setup();
+  await domain.redeemPairing(child,(await domain.createPairing(mom)).code);
+  await domain.sendSuggestion(child,{momUid:mom,id:'resume',tasks:[task,{...task,title:'Trà',hour:15}]});
+  await domain.resolveSuggestion(mom,{id:'resume',selected:[0]});
+  await domain.resolveSuggestion(mom,{id:'resume',selected:[]});
+  await domain.undoDismiss(mom,{id:'resume'});
+  assert.equal((await db.doc(`users/${mom}/suggestions/resume`).get()).data().status,'partial');
+  await domain.resolveSuggestion(mom,{id:'resume',selected:[1],times:{1:{hour:16,minute:30}}});
+  const s=(await db.doc(`users/${mom}/suggestions/resume`).get()).data();
+  assert.equal(s.status,'accepted');assert.equal(s.acceptedIds.length,2);
+  assert.equal((await db.collection(`users/${mom}/tasks`).get()).size,2);
+  await assert.rejects(domain.resolveSuggestion(mom,{id:'resume',selected:[0]}),e=>e.code==='failed-precondition');
+});
