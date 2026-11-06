@@ -81,8 +81,9 @@ service cloud.firestore {
       match /family/{id} {
         allow read, delete: if owner(uid);
         allow create, update: if owner(uid)
-          && request.resource.data.keys().hasOnly(['name','relation','phone'])
+          && request.resource.data.keys().hasOnly(['name','relation','phone','favorite'])
           && request.resource.data.keys().hasAll(['name','relation','phone'])
+          && (!('favorite' in request.resource.data) || request.resource.data.favorite is bool)
           && request.resource.data.name is string && request.resource.data.name.size() > 0
           && request.resource.data.name.size() <= 80
           && request.resource.data.relation is string && request.resource.data.relation.size() <= 40

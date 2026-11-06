@@ -27,6 +27,15 @@ class MainActivity : FlutterActivity() {
         MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "an_nhien/device_access")
             .setMethodCallHandler { call, result ->
                 when (call.method) {
+                    "openDialer" -> {
+                        val phone = call.arguments as? String ?: ""
+                        if (!Regex("\\+?[0-9]{6,20}").matches(phone)) {
+                            result.error("invalid", "Số điện thoại chưa hợp lệ.", null)
+                        } else try {
+                            startActivity(Intent(Intent.ACTION_DIAL, android.net.Uri.fromParts("tel", phone, null)))
+                            result.success(null)
+                        } catch (_: Exception) { result.error("unavailable", "Máy chưa có ứng dụng gọi điện.", null) }
+                    }
                     "recognize" -> {
                         if (recognizeResult != null) { result.error("busy", "Bác đang nói một việc khác.", null); return@setMethodCallHandler }
                         recognizeResult = result
