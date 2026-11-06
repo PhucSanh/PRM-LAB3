@@ -1,8 +1,18 @@
+import '../services/remote_config_service.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../services/providers.dart';
 import '../utils/app_error.dart';
 import 'session_view_model.dart';
 import 'task_form_view_model.dart';
+
+final _voiceConfigUpdatesProvider = StreamProvider<Set<String>>(
+    (ref) => ref.watch(remoteConfigServiceProvider).onUpdated);
+final voiceInputEnabledProvider = Provider<bool>((ref) {
+  ref.watch(_voiceConfigUpdatesProvider);
+  return ref
+      .watch(remoteConfigServiceProvider)
+      .getBool(RemoteConfigKeys.voiceInputEnabled);
+});
 
 String deviceError(Object error) => error is AppException
     ? error.userMessage
@@ -25,6 +35,12 @@ class VoiceInputViewModel extends Notifier<VoiceDraft> {
   void edit(String text) => state = VoiceDraft(text: text);
   Future<void> listen() async {
     if (state.busy) return;
+    if (!ref.read(voiceInputEnabledProvider)) {
+      state = VoiceDraft(
+          text: state.text,
+          error: 'Nhập giọng nói đang tạm tắt. Bác có thể gõ tên việc.');
+      return;
+    }
     final uid = ref.read(sessionProvider).value?.uid;
     final before = state.text;
     state = VoiceDraft(text: before, busy: true);

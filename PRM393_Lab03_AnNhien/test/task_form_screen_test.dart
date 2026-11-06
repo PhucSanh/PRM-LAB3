@@ -1,3 +1,5 @@
+import 'package:an_nhien/services/providers.dart';
+import 'package:an_nhien/services/remote_config_service.dart';
 import 'package:an_nhien/screens/tasks/task_form_screens.dart';
 import 'package:an_nhien/theme/app_theme.dart';
 import 'package:flutter/material.dart';
@@ -10,6 +12,10 @@ void main() {
       await tester.binding.setSurfaceSize(Size(width, 800));
       addTearDown(() => tester.binding.setSurfaceSize(null));
       await tester.pumpWidget(ProviderScope(
+          overrides: [
+            remoteConfigServiceProvider
+                .overrideWithValue(FakeRemoteConfigService())
+          ],
           child: MaterialApp(
               theme: AppTheme.light(), home: const ActivitySelectionScreen())));
       await tester.pump();

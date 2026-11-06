@@ -52,7 +52,8 @@ class _VoiceInputScreenState extends ConsumerState<VoiceInputScreen> {
                   label: state.text.isEmpty ? 'Bắt đầu nói' : 'Nói lại',
                   icon: Icons.mic_rounded,
                   busy: state.busy,
-                  onPressed: vm.listen),
+                  onPressed:
+                      ref.watch(voiceInputEnabledProvider) ? vm.listen : null),
               const SizedBox(height: AppSpacing.lg),
               AppTextField(
                   label: 'Tên việc Bác muốn làm',
