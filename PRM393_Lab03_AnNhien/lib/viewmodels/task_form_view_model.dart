@@ -54,7 +54,11 @@ class TaskFormState {
   bool get isTimeInPastToday {
     final selectedDate = date;
     if (selectedDate == null) return false;
-    if (mode == TaskFormMode.edit && hour == original?.hour && minute == original?.minute) return false;
+    if (mode == TaskFormMode.edit &&
+        hour == original?.hour &&
+        minute == original?.minute) {
+      return false;
+    }
     final now = DateTime.now();
     final isToday = selectedDate.year == now.year &&
         selectedDate.month == now.month &&
@@ -64,7 +68,10 @@ class TaskFormState {
   }
 
   bool get isDirty => mode == TaskFormMode.edit
-      ? title != original?.title ||
+      ? activity != original?.habitKey ||
+          weekdays.length != (original?.weekdays.length ?? 0) ||
+          !weekdays.every((day) => original?.weekdays.contains(day) ?? false) ||
+          title != original?.title ||
           hour != original?.hour ||
           minute != original?.minute ||
           repeat != original?.repeat ||
@@ -126,6 +133,9 @@ class TaskFormViewModel extends Notifier<TaskFormState> {
   /// Khởi tạo F4 bằng việc mặc định và giờ tròn kế tiếp để Bác chỉ cần sửa khi
   /// muốn. Ví dụ 15:33 → 16:00; 23:33 → ngày kế tiếp lúc 0:00.
   void startCreate() {
+    _scopedUndo = null;
+    _lastMutation = null;
+    _editDay = null;
     final now = DateTime.now();
     final nextHour = DateTime(now.year, now.month, now.day, now.hour + 1);
     state = TaskFormState(
@@ -141,6 +151,7 @@ class TaskFormViewModel extends Notifier<TaskFormState> {
   Future<bool> startEdit(String id, {DateTime? day}) async {
     _editDay = day ?? DateTime.now();
     _scopedUndo = null;
+    _lastMutation = null;
     final tasks = await ref.read(taskRepositoryProvider).tasksForDay(_editDay!);
     final task = tasks.where((item) => item.id == id).firstOrNull;
     if (task == null) return false;
@@ -198,7 +209,8 @@ class TaskFormViewModel extends Notifier<TaskFormState> {
       repeat: state.repeat,
       remind: state.remind,
       status: before?.status ?? TaskStatus.pending,
-      startDate: before?.startDate ?? dateKey(before != null ? _editDay! : state.date ?? DateTime.now()),
+      startDate: before?.startDate ??
+          dateKey(before != null ? _editDay! : state.date ?? DateTime.now()),
       weekdays: state.repeat == RepeatRule.someDays ||
               state.repeat == RepeatRule.weekly
           ? state.weekdays.toList()

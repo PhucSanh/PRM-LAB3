@@ -1,3 +1,4 @@
+import '../viewmodels/task_form_view_model.dart';
 import '../screens/calm/weekly_report_screen.dart';
 import '../screens/voice/voice_input_screen.dart';
 import '../screens/settings/reminder_settings_screen.dart';
@@ -92,6 +93,7 @@ final routerProvider = Provider<GoRouter>((ref) {
       if (lastUid != user?.uid) {
         lastUid = user?.uid;
         ref.invalidate(todayViewModelProvider);
+        ref.invalidate(taskFormViewModelProvider);
         ref.invalidate(roleViewModelProvider);
         ref.invalidate(taskRepositoryProvider);
         ref.invalidate(familyRepositoryProvider);
