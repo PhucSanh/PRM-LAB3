@@ -8,7 +8,6 @@ import '../../viewmodels/calm_feature_providers.dart';
 import '../../viewmodels/task_form_view_model.dart';
 import '../../widgets/app_back_bar.dart';
 import '../../widgets/app_button.dart';
-import '../../widgets/calm_parts.dart';
 import '../../widgets/velora_parts.dart';
 import '../../widgets/read_aloud_control.dart';
 import '../../widgets/state_views.dart';
@@ -19,12 +18,13 @@ class GuidedActivityScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final activity = guidedActivityById(id), text = Theme.of(context).textTheme;
-    if (activity == null)
+    if (activity == null) {
       return Scaffold(
           appBar: AppBackBar.adaptive(context),
           body: const EmptyView(
               icon: Icons.spa_outlined,
               title: 'Hoạt động này không còn trong thư viện.'));
+    }
     return Scaffold(
         body: SafeArea(
             child: VeloraDetailBody(
