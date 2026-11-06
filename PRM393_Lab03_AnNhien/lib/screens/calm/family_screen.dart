@@ -1,3 +1,4 @@
+import '../../widgets/family_contact_card.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -118,25 +119,11 @@ class FamilyScreen extends ConsumerWidget {
                   title: 'Chưa có người thân trong danh bạ.')
               : Column(children: [
                   for (final member in members) ...[
-                    CalmListRow(
-                        title: member.name,
-                        subtitle: '${member.relation}\n${member.phone}',
-                        icon: AppIcons.user,
-                        onTap: () => context.push(
-                            '/family/${Uri.encodeComponent(member.id)}/edit'),
-                        trailing: TextButton.icon(
-                            icon: const Icon(Icons.copy_rounded),
-                            label: const Text('Sao chép số'),
-                            onPressed: () async {
-                              await Clipboard.setData(
-                                  ClipboardData(text: member.phone));
-                              if (context.mounted) {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(
-                                        content: Text(
-                                            'Đã sao chép số điện thoại.')));
-                              }
-                            })),
+                    FamilyContactCard(
+                        person: member,
+                        onEdit: () => context.push(
+                            '/family/${Uri.encodeComponent(member.id)}/edit')),
+                    const SizedBox(height: AppSpacing.base),
                     const Divider(height: 1),
                   ]
                 ]),
@@ -284,6 +271,7 @@ class _FamilyEditorScreenState extends ConsumerState<FamilyEditorScreen> {
                                       Relative(
                                           id: widget.id ??
                                               'contact-${DateTime.now().microsecondsSinceEpoch}',
+                                          favorite: person?.favorite ?? false,
                                           name: _name.text.trim(),
                                           phone: _phone.text.trim(),
                                           relation: _relation.text.trim()),
