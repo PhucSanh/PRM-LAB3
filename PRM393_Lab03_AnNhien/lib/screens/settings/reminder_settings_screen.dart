@@ -62,6 +62,9 @@ class _ReminderSettingsScreenState extends ConsumerState<ReminderSettingsScreen>
               const SizedBox(height: AppSpacing.base),
               const Text(
                   'Bật hoặc tắt lời nhắc riêng cho từng việc ở màn Chỉnh sửa. Để tắt toàn bộ thông báo, Bác mở cài đặt điện thoại.'),
+              const SizedBox(height: AppSpacing.base),
+              const Text(
+                  'Lời nhắc được đặt vào giờ làm. Điện thoại ở chế độ tiết kiệm pin có thể giao thông báo muộn hơn.'),
               const SizedBox(height: AppSpacing.lg),
               if (state.allowed != true)
                 AppButton(

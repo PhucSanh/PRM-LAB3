@@ -94,6 +94,14 @@ class SpeechViewModel extends Notifier<SpeechState> {
       if (ref.mounted && generation == _generation) state = const SpeechState();
       return;
     }
+    await read(text);
+  }
+
+  Future<void> read(String text) async {
+    final service = ref.read(deviceAccessServiceProvider);
+    final generation = ++_generation;
+    if (state.speaking) await service.stopSpeaking();
+    if (!ref.mounted || generation != _generation) return;
     state = const SpeechState(speaking: true);
     try {
       await service.speak(text);

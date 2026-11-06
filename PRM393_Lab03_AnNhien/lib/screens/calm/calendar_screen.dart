@@ -1,3 +1,4 @@
+import '../../widgets/read_aloud_control.dart';
 import '../today/task_detail_screen.dart' show runTaskAction;
 import '../../viewmodels/today_view_model.dart';
 import 'package:flutter/material.dart';
@@ -188,7 +189,9 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
 }
 
 class CalmTaskDetailScreen extends ConsumerWidget {
-  const CalmTaskDetailScreen({super.key, required this.id, this.date});
+  const CalmTaskDetailScreen(
+      {super.key, required this.id, this.date, this.autoRead = false});
+  final bool autoRead;
   final String id;
   final DateTime? date;
   @override
@@ -222,6 +225,11 @@ class CalmTaskDetailScreen extends ConsumerWidget {
                 : context.go('/calendar?date=$key'),
             children: [
               Text(task.title, style: text.headlineMedium),
+              if (autoRead)
+                ReminderReadAloudControl(
+                    identity: '${task.id}-$key',
+                    text:
+                        '${task.title}. ${task.hour} giờ ${task.minute} phút. ${calendarLabel(day)}.'),
               const SizedBox(height: AppSpacing.base),
               Text(calendarLabel(day), style: text.bodyMedium),
               Text(

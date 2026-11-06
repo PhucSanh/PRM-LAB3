@@ -198,7 +198,10 @@ final routerProvider = Provider<GoRouter>((ref) {
           path: '/reminder/:taskId',
           builder: (_, state) => state.pathParameters['taskId'] == 'preview'
               ? const CalmReminderPreviewScreen()
-              : CalmTaskDetailScreen(id: state.pathParameters['taskId']!)),
+              : CalmTaskDetailScreen(
+                  id: state.pathParameters['taskId']!,
+                  date: parseDateKey(state.uri.queryParameters['date']),
+                  autoRead: true)),
       GoRoute(
           path: '/settings/reminders',
           builder: (_, __) => const ReminderSettingsScreen()),
