@@ -217,8 +217,8 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(path: '/inbox', builder: (_, __) => const InboxScreen()),
       GoRoute(
           path: '/inbox/suggestions/:id',
-          builder: (_, state) =>
-              SuggestionDemoScreen(suggestionId: state.pathParameters['id']!)),
+          builder: (_, state) => SuggestionReviewScreen(
+              id: state.pathParameters['id']!, entry: SuggestionEntry.push)),
       // Chế độ Con cháu: editor/detail ở root, ba destination có shell riêng.
       // F13/F14 – Hiếu. Guard demo vẫn mặc định tắt.
       GoRoute(

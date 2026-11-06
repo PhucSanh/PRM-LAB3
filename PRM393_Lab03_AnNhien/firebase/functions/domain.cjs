@@ -109,7 +109,8 @@ function createDomain(db, {now = () => Date.now(), generateCode = () => String(r
         if(existing.data().senderUid!==uid || !isDeepStrictEqual(existing.data().tasks,tasks) || existing.data().message!==message) fail('already-exists','Mã yêu cầu đã dùng cho lịch khác. Tạo lịch mới rồi gửi lại.');
         return; // Same request id: do not create a second notification or schedule.
       }
-      tx.create(ref,{senderUid:uid,status:'pending',tasks,message,createdAt:FieldValue.serverTimestamp(),acceptedIds:[]});
+      const sender=await tx.get(db.doc(`users/${uid}`));
+      tx.create(ref,{senderName:sender.data()?.displayName||'Người thân',senderUid:uid,status:'pending',tasks,message,createdAt:FieldValue.serverTimestamp(),acceptedIds:[]});
       tx.set(db.doc(`users/${momUid}/notifications/suggestion-${id}`),{
         kind:'family',event:'suggestion_received',title:'Có lịch gợi ý mới',body:'Người thân gửi lịch. Bác tự chọn nhận hoặc bỏ qua.',
         route:`/inbox/suggestions/${id}`,recipientUid:momUid,receivedAt:FieldValue.serverTimestamp()});
@@ -123,12 +124,15 @@ function createDomain(db, {now = () => Date.now(), generateCode = () => String(r
     await db.runTransaction(async tx=>{
       const ref=db.doc(`users/${uid}/suggestions/${id}`);const snap=await tx.get(ref);const s=snap.data();
       if(!s) fail('not-found','Không tìm thấy lịch gợi ý.');
-      if(s.status!=='pending') fail('failed-precondition','Gợi ý này đã được xử lý.');
+      if(!['pending','partial'].includes(s.status)) fail('failed-precondition','Gợi ý này đã được xử lý.');
       if(!Array.isArray(s.tasks)||selected.some(n=>n<0||n>=s.tasks.length)||Object.keys(times).some(k=>!selected.includes(Number(k)))) fail('invalid-argument','Lựa chọn chưa hợp lệ.');
+      const previous=s.acceptedIds||[];
+      if(selected.some(n=>previous.includes(`suggestion-${id}-${n}`))) fail('failed-precondition','Việc này đã được nhận.');
       const tasks=selected.map(n=>validateTask({...s.tasks[n],...(times[n]||{})}));
       const ids=selected.map(n=>`suggestion-${id}-${n}`);
       ids.forEach((taskId,i)=>tx.create(db.doc(`users/${uid}/tasks/${taskId}`),tasks[i]));
-      tx.update(ref,{status:!selected.length?'dismissed':selected.length===s.tasks.length?'accepted':'partial',acceptedIds:ids,
+      const acceptedIds=[...previous,...ids];
+      tx.update(ref,{status:!selected.length?'dismissed':acceptedIds.length===s.tasks.length?'accepted':'partial',acceptedIds,
         resolvedAt:FieldValue.serverTimestamp()});
     });
     return {ok:true};
@@ -138,7 +142,7 @@ function createDomain(db, {now = () => Date.now(), generateCode = () => String(r
     await db.runTransaction(async tx=>{
       const ref=db.doc(`users/${uid}/suggestions/${id}`);const snap=await tx.get(ref);
       if(snap.data()?.status!=='dismissed') fail('failed-precondition','Chỉ hoàn tác gợi ý vừa bỏ qua.');
-      tx.update(ref,{status:'pending',resolvedAt:FieldValue.delete()});
+      tx.update(ref,{status:(snap.data().acceptedIds||[]).length?'partial':'pending',resolvedAt:FieldValue.delete()});
     });return {ok:true};
   }
   return {createPairing,redeemPairing,revokePairing,sendSuggestion,resolveSuggestion,undoDismiss};

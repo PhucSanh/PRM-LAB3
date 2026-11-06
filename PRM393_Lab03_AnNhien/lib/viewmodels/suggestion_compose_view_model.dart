@@ -81,6 +81,8 @@ const _loadFailed = 'Chưa tải được tài khoản. Bấm "Thử lại" nhé
 const _sendFailed = 'Chưa gửi được gợi ý. Bấm "Thử lại" nhé.';
 
 class SuggestionComposeViewModel extends Notifier<UiState<SuggestionCompose>> {
+  String _requestId = '';
+
   /// 2 việc gợi ý mặc định cho ngày mai, đúng Figma G01 `52:161` (người dùng chọn 04/11:
   /// mẫu trong ViewModel). Không phải danh sách thói quen – tên thói quen nạp từ `HabitRepository`.
   /// TODO(Hiếu): thay bằng `habits/{key}.suggestions[]` khi có dữ liệu.
@@ -118,6 +120,7 @@ class SuggestionComposeViewModel extends Notifier<UiState<SuggestionCompose>> {
   Future<void> load() async {
     if (!ref.mounted) return;
     state = const UiLoading();
+    _requestId = DateTime.now().microsecondsSinceEpoch.toString();
     final user = ref.read(authServiceProvider).currentUser;
     if (user == null) {
       state = const UiError('Bạn cần đăng nhập lại.');
@@ -197,7 +200,7 @@ class SuggestionComposeViewModel extends Notifier<UiState<SuggestionCompose>> {
     }
     state = UiData(data.copyWith(sending: true));
     final suggestion = Suggestion(
-      id: '',
+      id: _requestId,
       fromUid: data.fromUid,
       fromName: data.fromName,
       // TODO(Hiếu): quan hệ với mẹ ("Con gái") khi ghép nối (F13) – chưa có trong hồ sơ (DT-30).
