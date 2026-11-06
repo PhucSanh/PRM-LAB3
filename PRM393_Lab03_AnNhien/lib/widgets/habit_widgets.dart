@@ -1,3 +1,4 @@
+import 'read_aloud_region.dart';
 import 'package:flutter/material.dart';
 
 import '../theme/app_colors.dart';
@@ -224,7 +225,7 @@ class HabitAccentCard extends StatelessWidget {
                     const BoxConstraints(minHeight: AppSizes.minTarget),
                 child: Padding(
                     padding: const EdgeInsets.all(AppSpacing.base),
-                    child: child),
+                    child: ReadAloudRegion(child: child)),
               ),
             ),
           ]),

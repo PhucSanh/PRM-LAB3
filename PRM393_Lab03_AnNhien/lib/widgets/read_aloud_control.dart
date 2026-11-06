@@ -3,7 +3,6 @@ import '../viewmodels/session_view_model.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../viewmodels/device_access_view_model.dart';
-import 'read_aloud_button.dart';
 import 'form_parts.dart';
 
 class ReadAloudControl extends ConsumerWidget {
@@ -13,10 +12,16 @@ class ReadAloudControl extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final state = ref.watch(speechViewModelProvider);
     return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-      ReadAloudButton(
-          speaking: state.speaking,
-          onPressed: () =>
-              ref.read(speechViewModelProvider.notifier).toggle(text)),
+      Align(
+          alignment: Alignment.centerRight,
+          child: IconButton(
+              tooltip:
+                  state.speaking ? 'Dừng đọc nội dung này' : 'Đọc nội dung này',
+              icon: Icon(state.speaking
+                  ? Icons.stop_circle_outlined
+                  : Icons.volume_up_rounded),
+              onPressed: () =>
+                  ref.read(speechViewModelProvider.notifier).toggle(text))),
       if (state.error != null) FieldMessage.error(state.error!),
     ]);
   }

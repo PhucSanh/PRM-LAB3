@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../theme/app_spacing.dart';
+import 'read_aloud_region.dart';
 
 /// Shared matte surface for forms, account, reminders and feature cards.
 /// High-contrast outlines are inherited from the application's card theme.
@@ -33,6 +34,8 @@ class AppSurface extends StatelessWidget {
         shape: shape,
         clipBehavior: Clip.antiAlias,
         child: InkWell(
-            onTap: onTap, child: Padding(padding: padding, child: child)));
+            onTap: onTap,
+            child: Padding(
+                padding: padding, child: ReadAloudRegion(child: child))));
   }
 }

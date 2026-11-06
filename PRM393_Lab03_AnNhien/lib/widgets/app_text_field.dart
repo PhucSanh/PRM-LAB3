@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 
 import '../theme/app_spacing.dart';
 import 'form_parts.dart';
+import 'read_aloud_region.dart';
 
 /// Ô nhập chữ (Figma S02 `1:103`, S02 Nhập lại tên `1:176`, S06e `12:193`, S12e `14:196`, ST-Validation `29:2`).
 /// Nhãn đặt **trên** ô (không floating label); [hint] hiện **dưới** ô, tự thêm "Ví dụ: ".
@@ -57,10 +58,11 @@ class AppTextField extends StatelessWidget {
           borderSide: BorderSide(color: color, width: width),
         );
 
-    return Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        mainAxisSize: MainAxisSize.min,
-        children: [
+    return ReadAloudRegion(
+        child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            mainAxisSize: MainAxisSize.min,
+            children: [
           ExcludeSemantics(child: FieldLabel(label, icon: icon)),
           const SizedBox(height: AppSpacing.sm),
           ConstrainedBox(
@@ -106,6 +108,6 @@ class AppTextField extends StatelessWidget {
             const SizedBox(height: AppSpacing.sm),
             FieldMessage.hint(exampleHint(hint!), showIcon: !hasError),
           ],
-        ]);
+        ]));
   }
 }

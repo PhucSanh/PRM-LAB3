@@ -1,3 +1,4 @@
+import 'read_aloud_region.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -139,7 +140,8 @@ class VeloraScheduleCard extends StatelessWidget {
             borderRadius: AppRadius.cardAll,
             child: Padding(
                 padding: const EdgeInsets.all(AppSpacing.base),
-                child: Row(children: [
+                child: ReadAloudRegion(
+                    child: Row(children: [
                   Container(
                       width: 48,
                       height: 56,
@@ -162,6 +164,6 @@ class VeloraScheduleCard extends StatelessWidget {
                                 ?.copyWith(color: colors.onSurfaceVariant)),
                       ])),
                   const Icon(Icons.chevron_right_rounded),
-                ]))));
+                ])))));
   }
 }
