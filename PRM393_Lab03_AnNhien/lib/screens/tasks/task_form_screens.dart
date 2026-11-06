@@ -1,3 +1,5 @@
+import '../../widgets/state_views.dart';
+import '../../utils/app_error.dart';
 import '../../viewmodels/device_access_view_model.dart'
     show voiceInputEnabledProvider;
 import 'package:flutter/material.dart';
@@ -143,21 +145,13 @@ class TaskConfigureScreen extends ConsumerStatefulWidget {
 class _TaskConfigureScreenState extends ConsumerState<TaskConfigureScreen> {
   final _title = TextEditingController();
   bool _loaded = false;
+  String? _loadError;
+  int _loadGeneration = 0;
   @override
   void initState() {
     super.initState();
     if (widget.editId != null) {
-      WidgetsBinding.instance.addPostFrameCallback((_) async {
-        final found = await ref
-            .read(taskFormViewModelProvider.notifier)
-            .startEdit(widget.editId!, day: widget.day);
-        if (mounted) {
-          setState(() {
-            _loaded = found;
-            _title.text = ref.read(taskFormViewModelProvider).title;
-          });
-        }
-      });
+      WidgetsBinding.instance.addPostFrameCallback((_) => _loadEdit());
     } else {
       _loaded = true;
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -165,6 +159,34 @@ class _TaskConfigureScreenState extends ConsumerState<TaskConfigureScreen> {
         if (ref.read(taskFormViewModelProvider).date == null) vm.startCreate();
         if (mounted) _title.text = ref.read(taskFormViewModelProvider).title;
       });
+    }
+  }
+
+  Future<void> _loadEdit() async {
+    final generation = ++_loadGeneration;
+    if (mounted) {
+      setState(() {
+        _loaded = false;
+        _loadError = null;
+      });
+    }
+    try {
+      final found = await ref
+          .read(taskFormViewModelProvider.notifier)
+          .startEdit(widget.editId!, day: widget.day);
+      if (!mounted || generation != _loadGeneration) return;
+      setState(() {
+        _loaded = found;
+        _loadError = found
+            ? null
+            : 'Việc này không còn trong lịch. Bác quay lại lịch hoặc thử tải lại nhé.';
+        if (found) _title.text = ref.read(taskFormViewModelProvider).title;
+      });
+    } catch (e) {
+      if (!mounted || generation != _loadGeneration) return;
+      setState(() => _loadError = e is AppException
+          ? e.userMessage
+          : 'Chưa tải được việc. Bác thử lại nhé.');
     }
   }
 
@@ -198,7 +220,21 @@ class _TaskConfigureScreenState extends ConsumerState<TaskConfigureScreen> {
   @override
   Widget build(BuildContext context) {
     if (!_loaded && widget.editId != null) {
-      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+      return Scaffold(
+          appBar: AppBackBar.adaptive(context,
+              onBack: () =>
+                  context.canPop() ? context.pop() : context.go('/calendar')),
+          body: SafeArea(
+              child: _loadError == null
+                  ? const LoadingView(message: 'Đang tải việc…')
+                  : ListView(padding: AppSpacing.screenPadding, children: [
+                      ErrorView(message: _loadError!, onRetry: _loadEdit),
+                      AppButton(
+                          label: 'Về lịch',
+                          icon: Icons.calendar_month_rounded,
+                          kind: AppButtonKind.secondary,
+                          onPressed: () => context.go('/calendar')),
+                    ])));
     }
     final state = ref.watch(taskFormViewModelProvider);
     final vm = ref.read(taskFormViewModelProvider.notifier);
@@ -309,24 +345,28 @@ class _TaskConfigureScreenState extends ConsumerState<TaskConfigureScreen> {
           ],
           const SizedBox(height: AppSpacing.lg),
           const _SectionTitle(icon: Icons.repeat_rounded, text: 'Lặp lại'),
-          ChoiceGroup<RepeatRule>(
-              options: const [
-                ChoiceOption(value: RepeatRule.daily, label: 'Mỗi ngày'),
-                ChoiceOption(value: RepeatRule.someDays, label: 'Vài ngày'),
-                ChoiceOption(value: RepeatRule.once, label: 'Một lần')
-              ],
-              value: state.repeat,
-              onChanged: (value) async {
-                if (value == RepeatRule.someDays) {
-                  final result = await context.push<Set<int>>('/task/repeat');
-                  if (result != null) {
+          if (state.original?.isRescheduled == true)
+            const Text(
+                'Chỉ sửa lần đã dời này. Các lần lặp khác vẫn giữ nguyên.')
+          else
+            ChoiceGroup<RepeatRule>(
+                options: const [
+                  ChoiceOption(value: RepeatRule.daily, label: 'Mỗi ngày'),
+                  ChoiceOption(value: RepeatRule.someDays, label: 'Vài ngày'),
+                  ChoiceOption(value: RepeatRule.once, label: 'Một lần')
+                ],
+                value: state.repeat,
+                onChanged: (value) async {
+                  if (value == RepeatRule.someDays) {
+                    final result = await context.push<Set<int>>('/task/repeat');
+                    if (result != null) {
+                      vm.setRepeat(value);
+                      vm.setWeekdays(result);
+                    }
+                  } else {
                     vm.setRepeat(value);
-                    vm.setWeekdays(result);
                   }
-                } else {
-                  vm.setRepeat(value);
-                }
-              }),
+                }),
           const SizedBox(height: AppSpacing.lg),
           const _SectionTitle(
               icon: Icons.calendar_month_rounded, text: 'Ngày làm'),
@@ -708,7 +748,7 @@ class TaskSavedScreen extends ConsumerWidget {
                               _ActivitySummary(activity: activity),
                               const SizedBox(height: AppSpacing.md),
                               Text(
-                                  '${_time(state)}\n${_repeatText(state)}${state.remind ? '\nNhắc trước 10 phút' : ''}',
+                                  '${_time(state)}\n${_repeatText(state)}${state.remind ? '\nNhắc vào giờ làm' : ''}',
                                   style: Theme.of(context).textTheme.bodyLarge,
                                   textAlign: TextAlign.center)
                             ]))))));

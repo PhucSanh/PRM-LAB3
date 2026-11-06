@@ -163,7 +163,7 @@ class TaskFormViewModel extends Notifier<TaskFormState> {
       hour: task.hour,
       minute: task.minute,
       isAm: task.hour < 12,
-      repeat: task.repeat,
+      repeat: task.isRescheduled ? RepeatRule.once : task.repeat,
       weekdays: task.weekdays.toSet(),
       remind: task.remind,
       editingId: task.id,
@@ -228,11 +228,13 @@ class TaskFormViewModel extends Notifier<TaskFormState> {
                 before,
                 _editDay!,
                 task,
-                before.repeat == RepeatRule.once
-                    ? schedule.ChangeScope.all
-                    : scope == ChangeScope.once
-                        ? schedule.ChangeScope.occurrence
-                        : schedule.ChangeScope.future);
+                before.isRescheduled
+                    ? schedule.ChangeScope.occurrence
+                    : before.repeat == RepeatRule.once
+                        ? schedule.ChangeScope.all
+                        : scope == ChangeScope.once
+                            ? schedule.ChangeScope.occurrence
+                            : schedule.ChangeScope.future);
       } else {
         await repository.save(task);
       }
