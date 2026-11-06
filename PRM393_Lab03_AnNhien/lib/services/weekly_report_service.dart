@@ -61,32 +61,35 @@ Future<Uint8List> renderWeeklyReport(List<WeeklyReportDay> days) async {
           style: const pw.TextStyle(fontSize: 12)),
       pw.SizedBox(height: 16),
       for (final day in days) ...[
-        pw.Column(crossAxisAlignment: pw.CrossAxisAlignment.stretch, children: [
-          pw.Container(
-              width: double.infinity,
-              padding: const pw.EdgeInsets.all(8),
-              color: PdfColor.fromHex('#E3E9DE'),
-              child: pw.Text(
-                  '${[
-                    'Thứ Hai',
-                    'Thứ Ba',
-                    'Thứ Tư',
-                    'Thứ Năm',
-                    'Thứ Sáu',
-                    'Thứ Bảy',
-                    'Chủ Nhật'
-                  ][day.date.weekday - 1]} - ${date(day.date)}',
-                  style: pw.TextStyle(
-                      fontSize: 16,
-                      fontWeight: pw.FontWeight.bold,
-                      color: pine))),
-          if (day.tasks.isEmpty)
-            pw.Padding(
-                padding: const pw.EdgeInsets.all(10),
-                child: pw.Text('Chưa có việc.',
-                    style: const pw.TextStyle(fontSize: 13))),
-          if (day.tasks.isNotEmpty) taskRow(day.tasks.first),
-        ]),
+        pw.Inseparable(
+            child: pw.Column(
+                crossAxisAlignment: pw.CrossAxisAlignment.stretch,
+                children: [
+              pw.Container(
+                  width: double.infinity,
+                  padding: const pw.EdgeInsets.all(8),
+                  color: PdfColor.fromHex('#E3E9DE'),
+                  child: pw.Text(
+                      '${[
+                        'Thứ Hai',
+                        'Thứ Ba',
+                        'Thứ Tư',
+                        'Thứ Năm',
+                        'Thứ Sáu',
+                        'Thứ Bảy',
+                        'Chủ Nhật'
+                      ][day.date.weekday - 1]} - ${date(day.date)}',
+                      style: pw.TextStyle(
+                          fontSize: 16,
+                          fontWeight: pw.FontWeight.bold,
+                          color: pine))),
+              if (day.tasks.isEmpty)
+                pw.Padding(
+                    padding: const pw.EdgeInsets.all(10),
+                    child: pw.Text('Chưa có việc.',
+                        style: const pw.TextStyle(fontSize: 13))),
+              if (day.tasks.isNotEmpty) taskRow(day.tasks.first),
+            ])),
         for (final task in day.tasks.skip(1)) taskRow(task),
         pw.SizedBox(height: 12),
       ],
