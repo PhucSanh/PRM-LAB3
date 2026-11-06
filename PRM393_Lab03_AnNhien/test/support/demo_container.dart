@@ -1,3 +1,4 @@
+import 'package:an_nhien/services/contact_launcher_service.dart';
 import 'package:an_nhien/services/voice_task_service.dart';
 import 'package:an_nhien/services/device_access_service.dart';
 import 'package:an_nhien/router/app_router.dart';
@@ -43,6 +44,8 @@ ProviderContainer demoContainer(
     ProviderContainer(overrides: [
       voiceTaskServiceProvider
           .overrideWithValue(voiceTasks ?? FakeVoiceTaskService()),
+      contactLauncherServiceProvider
+          .overrideWithValue(FakeContactLauncherService()),
       deviceAccessServiceProvider
           .overrideWithValue(device ?? AndroidDeviceAccessService()),
       authGuardEnabledProvider.overrideWithValue(false),
