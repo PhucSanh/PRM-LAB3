@@ -1,3 +1,5 @@
+import '../services/task_repository.dart';
+import '../services/caregiver_schedule_service.dart' as schedule;
 import 'calm_feature_providers.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -52,6 +54,7 @@ class TaskFormState {
   bool get isTimeInPastToday {
     final selectedDate = date;
     if (selectedDate == null) return false;
+    if (mode == TaskFormMode.edit && hour == original?.hour && minute == original?.minute) return false;
     final now = DateTime.now();
     final isToday = selectedDate.year == now.year &&
         selectedDate.month == now.month &&
@@ -114,6 +117,8 @@ class TaskFormState {
 class TaskFormViewModel extends Notifier<TaskFormState> {
   TaskItem? _lastMutation;
   bool _lastWasDelete = false;
+  schedule.ScheduleUndo? _scopedUndo;
+  DateTime? _editDay;
 
   @override
   TaskFormState build() => const TaskFormState();
@@ -133,20 +138,22 @@ class TaskFormViewModel extends Notifier<TaskFormState> {
     );
   }
 
-  Future<bool> startEdit(String id) async {
-    final tasks =
-        await ref.read(taskRepositoryProvider).tasksForDay(DateTime.now());
+  Future<bool> startEdit(String id, {DateTime? day}) async {
+    _editDay = day ?? DateTime.now();
+    _scopedUndo = null;
+    final tasks = await ref.read(taskRepositoryProvider).tasksForDay(_editDay!);
     final task = tasks.where((item) => item.id == id).firstOrNull;
     if (task == null) return false;
     state = TaskFormState(
       mode: TaskFormMode.edit,
       activity: task.habitKey,
       title: task.title,
-      date: DateTime.now(),
+      date: _editDay,
       hour: task.hour,
       minute: task.minute,
       isAm: task.hour < 12,
       repeat: task.repeat,
+      weekdays: task.weekdays.toSet(),
       remind: task.remind,
       editingId: task.id,
       original: task,
@@ -179,7 +186,10 @@ class TaskFormViewModel extends Notifier<TaskFormState> {
       return false;
     }
     final before = state.original;
-    final task = TaskItem(
+    final task = (before ??
+            const TaskItem(
+                id: "", title: "", habitKey: "move", hour: 8, minute: 0))
+        .copyWith(
       id: state.editingId ?? DateTime.now().microsecondsSinceEpoch.toString(),
       title: state.title.trim(),
       habitKey: state.activity,
@@ -188,11 +198,28 @@ class TaskFormViewModel extends Notifier<TaskFormState> {
       repeat: state.repeat,
       remind: state.remind,
       status: before?.status ?? TaskStatus.pending,
+      startDate: before?.startDate ?? dateKey(before != null ? _editDay! : state.date ?? DateTime.now()),
+      weekdays: state.repeat == RepeatRule.someDays ||
+              state.repeat == RepeatRule.weekly
+          ? state.weekdays.toList()
+          : const [],
     );
     state =
         state.copyWith(saveState: TaskSaveState.saving, showValidation: false);
     try {
-      await ref.read(taskRepositoryProvider).save(task);
+      final repository = ref.read(taskRepositoryProvider);
+      if (before != null && repository is ScopedTaskRepository) {
+        _scopedUndo = await (repository as ScopedTaskRepository)
+            .changeOccurrence(
+                before,
+                _editDay!,
+                task,
+                before.repeat == RepeatRule.once || scope == ChangeScope.once
+                    ? schedule.ChangeScope.occurrence
+                    : schedule.ChangeScope.future);
+      } else {
+        await repository.save(task);
+      }
       await ref.read(analyticsServiceProvider).logEvent(
         state.mode == TaskFormMode.create ? 'add_task' : 'edit_task',
         {'task_id': task.id, 'repeat': task.repeat.name},
@@ -227,7 +254,19 @@ class TaskFormViewModel extends Notifier<TaskFormState> {
     if (task == null) return false;
     state = state.copyWith(saveState: TaskSaveState.saving);
     try {
-      await ref.read(taskRepositoryProvider).delete(task.id);
+      final repository = ref.read(taskRepositoryProvider);
+      if (repository is ScopedTaskRepository) {
+        _scopedUndo = await (repository as ScopedTaskRepository)
+            .changeOccurrence(
+                task,
+                _editDay ?? DateTime.now(),
+                null,
+                scope == ChangeScope.once
+                    ? schedule.ChangeScope.occurrence
+                    : schedule.ChangeScope.future);
+      } else {
+        await repository.delete(task.id);
+      }
       await ref
           .read(analyticsServiceProvider)
           .logEvent('delete_task', {'task_id': task.id, 'scope': scope.name});
@@ -248,6 +287,14 @@ class TaskFormViewModel extends Notifier<TaskFormState> {
   }
 
   Future<void> undoLastMutation() async {
+    if (_scopedUndo != null) {
+      await (ref.read(taskRepositoryProvider) as ScopedTaskRepository)
+          .undoOccurrence(_scopedUndo!);
+      _scopedUndo = null;
+      ref.invalidate(todayViewModelProvider);
+      ref.invalidate(calendarTasksProvider);
+      return;
+    }
     final last = _lastMutation;
     if (last == null) return;
     if (_lastWasDelete) {
@@ -256,7 +303,7 @@ class TaskFormViewModel extends Notifier<TaskFormState> {
       await ref.read(taskRepositoryProvider).save(last);
     }
     ref.invalidate(todayViewModelProvider);
-      ref.invalidate(calendarTasksProvider);
+    ref.invalidate(calendarTasksProvider);
   }
 }
 

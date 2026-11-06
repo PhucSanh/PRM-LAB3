@@ -128,7 +128,8 @@ class _ActivityChoice extends StatelessWidget {
 }
 
 class TaskConfigureScreen extends ConsumerStatefulWidget {
-  const TaskConfigureScreen({super.key, this.editId});
+  const TaskConfigureScreen({super.key, this.editId, this.day});
+  final DateTime? day;
   final String? editId;
   @override
   ConsumerState<TaskConfigureScreen> createState() =>
@@ -145,7 +146,7 @@ class _TaskConfigureScreenState extends ConsumerState<TaskConfigureScreen> {
       WidgetsBinding.instance.addPostFrameCallback((_) async {
         final found = await ref
             .read(taskFormViewModelProvider.notifier)
-            .startEdit(widget.editId!);
+            .startEdit(widget.editId!, day: widget.day);
         if (mounted) {
           setState(() {
             _loaded = found;
@@ -233,7 +234,12 @@ class _TaskConfigureScreenState extends ConsumerState<TaskConfigureScreen> {
                     label: edit ? 'Lưu thay đổi' : 'Lưu việc này',
                     icon: Icons.save_rounded,
                     onPressed: () async {
-                      final saved = await vm.save();
+                      ChangeScope? scope;
+                      if (edit && state.repeat != RepeatRule.once) {
+                        scope = await showScopeDialog(context, state.title);
+                        if (scope == null || !context.mounted) return;
+                      }
+                      final saved = await vm.save(scope: scope);
                       if (!context.mounted) return;
                       if (saved && edit) {
                         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
@@ -324,10 +330,12 @@ class _TaskConfigureScreenState extends ConsumerState<TaskConfigureScreen> {
               text: state.date == null
                   ? 'Chọn ngày'
                   : '${state.date!.day}/${state.date!.month}/${state.date!.year}',
-              onTap: () async {
-                final value = await context.push<DateTime>('/task/date');
-                if (value != null) vm.setDate(value);
-              }),
+              onTap: state.mode == TaskFormMode.edit
+                  ? null
+                  : () async {
+                      final value = await context.push<DateTime>('/task/date');
+                      if (value != null) vm.setDate(value);
+                    }),
           const SizedBox(height: AppSpacing.lg),
           SwitchListTile.adaptive(
               value: state.remind,
@@ -423,7 +431,7 @@ class _SectionTitle extends StatelessWidget {
 class _PickerTile extends StatelessWidget {
   const _PickerTile({required this.text, required this.onTap});
   final String text;
-  final VoidCallback onTap;
+  final VoidCallback? onTap;
   @override
   Widget build(BuildContext context) => OutlinedButton(
       onPressed: onTap,
