@@ -1,3 +1,5 @@
+import 'voice_task_service.dart';
+import 'firebase_voice_task_service.dart';
 import 'weekly_report_service.dart';
 import 'device_access_service.dart';
 import 'firebase_family_suggestion_service.dart';
@@ -156,3 +158,6 @@ final reminderRuntimeProvider = Provider<ReminderRuntime>((ref) {
 
 final deviceAccessServiceProvider =
     Provider<DeviceAccessService>((ref) => AndroidDeviceAccessService());
+
+final voiceTaskServiceProvider = Provider<VoiceTaskService>(
+    (ref) => FirebaseVoiceTaskService(ref.watch(functionsSdkProvider)));
