@@ -5,6 +5,7 @@ import '../../theme/app_spacing.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_icons.dart';
 import '../../viewmodels/calm_feature_providers.dart';
+import '../../viewmodels/task_form_view_model.dart';
 import '../../widgets/calm_parts.dart';
 import '../../widgets/velora_parts.dart';
 import '../../widgets/app_button.dart';
@@ -32,9 +33,9 @@ class ActivitiesScreen extends ConsumerWidget {
         SingleChildScrollView(
             scrollDirection: Axis.horizontal,
             child: Row(children: [
-              for (final entry in const {
+              for (final entry in {
                 'explore': 'Khám phá',
-                'saved': 'Đã lưu',
+                if (selected == 'saved') 'saved': 'Đã lưu',
                 'habits': 'Thói quen'
               }.entries)
                 Padding(
@@ -155,9 +156,17 @@ class HabitDetailScreen extends ConsumerWidget {
                           title: 'Nội dung này không còn khả dụng.')
                       : VeloraDetailBody(
                           footer: AppButton(
-                              label: 'Chọn hoạt động để lên lịch',
+                              label: 'Thêm vào lịch',
                               icon: AppIcons.tabWeek,
-                              onPressed: () => context.push('/today/add')),
+                              onPressed: () {
+                                ref
+                                    .read(taskFormViewModelProvider.notifier)
+                                    .startCreate(
+                                        day: ref.read(calendarDateProvider),
+                                        activity: habit.key,
+                                        title: habit.name);
+                                context.push('/today/add/time');
+                              }),
                           onBack: () => context.canPop()
                               ? context.pop()
                               : context.go('/activities?section=habits'),

@@ -347,7 +347,9 @@ final routerProvider = Provider<GoRouter>((ref) {
                               parseDateKey(state.uri.queryParameters['date']))),
                   GoRoute(
                       path: 'add',
-                      builder: (_, __) => const ActivitySelectionScreen()),
+                      builder: (_, state) => ActivitySelectionScreen(
+                          initialDate:
+                              parseDateKey(state.uri.queryParameters['date']))),
                   GoRoute(
                       path: 'add/time',
                       builder: (_, __) => const TaskConfigureScreen()),

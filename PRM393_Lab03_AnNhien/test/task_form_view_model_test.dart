@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:an_nhien/services/caregiver_schedule_service.dart' as scoped;
 import 'package:an_nhien/models/task_item.dart';
 import 'package:an_nhien/services/analytics_service.dart';
@@ -23,6 +24,25 @@ class ScopedTestRepository extends FakeTaskRepository
       schedules.undo(change);
 }
 
+class _PendingRepository extends FakeTaskRepository {
+  _PendingRepository() : super([]);
+  final release = Completer<void>();
+  int writes = 0;
+  @override
+  Future<void> save(TaskItem task) async {
+    writes++;
+    await release.future;
+    await super.save(task);
+  }
+}
+
+class _OfflineRepository extends FakeTaskRepository {
+  _OfflineRepository() : super([]);
+  @override
+  Future<void> save(TaskItem task) async =>
+      throw StateError('network unavailable');
+}
+
 void main() {
   late FakeTaskRepository repository;
   late FakeAnalyticsService analytics;
@@ -38,6 +58,78 @@ void main() {
     ]);
   });
   tearDown(() => container.dispose());
+
+  test('creation preserves future calendar date and chosen activity', () async {
+    final day = DateTime.now().add(const Duration(days: 12));
+    final vm = container.read(taskFormViewModelProvider.notifier);
+    vm.startCreate(day: day, activity: 'downshift', title: 'Thư giãn');
+    final state = container.read(taskFormViewModelProvider);
+    expect(dateKey(state.date!), dateKey(day));
+    expect(state.hour, 8);
+    expect(state.activity, 'downshift');
+    expect(await vm.save(), isTrue);
+    final saved = await repository.tasksForDay(day);
+    expect(saved.single.title, 'Thư giãn');
+    expect(saved.single.startDate, dateKey(day));
+  });
+
+  test('past calendar context defaults to the next available time', () {
+    final vm = container.read(taskFormViewModelProvider.notifier);
+    vm.startCreate(day: DateTime(2020));
+    final state = container.read(taskFormViewModelProvider);
+    expect(
+        state.date!.isBefore(DateTime.now().subtract(const Duration(days: 1))),
+        isFalse);
+    expect(state.isTimeInPastToday, isFalse);
+  });
+
+  test('past time does not incorrectly mark a valid title as missing',
+      () async {
+    final vm = container.read(taskFormViewModelProvider.notifier);
+    vm.startCreate();
+    vm.setDate(DateTime.now());
+    vm.setTime(hour: 0, minute: 0, isAm: true);
+    expect(await vm.save(), isFalse);
+    expect(container.read(taskFormViewModelProvider).titleError, isNull);
+    vm.setTitle('x' * 81);
+    expect(await vm.save(), isFalse);
+    expect(
+        container.read(taskFormViewModelProvider).titleError, contains('80'));
+    expect(await repository.tasksForDay(DateTime.now()), isEmpty);
+  });
+
+  test('rapid duplicate save submits only one repository write', () async {
+    final pending = _PendingRepository();
+    final c = ProviderContainer(overrides: [
+      taskRepositoryProvider.overrideWithValue(pending),
+      analyticsServiceProvider.overrideWithValue(analytics),
+      crashServiceProvider.overrideWithValue(FakeCrashService()),
+    ]);
+    addTearDown(c.dispose);
+    final vm = c.read(taskFormViewModelProvider.notifier)..startCreate();
+    final first = vm.save();
+    expect(await vm.save(), isFalse);
+    expect(pending.writes, 1);
+    pending.release.complete();
+    expect(await first, isTrue);
+  });
+
+  test('failed save preserves draft and does not claim it was saved offline',
+      () async {
+    final c = ProviderContainer(overrides: [
+      taskRepositoryProvider.overrideWithValue(_OfflineRepository()),
+      analyticsServiceProvider.overrideWithValue(analytics),
+      crashServiceProvider.overrideWithValue(FakeCrashService()),
+    ]);
+    addTearDown(c.dispose);
+    final vm = c.read(taskFormViewModelProvider.notifier)..startCreate();
+    vm.setTitle('Gọi cháu vào buổi chiều');
+    expect(await vm.save(), isFalse);
+    expect(c.read(taskFormViewModelProvider).errorMessage,
+        startsWith('Chưa lưu được'));
+    vm.restoreEditing();
+    expect(c.read(taskFormViewModelProvider).title, 'Gọi cháu vào buổi chiều');
+  });
 
   test('F4: tên trống hiển thị validation và không lưu', () async {
     final vm = container.read(taskFormViewModelProvider.notifier);
