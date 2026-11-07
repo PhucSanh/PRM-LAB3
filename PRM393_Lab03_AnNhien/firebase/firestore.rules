@@ -71,6 +71,15 @@ service cloud.firestore {
         allow read: if owner(uid) || (signedIn() && request.auth.uid == caregiverUid);
         allow write: if false;
       }
+      match /scheduleState/{id} {
+        allow read: if owner(uid) || caregiver(uid);
+        allow create: if (owner(uid) || caregiver(uid)) && id == 'current'
+          && request.resource.data.keys().hasOnly(['revision']) && request.resource.data.revision == 0;
+        allow update: if (owner(uid) || caregiver(uid)) && id == 'current'
+          && request.resource.data.keys().hasOnly(['revision']) && request.resource.data.revision is int
+          && request.resource.data.revision == resource.data.revision + 1;
+        allow delete: if false;
+      }
       match /tasks/{id} {
         allow read: if owner(uid) || caregiver(uid);
         allow delete: if owner(uid) || caregiver(uid);

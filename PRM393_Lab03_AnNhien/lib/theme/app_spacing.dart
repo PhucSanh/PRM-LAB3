@@ -42,6 +42,10 @@ abstract final class AppSizes {
   /// Reference-first: primary targets ≥56dp, growing with scaled labels.
   static const double minTarget = 56;
 
+  /// Nút hỗ trợ luôn sẵn cho Bác ở mọi màn hình.
+  static const double assistanceTarget = 72;
+  static const double timeWheelHeight = 240;
+
   /// Nút micro lớn ở luồng giọng nói (V01, V02): 152 dp (≈ 24 mm).
   static const double micButton = 152;
 

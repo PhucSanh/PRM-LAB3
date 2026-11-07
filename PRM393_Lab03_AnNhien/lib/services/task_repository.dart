@@ -1,4 +1,5 @@
 import '../utils/app_error.dart';
+import 'schedule_limits.dart';
 import 'caregiver_schedule_service.dart' as schedule;
 import '../models/task_item.dart';
 
@@ -173,6 +174,11 @@ class FakeTaskRepository implements TaskRepository, RecentActivityRepository {
 
   @override
   Future<void> save(TaskItem task) async {
+    validateScheduleLimits(
+        [..._tasks.where((t) => t.id != task.id), task],
+        _reschedules.values.toList(),
+        {task.id},
+        DateTime.parse(task.startDate ?? dateKey(DateTime.now())));
     _tasks
       ..removeWhere((t) => t.id == task.id)
       ..add(task);
@@ -212,7 +218,7 @@ class FakeTaskRepository implements TaskRepository, RecentActivityRepository {
         'fromMinute': before?.minute ?? task.minute,
       },
     ];
-    _reschedules[key] = TaskReschedule(
+    final next = TaskReschedule(
       taskId: task.id,
       sourceDate: sourceDate,
       targetDate: dateKey(targetDay),
@@ -220,6 +226,12 @@ class FakeTaskRepository implements TaskRepository, RecentActivityRepository {
       minute: minute,
       history: history,
     );
+    validateScheduleLimits(
+        _tasks,
+        [..._reschedules.values.where((m) => m.key != key), next],
+        {task.id},
+        targetDay);
+    _reschedules[key] = next;
     return TaskRescheduleChange(
         key: key, before: before, after: _reschedules[key]);
   }
@@ -238,6 +250,19 @@ class FakeTaskRepository implements TaskRepository, RecentActivityRepository {
           current.sourceDate,
           DateTime.parse(change.before?.targetDate ?? current.sourceDate),
           _reschedules.values);
+    }
+    final template = _tasks
+        .where((t) => t.id == (current?.taskId ?? change.before?.taskId))
+        .firstOrNull;
+    if (template != null) {
+      validateScheduleLimits(
+          _tasks,
+          [
+            ..._reschedules.values.where((m) => m.key != change.key),
+            if (change.before != null) change.before!
+          ],
+          {template.id},
+          DateTime.now());
     }
     if (change.before == null) {
       _reschedules.remove(change.key);

@@ -1,3 +1,4 @@
+import 'read_aloud_region.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../theme/app_spacing.dart';
@@ -72,36 +73,39 @@ class CalmListRow extends StatelessWidget {
           onTap: onTap,
           child: Padding(
             padding: const EdgeInsets.symmetric(vertical: AppSpacing.base),
-            child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              ExcludeSemantics(
-                  child: Container(
-                      width: AppSizes.habitIcon,
-                      height: AppSizes.habitIcon,
-                      decoration: BoxDecoration(
-                          color: colors.primaryContainer,
-                          borderRadius: AppRadius.mdAll),
-                      child: Icon(icon,
-                          color: colors.onPrimaryContainer,
-                          size: AppSizes.icon))),
-              const SizedBox(width: AppSpacing.md),
-              Expanded(
-                  child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                    Text(title, style: theme.textTheme.titleMedium),
-                    if (subtitle != null) ...[
-                      const SizedBox(height: AppSpacing.xs),
-                      Text(subtitle!,
-                          style: theme.textTheme.bodyMedium
-                              ?.copyWith(color: colors.onSurfaceVariant)),
-                    ],
-                    if (trailing != null) ...[
-                      const SizedBox(height: AppSpacing.sm),
-                      trailing!,
-                    ],
-                  ])),
-              if (onTap != null) const Icon(AppIcons.chevronRight),
-            ]),
+            child: ReadAloudRegion(
+                child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                  ExcludeSemantics(
+                      child: Container(
+                          width: AppSizes.habitIcon,
+                          height: AppSizes.habitIcon,
+                          decoration: BoxDecoration(
+                              color: colors.primaryContainer,
+                              borderRadius: AppRadius.mdAll),
+                          child: Icon(icon,
+                              color: colors.onPrimaryContainer,
+                              size: AppSizes.icon))),
+                  const SizedBox(width: AppSpacing.md),
+                  Expanded(
+                      child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                        Text(title, style: theme.textTheme.titleMedium),
+                        if (subtitle != null) ...[
+                          const SizedBox(height: AppSpacing.xs),
+                          Text(subtitle!,
+                              style: theme.textTheme.bodyMedium
+                                  ?.copyWith(color: colors.onSurfaceVariant)),
+                        ],
+                        if (trailing != null) ...[
+                          const SizedBox(height: AppSpacing.sm),
+                          trailing!,
+                        ],
+                      ])),
+                  if (onTap != null) const Icon(AppIcons.chevronRight),
+                ])),
           ),
         ));
   }

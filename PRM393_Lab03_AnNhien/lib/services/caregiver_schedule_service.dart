@@ -1,3 +1,4 @@
+import 'schedule_limits.dart';
 import 'task_repository.dart' show TaskReschedule;
 import 'dart:async';
 import '../models/task_item.dart';
@@ -197,6 +198,8 @@ class FakeCaregiverScheduleService implements CaregiverScheduleService {
     _check();
     task.validate();
     if (tasks.containsKey(task.id)) return;
+    validateScheduleLimits([...tasks.values, task], reschedules.values.toList(),
+        {task.id}, DateTime.parse(task.startDate ?? dateKey(DateTime.now())));
     tasks[task.id] = task;
     _changes.add(null);
   }
@@ -216,6 +219,24 @@ class FakeCaregiverScheduleService implements CaregiverScheduleService {
     final plan = planScheduleChange(current, day, replacement, scope,
         '${current.id}-${DateTime.now().microsecondsSinceEpoch}',
         moved: moved);
+    if (replacement != null) {
+      final prospective = Map<String, TaskItem>.of(tasks);
+      for (final e in plan.after.entries) {
+        if (e.value == null) {
+          prospective.remove(e.key);
+        } else {
+          prospective[e.key] = e.value!;
+        }
+      }
+      validateScheduleLimits(
+          prospective.values.toList(),
+          reschedules.entries
+              .where((e) => moved == null || e.key != movedKey)
+              .map((e) => e.value)
+              .toList(),
+          plan.after.keys.toSet(),
+          day);
+    }
     for (final e in plan.after.entries) {
       if (e.value == null) {
         tasks.remove(e.key);
@@ -239,6 +260,27 @@ class FakeCaregiverScheduleService implements CaregiverScheduleService {
         throw const AppException('Lịch đã được sửa tiếp. Không thể hoàn tác.');
       }
     }
+    final prospective = Map<String, TaskItem>.of(tasks);
+    for (final e in change.before.entries) {
+      if (e.value == null) {
+        prospective.remove(e.key);
+      } else {
+        prospective[e.key] = e.value!;
+      }
+    }
+    final restoredMoves = Map<String, TaskReschedule>.of(reschedules);
+    for (final e in change.reschedulesBefore.entries) {
+      if (e.value == null) {
+        restoredMoves.remove(e.key);
+      } else {
+        restoredMoves[e.key] = e.value!;
+      }
+    }
+    validateScheduleLimits(
+        prospective.values.toList(),
+        restoredMoves.values.toList(),
+        change.before.keys.toSet(),
+        DateTime.now());
     for (final e in change.before.entries) {
       if (e.value == null) {
         tasks.remove(e.key);

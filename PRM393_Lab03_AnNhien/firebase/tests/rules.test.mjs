@@ -162,3 +162,26 @@ test('voice quota cannot be read or reset by authenticated clients',async()=>{
   await assertFails(setDoc(doc(db('mom'),'voiceUsage/mom'),{dayCount:0}));
   await assertFails(deleteDoc(doc(db('mom'),'voiceUsage/mom')));
 });
+
+test('family supports optional boolean favorite without widening owner access', async () => {
+  const contact = {name:'Mai',relation:'Con',phone:'0912345678'};
+  const target = doc(db('mom'), 'users/mom/family/favorite-contact');
+  await assertSucceeds(setDoc(target, {...contact,favorite:false}));
+  await assertSucceeds(updateDoc(target, {favorite:true}));
+  await assertFails(setDoc(target, {...contact,favorite:'true'}));
+  await assertFails(setDoc(target, {...contact,favorite:true,admin:true}));
+  await assertFails(setDoc(doc(db('stranger'), 'users/mom/family/other'), {...contact,favorite:true}));
+  await assertFails(getDoc(doc(db('stranger'), 'users/mom/family/favorite-contact')));
+  await assertSucceeds(setDoc(target, contact));
+});
+
+test('schedule validation lock is owner scoped and revision must increase', async () => {
+  const lock = doc(db('mom'), 'users/mom/scheduleState/current');
+  await assertSucceeds(setDoc(lock, {revision:0}));
+  await assertSucceeds(updateDoc(lock, {revision:1}));
+  await assertFails(updateDoc(lock, {revision:1}));
+  await assertFails(updateDoc(lock, {revision:3}));
+  await assertFails(updateDoc(lock, {revision:2,extra:true}));
+  await assertFails(getDoc(doc(db('stranger'), 'users/mom/scheduleState/current')));
+  await assertFails(setDoc(doc(db('stranger'), 'users/mom/scheduleState/current'), {revision:2}));
+});

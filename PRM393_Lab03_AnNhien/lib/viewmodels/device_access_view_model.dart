@@ -128,7 +128,7 @@ String conflictMessage(TaskItem task) {
   final time = '${task.hour.toString().padLeft(2, '0')}:'
       '${task.minute.toString().padLeft(2, '0')}';
   return 'Lúc $time Bác đã có việc “${task.title}”. '
-      'Bác vẫn thêm được, hoặc nói giờ khác nhé.';
+      'Bác chọn giờ khác nhé.';
 }
 
 class VoiceInputViewModel extends Notifier<VoiceDraft> {
@@ -310,11 +310,13 @@ class VoiceInputViewModel extends Notifier<VoiceDraft> {
       // Bắt đầu lượt mới để Bác nói tiếp việc khác.
       if (_active(generation, uid)) state = const VoiceDraft();
       return task;
-    } catch (_) {
+    } catch (error) {
       if (_active(generation, uid)) {
         state = before.copyWith(
             conflict: before.conflict,
-            error: 'Chưa thêm được vào lịch. Bác thử lại hoặc nhập tay nhé.');
+            error: error is AppException
+                ? error.userMessage
+                : 'Chưa thêm được vào lịch. Bác thử lại hoặc nhập tay nhé.');
       }
       return null;
     }
@@ -420,7 +422,19 @@ class SpeechViewModel extends Notifier<SpeechState> {
     if (!ref.mounted || generation != _generation) return;
     state = const SpeechState(speaking: true);
     try {
-      await service.speak(text);
+      // Android TTS limits each utterance to about 4000 characters.
+      // Keep long schedules readable and allow Stop between chunks.
+      var remaining = text;
+      while (remaining.isNotEmpty) {
+        var end = remaining.length > 3500 ? 3500 : remaining.length;
+        if (end < remaining.length) {
+          final space = remaining.lastIndexOf(' ', end);
+          if (space > 0) end = space;
+        }
+        await service.speak(remaining.substring(0, end));
+        if (!ref.mounted || generation != _generation) return;
+        remaining = remaining.substring(end).trimLeft();
+      }
       if (ref.mounted && generation == _generation) state = const SpeechState();
     } catch (e) {
       if (ref.mounted && generation == _generation) {
