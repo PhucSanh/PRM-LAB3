@@ -176,8 +176,9 @@ class TimeGridDialog extends StatefulWidget {
   final String title;
   final IconData icon;
 
-  /// Các mốc phút trên Figma.
-  static const minuteSteps = [0, 15, 30, 45];
+  /// Các mốc phút, cách nhau 5 phút (00, 05, … 55): 12 ô, lưới 4 cột như
+  /// phần Giờ. Figma ban đầu chỉ có 00/15/30/45, quá thưa khi đặt lịch.
+  static const minuteSteps = [0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55];
 
   @override
   State<TimeGridDialog> createState() => _TimeGridDialogState();
