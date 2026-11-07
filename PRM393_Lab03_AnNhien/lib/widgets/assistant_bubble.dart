@@ -5,6 +5,8 @@ import 'package:go_router/go_router.dart';
 import '../theme/app_icons.dart';
 import '../theme/app_spacing.dart';
 import '../viewmodels/device_access_view_model.dart';
+import 'app_button.dart';
+import 'form_parts.dart';
 
 /// Bong bóng trợ lý AI nổi ở góc dưới bên phải, đi theo các tab của Bác.
 /// Bấm vào mở màn "Nói để thêm việc". Ẩn khi Remote Config tắt giọng nói.
@@ -63,13 +65,76 @@ class AssistantBubble extends ConsumerWidget {
 }
 
 /// Câu trả lời của cháu (trợ lý) trong khung nói, dạng bong bóng chat.
-/// TalkBack tự đọc khi câu đổi.
-class AssistantReply extends StatelessWidget {
-  const AssistantReply({super.key, required this.text});
+/// Lần đầu câu hiện ra thì tự đọc to (một lần cho mỗi câu); dưới bong bóng có
+/// nút "Nghe lại" / "Dừng đọc" để Bác nghe lại bao nhiêu lần cũng được.
+class AssistantReply extends ConsumerStatefulWidget {
+  const AssistantReply({super.key, required this.text, this.autoRead = true});
   final String text;
+
+  /// `false`: không tự đọc, chỉ đọc khi Bác bấm nút.
+  final bool autoRead;
+
+  @override
+  ConsumerState<AssistantReply> createState() => _AssistantReplyState();
+}
+
+class _AssistantReplyState extends ConsumerState<AssistantReply> {
+  @override
+  void initState() {
+    super.initState();
+    _autoRead();
+  }
+
+  @override
+  void didUpdateWidget(AssistantReply oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.text != widget.text) _autoRead();
+  }
+
+  /// Đọc câu mới đúng một lần. ViewModel có thể đã tự đọc câu này rồi thì
+  /// không đọc chồng lên.
+  void _autoRead() {
+    if (!widget.autoRead) return;
+    final text = widget.text;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || widget.text != text) return;
+      final speech = ref.read(speechViewModelProvider);
+      if (speech.speaking && speech.text == text) return;
+      ref.read(speechViewModelProvider.notifier).read(text);
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
+    final text = widget.text;
+    final speech = ref.watch(speechViewModelProvider);
+    final speaking = speech.speaking && speech.text == text;
     final theme = Theme.of(context), colors = theme.colorScheme;
+    return Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          _bubble(theme, colors, text),
+          const SizedBox(height: AppSpacing.md),
+          Padding(
+            padding: const EdgeInsetsDirectional.only(
+                start: AppSizes.icon * 2 + AppSpacing.md),
+            child: AppButton(
+                key: const Key('assistant-reply-read-aloud'),
+                label: speaking ? 'Dừng đọc' : 'Nghe lại',
+                icon: speaking ? AppIcons.stopReading : AppIcons.volume,
+                kind: AppButtonKind.secondary,
+                onPressed: () =>
+                    ref.read(speechViewModelProvider.notifier).toggle(text)),
+          ),
+          if (speech.error != null && !speech.speaking) ...[
+            const SizedBox(height: AppSpacing.sm),
+            FieldMessage.error(speech.error!),
+          ],
+        ]);
+  }
+
+  Widget _bubble(ThemeData theme, ColorScheme colors, String text) {
     return Semantics(
       liveRegion: true,
       label: 'Cháu trả lời: $text',

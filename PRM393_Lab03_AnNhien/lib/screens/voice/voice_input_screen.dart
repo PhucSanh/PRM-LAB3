@@ -11,6 +11,7 @@ import '../../widgets/app_text_field.dart';
 import '../../widgets/calm_parts.dart';
 import '../../widgets/form_parts.dart';
 import '../../widgets/undo_snackbar.dart';
+import '../../widgets/voice_example_art.dart';
 import '../../widgets/voice_task_review.dart';
 import '../../theme/app_spacing.dart';
 
@@ -64,6 +65,9 @@ class _VoiceInputScreenState extends ConsumerState<VoiceInputScreen> {
     final vm = ref.read(voiceInputViewModelProvider.notifier);
     final enabled = ref.watch(voiceInputEnabledProvider);
     final result = state.interpretation;
+    // Giữ bộ đọc to sống suốt màn: ViewModel tự đọc câu hỏi / đề xuất, nếu
+    // không ai nghe thì provider autoDispose bị huỷ và cắt ngang giọng đọc.
+    ref.listen(speechViewModelProvider, (_, __) {});
     ref.listen(voiceInputViewModelProvider, (previous, next) {
       _sync(controller, next.text);
       _sync(followUp, next.followUp);
@@ -89,8 +93,9 @@ class _VoiceInputScreenState extends ConsumerState<VoiceInputScreen> {
               title: 'Nói để thêm việc',
               subtitle:
                   'Bác nói tên việc, ngày, giờ và làm trong bao lâu. Bác cũng có thể nói “Tôi làm xong rồi” để cháu đánh dấu và báo việc tiếp theo.',
-              art: true,
               actions: false),
+          const SizedBox(height: AppSpacing.lg),
+          const VoiceExampleArt(),
           const SizedBox(height: AppSpacing.lg),
           AppButton(
               label: state.text.isEmpty ? 'Bắt đầu nói' : 'Nói lại từ đầu',
@@ -111,7 +116,7 @@ class _VoiceInputScreenState extends ConsumerState<VoiceInputScreen> {
             const FieldMessage.hint(
                 'Nhập giọng nói đang tạm tắt. Bác có thể gõ tên việc và nhập lịch bằng tay.'),
           const Text(
-              'Khi Bác bấm “Hiểu lời Bác nói”, phần chữ, giờ thức dậy và các giờ đã có việc (không kèm tên việc) được gửi tới Groq để hiểu ngày, giờ. Bản ghi âm không được gửi đi.'),
+              'Khi Bác bấm “Hiểu lời Bác nói”, phần chữ, giờ thức dậy và các giờ đã có việc trong 7 ngày tới (không kèm tên việc) được gửi tới Google Gemini để hiểu ý Bác. Bản ghi âm không được gửi đi.'),
           const SizedBox(height: AppSpacing.lg),
           if (result == null)
             AppButton(

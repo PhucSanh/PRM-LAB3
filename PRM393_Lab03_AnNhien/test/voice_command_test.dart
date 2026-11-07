@@ -70,7 +70,31 @@ void main() {
           VoiceCommandKind.next);
     });
 
+    test('hỏi lịch một ngày là lệnh đọc lịch, không phải thêm việc', () {
+      for (final s in [
+        'công việc ngày mai',
+        'Ngày mai tui phải làm gì?',
+        'việc sắp tới phải làm trong hôm nay',
+        'Xem lịch thứ 5',
+        'Ngày mai còn việc gì không cháu',
+        'Chủ nhật có việc gì không',
+      ]) {
+        expect(parseVoiceCommand(s), VoiceCommandKind.agenda, reason: s);
+      }
+      // 05/02/2030 là thứ Ba.
+      final tue = DateTime(2030, 2, 5);
+      expect(agendaDayOffset('công việc ngày mai', tue), 1);
+      expect(agendaDayOffset('việc sắp tới hôm nay', tue), 0);
+      expect(agendaDayOffset('lịch ngày kia', tue), 2);
+      expect(agendaDayOffset('lịch thứ năm', tue), 2);
+      expect(agendaDayOffset('lịch thứ 2', tue), 6);
+      expect(agendaDayOffset('có một việc gì không', tue), 0);
+    });
+
     test('câu thêm việc mới không bị hiểu nhầm là lệnh', () {
+      expect(parseVoiceCommand('Tưới cây ngày mai'), isNull);
+      expect(parseVoiceCommand('Lên lịch đi bộ ngày mai'), isNull);
+      expect(parseVoiceCommand('Mai 8 giờ có việc đi chợ'), isNull);
       expect(parseVoiceCommand('Mai 8 giờ sáng tưới cây 15 phút'), isNull);
       expect(
           parseVoiceCommand('Nhắc tôi hoàn thành báo cáo lúc 8 giờ'), isNull);
@@ -142,6 +166,36 @@ void main() {
             .read(taskRepositoryProvider)
             .tasksForDay(DateTime(2030, 2, 5));
         expect(tasks.every((t) => t.status == TaskStatus.pending), isTrue);
+      });
+    });
+
+    test('hỏi công việc ngày mai thì đọc lịch ngày mai, không hỏi giờ',
+        () async {
+      await withClock(_clock, () async {
+        final (c, device) = await _setup([walk, tea, call]);
+        final vm = c.read(voiceInputViewModelProvider.notifier)
+          ..edit('công việc ngày mai');
+        expect(await vm.analyze(), isNull);
+        final state = c.read(voiceInputViewModelProvider);
+        expect(state.interpretation, isNull);
+        expect(state.reply, startsWith('Ngày mai, thứ Tư, ngày 6/2,'));
+        expect(state.addedDay, DateTime(2030, 2, 6));
+        expect(device.spoken, state.reply);
+      });
+    });
+
+    test('hỏi lịch hôm nay chỉ kể việc chưa làm', () async {
+      await withClock(_clock, () async {
+        final (c, _) =
+            await _setup([walk.copyWith(status: TaskStatus.done), tea, call]);
+        final vm = c.read(voiceInputViewModelProvider.notifier)
+          ..edit('hôm nay tui phải làm gì');
+        await vm.analyze();
+        final reply = c.read(voiceInputViewModelProvider).reply!;
+        expect(reply, contains('còn 2 việc'));
+        expect(reply, contains('“Uống trà với bạn” lúc 15:00'));
+        expect(reply, contains('“Gọi điện cho Mai” lúc 18:00'));
+        expect(reply, isNot(contains('Đi bộ')));
       });
     });
 

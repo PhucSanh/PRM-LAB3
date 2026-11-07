@@ -4,7 +4,9 @@ import '../services/local_voice_task_service.dart' show foldVietnamese;
 
 /// Lệnh Bác nói về lịch hôm nay (không phải thêm việc mới). Nhận diện trên
 /// máy bằng luật; câu nói không bao giờ được gửi cho AI để tự ghi lịch.
-enum VoiceCommandKind { complete, next }
+/// [agenda]: Bác hỏi lịch một ngày ("công việc ngày mai", "hôm nay phải làm
+/// gì") – chỉ đọc lịch, không thêm việc.
+enum VoiceCommandKind { complete, next, agenda }
 
 final _reComplete = RegExp(
     r'\b(?:lam\s+xong|da\s+xong|xong\s+(?:roi|ru[io]i|viec|het)|hoan\s+thanh|da\s+lam\s+(?:roi|ru[io]i|viec)|lam\s+(?:roi|ru[io]i)|danh\s+dau\s+(?:xong|da\s+lam))\b');
@@ -14,12 +16,61 @@ final _reNext = RegExp(
 final _reAddIntent =
     RegExp(r'\b(?:nhac|them|len\s+lich|dat\s+lich|hen)\b.*\d|\d.*\b(?:nhac)\b');
 
+// Hỏi về lịch: "công việc", "những việc", "lịch", "việc gì", "phải làm gì"…
+final _reAgenda = RegExp(
+    r'\b(?:cong\s+viec|nhung\s+viec|cac\s+viec|lich|viec\s+(?:gi|nao)|co\s+viec|lam\s+gi|phai\s+lam|sap\s+toi|ke\s+hoach)\b');
+// Có động từ thêm việc ("nhắc", "thêm", "lên lịch"…) thì là thêm việc mới.
+final _reAddVerb = RegExp(
+    r'\b(?:nhac|them|tao|hen|len\s+lich|dat\s+lich|xep\s+lich|ghi\s+lich)\b');
+final _reWeekdayNumber = RegExp(r'\bthu\s*[2-7]\b');
+const _weekdays = {
+  'thu hai': DateTime.monday,
+  'thu ba': DateTime.tuesday,
+  'thu tu': DateTime.wednesday,
+  'thu nam': DateTime.thursday,
+  'thu sau': DateTime.friday,
+  'thu bay': DateTime.saturday,
+  'chu nhat': DateTime.sunday,
+};
+
 VoiceCommandKind? parseVoiceCommand(String text) {
   final f = foldVietnamese(text);
   if (_reAddIntent.hasMatch(f)) return null;
   if (_reComplete.hasMatch(f)) return VoiceCommandKind.complete;
+  // "Ngày mai còn việc gì" hỏi ngày khác, không phải việc kế tiếp hôm nay.
+  final otherDay = agendaDayOffset(text, DateTime(2000, 1, 3)) != 0;
+  if (_reNext.hasMatch(f) && !otherDay) return VoiceCommandKind.next;
+  if (_isAgenda(f)) return VoiceCommandKind.agenda;
   if (_reNext.hasMatch(f)) return VoiceCommandKind.next;
   return null;
+}
+
+/// Câu hỏi lịch: có từ hỏi lịch, không có động từ thêm việc, không nêu giờ.
+bool _isAgenda(String folded) {
+  if (!_reAgenda.hasMatch(folded) || _reAddVerb.hasMatch(folded)) {
+    return false;
+  }
+  // "thứ 5" là ngày, không phải giờ; số khác (8 giờ, 15 phút) là thêm việc.
+  return !RegExp(r'\d').hasMatch(folded.replaceAll(_reWeekdayNumber, ''));
+}
+
+/// Bác hỏi lịch ngày nào, tính từ [today]: 0 = hôm nay (mặc định),
+/// 1 = mai, 2 = ngày kia / ngày mốt, hoặc thứ trong tuần gần nhất.
+int agendaDayOffset(String text, DateTime today) {
+  final f = foldVietnamese(text);
+  if (RegExp(r'\b(?:ngay\s+kia|ngay\s+mot)\b').hasMatch(f)) return 2;
+  if (RegExp(r'\b(?:ngay\s+mai|sang\s+mai|chieu\s+mai|toi\s+mai|mai)\b')
+      .hasMatch(f)) {
+    return 1;
+  }
+  int? weekday;
+  for (final e in _weekdays.entries) {
+    if (f.contains(e.key)) weekday = e.value;
+  }
+  final n = RegExp(r'\bthu\s*([2-7])\b').firstMatch(f);
+  if (n != null) weekday = int.parse(n.group(1)!) - 1;
+  if (weekday == null) return 0;
+  return (weekday - today.weekday + 7) % 7;
 }
 
 int _start(TaskItem t) => t.hour * 60 + t.minute;
@@ -107,3 +158,45 @@ String nextTaskSentence(TaskItem? next) => next == null
 
 String completedSentence(TaskItem done, TaskItem? next) =>
     'Cháu đã đánh dấu xong “${done.title}”. ${nextTaskSentence(next)}';
+
+const _weekdayNames = [
+  'thứ Hai',
+  'thứ Ba',
+  'thứ Tư',
+  'thứ Năm',
+  'thứ Sáu',
+  'thứ Bảy',
+  'Chủ nhật'
+];
+
+/// Số việc đọc to tối đa; còn lại Bác xem trong Lịch.
+const agendaReadLimit = 6;
+
+/// Câu trả lời khi Bác hỏi lịch ngày [day] ([offset] ngày tính từ hôm nay).
+/// Hôm nay chỉ kể việc chưa làm; ngày khác kể mọi việc trừ việc đã bỏ qua.
+String agendaSentence(DateTime day, int offset, List<TaskItem> tasks) {
+  final weekday = _weekdayNames[day.weekday - 1];
+  final date = '$weekday, ngày ${day.day}/${day.month}';
+  final when = switch (offset) {
+    0 => 'Hôm nay, $date,',
+    1 => 'Ngày mai, $date,',
+    2 => 'Ngày kia, $date,',
+    _ => '${weekday[0].toUpperCase()}${weekday.substring(1)} '
+        'ngày ${day.day}/${day.month},',
+  };
+  final list = tasks
+      .where((t) => offset == 0 ? _open(t) : t.status != TaskStatus.skipped)
+      .toList()
+    ..sort((a, b) => _start(a).compareTo(_start(b)));
+  if (list.isEmpty) {
+    return offset == 0
+        ? '$when Bác không còn việc nào nữa. Bác nghỉ ngơi nhé.'
+        : '$when Bác chưa có việc nào. Muốn thêm việc, Bác nói tên việc và giờ nhé.';
+  }
+  final read = list.take(agendaReadLimit).map((t) =>
+      '“${t.title}” lúc ${_time(t)}, ${durationText(t.durationMinutes)}');
+  final more = list.length - agendaReadLimit;
+  return '$when Bác ${offset == 0 ? 'còn' : 'có'} ${list.length} việc: '
+      '${read.join('; ')}.'
+      '${more > 0 ? ' Còn $more việc nữa, Bác xem trong Lịch nhé.' : ''}';
+}

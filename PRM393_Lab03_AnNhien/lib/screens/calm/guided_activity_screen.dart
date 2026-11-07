@@ -8,6 +8,7 @@ import '../../viewmodels/calm_feature_providers.dart';
 import '../../viewmodels/task_form_view_model.dart';
 import '../../widgets/app_back_bar.dart';
 import '../../widgets/app_button.dart';
+import '../../widgets/read_aloud_control.dart';
 import '../../widgets/velora_parts.dart';
 import '../../widgets/task_detail_parts.dart';
 import '../../widgets/state_views.dart';
@@ -49,6 +50,16 @@ class GuidedActivityScreen extends ConsumerWidget {
         const SizedBox(height: AppSpacing.sm),
         Text('${activity.minutes} phút · Theo nhịp của Bác',
             style: text.titleMedium),
+        const SizedBox(height: AppSpacing.base),
+        // Đọc to cả màn: tên, thời lượng, từng bước và lời dặn cuối.
+        ReadAloudControl(
+            text: [
+          '${activity.title}. ${activity.minutes} phút, theo nhịp của Bác.',
+          'Bác có thể bắt đầu như sau.',
+          for (final (index, step) in activity.steps.indexed)
+            'Bước ${index + 1}: $step',
+          'Bác có thể thay đổi thời lượng, ngày và giờ trước khi lưu.',
+        ].join(' ')),
         const SizedBox(height: AppSpacing.lg),
         Text('Bác có thể bắt đầu như sau', style: text.titleLarge),
         for (final (index, step) in activity.steps.indexed) ...[

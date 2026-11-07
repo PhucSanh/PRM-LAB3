@@ -224,7 +224,6 @@ void main() {
     expect(router.routeInformationProvider.value.uri.path, '/calendar');
     for (final (label, path, section) in [
       ('Khám phá', '/activities', 'explore'),
-      ('Thói quen', '/activities', 'habits'),
       ('Gia đình', '/family', ''),
       ('Cá nhân', '/account', ''),
     ]) {
@@ -382,19 +381,21 @@ void main() {
     final container = await pumpApp(tester, '/family');
     await tapText(tester, 'Thêm người thân');
     await tester.enterText(find.byType(TextField).at(0), 'Cô An');
-    await tester.enterText(find.byType(TextField).at(1), 'Bạn');
-    await tester.enterText(find.byType(TextField).at(2), '12');
+    // Mối quan hệ: chọn trong danh sách thả xuống.
+    await tapText(tester, 'Chọn mối quan hệ');
+    await tester.tap(find.text('Bạn bè').last);
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byType(TextField).at(1), '12');
     await tapText(tester, 'Lưu người thân');
     expect(find.text('Vui lòng kiểm tra lại số điện thoại.'), findsOneWidget);
     expect(find.text('Cô An'), findsOneWidget);
-    await tester.enterText(find.byType(TextField).at(2), '0901234567');
+    await tester.enterText(find.byType(TextField).at(1), '0901234567');
     await tapText(tester, 'Lưu người thân');
-    expect(
-        (await container.read(familyListProvider.future))
-            .where((person) => person.name == 'Cô An')
-            .single
-            .phone,
-        '0901234567');
+    final saved = (await container.read(familyListProvider.future))
+        .where((person) => person.name == 'Cô An')
+        .single;
+    expect(saved.phone, '0901234567');
+    expect(saved.relation, 'Bạn bè');
     await tapText(tester, 'Hoàn tác');
     expect(
         (await container.read(familyListProvider.future))
@@ -559,6 +560,12 @@ void main() {
   });
 
   group('Nút Đọc to', () {
+    testReferenceWidgets('hướng dẫn hoạt động có nút đọc cả màn',
+        (tester) async {
+      await pumpApp(tester, '/activities/guides/breathe-5', width: 360);
+      expect(find.text('Đọc to', skipOffstage: false), findsOneWidget);
+      await closeApp(tester);
+    });
     testReferenceWidgets('chỉ một nút trong màn Xem chi tiết việc',
         (tester) async {
       await pumpApp(tester, '/calendar/task/real-task?date=2026-11-05',
@@ -568,7 +575,6 @@ void main() {
     });
     for (final route in [
       '/calendar',
-      '/activities/guides/breathe-5',
       '/today/voice',
     ]) {
       testReferenceWidgets('$route không còn nút Đọc to', (tester) async {

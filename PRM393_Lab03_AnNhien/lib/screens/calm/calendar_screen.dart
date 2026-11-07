@@ -132,20 +132,14 @@ class CalendarScreen extends ConsumerWidget {
                       onRetry: () =>
                           ref.invalidate(calendarTasksProvider(key))),
                   data: (items) {
-                    final now = vietnamNow();
-                    final next = nextPendingTask(items, today, now);
-                    if (next == null) {
-                      return EmptyView(
-                          icon: AppIcons.tabWeek,
-                          title: items.isEmpty
-                              ? 'Hôm nay chưa có hoạt động nào.'
-                              : 'Bác đã xong các việc hôm nay.',
-                          message:
-                              'Bác chạm Thêm hoạt động bên dưới để lên lịch.');
-                    }
-                    final later = upcomingTasks(items, now, except: next.id)
-                        .take(moreUpcoming)
-                        .toList();
+                    // Chỉ việc hôm nay chưa làm và chưa kết thúc theo giờ
+                    // hiện tại: đang diễn ra hoặc chưa tới giờ. Việc đã qua
+                    // giờ không hiện ở đây (xem trong lịch ngày). Không còn
+                    // việc nào thì không hiện thẻ.
+                    final upcoming = upcomingTasks(items, vietnamNow());
+                    if (upcoming.isEmpty) return const SizedBox.shrink();
+                    final next = upcoming.first;
+                    final later = upcoming.skip(1).take(moreUpcoming).toList();
                     return Column(
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
@@ -310,12 +304,6 @@ class _CalendarDayScreenState extends ConsumerState<CalendarDayScreen> {
                               ],
                             ]),
                 ),
-                const SizedBox(height: AppSpacing.lg),
-                AppButton(
-                    label: 'Lưu lịch tuần PDF',
-                    icon: Icons.picture_as_pdf_rounded,
-                    kind: AppButtonKind.secondary,
-                    onPressed: () => context.push('/calendar/export')),
               ]),
         )));
   }

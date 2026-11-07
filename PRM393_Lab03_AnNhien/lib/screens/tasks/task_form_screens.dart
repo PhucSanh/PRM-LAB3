@@ -1,8 +1,6 @@
 import '../../viewmodels/calm_feature_providers.dart';
 import '../../widgets/state_views.dart';
 import '../../utils/app_error.dart';
-import '../../viewmodels/device_access_view_model.dart'
-    show voiceInputEnabledProvider;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -119,24 +117,11 @@ class _ActivitySelectionScreenState
               }),
           const SizedBox(height: AppSpacing.betweenTargets),
         ],
-        Row(children: [
-          if (ref.watch(voiceInputEnabledProvider)) ...[
-            Expanded(
-                child: AppButton(
-                    label: 'Nói việc',
-                    icon: Icons.mic_none_rounded,
-                    kind: AppButtonKind.secondary,
-                    onPressed: () => context.push('/today/voice'))),
-            const SizedBox(width: AppSpacing.md),
-          ],
-          Expanded(
-              child: AppButton(
-                  label: expanded ? 'Thu gọn' : 'Xem thêm',
-                  icon:
-                      expanded ? Icons.expand_less_rounded : Icons.add_rounded,
-                  kind: AppButtonKind.secondary,
-                  onPressed: () => setState(() => expanded = !expanded))),
-        ]),
+        AppButton(
+            label: expanded ? 'Thu gọn' : 'Xem thêm',
+            icon: expanded ? Icons.expand_less_rounded : Icons.add_rounded,
+            kind: AppButtonKind.secondary,
+            onPressed: () => setState(() => expanded = !expanded)),
       ]),
     );
   }

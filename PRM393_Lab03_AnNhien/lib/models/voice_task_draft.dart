@@ -145,10 +145,15 @@ class VoiceBusySlot {
       {required this.hour,
       required this.minute,
       required this.durationMinutes,
-      required this.habitKey});
+      required this.habitKey,
+      this.date});
   final int hour, minute, durationMinutes;
   final String habitKey;
+
+  /// Chỉ có ở `week` (khung giờ bận 7 ngày tới).
+  final DateTime? date;
   Map<String, Object> toMap() => {
+        if (date != null) 'date': dateKey(date!),
         'time':
             '${hour.toString().padLeft(2, '0')}:${minute.toString().padLeft(2, '0')}',
         'durationMinutes': durationMinutes,
@@ -160,16 +165,25 @@ class VoiceBusySlot {
 /// giờ đã bận của ngày đang xem. Mọi trường đều có thể thiếu.
 class VoiceUserContext {
   const VoiceUserContext(
-      {this.honorific, this.wakeHour, this.wakeMinute, this.busy = const []});
+      {this.honorific,
+      this.wakeHour,
+      this.wakeMinute,
+      this.busy = const [],
+      this.week = const []});
 
   /// Khoá `ong` / `ba` như `users/{uid}.honorific`.
   final String? honorific;
   final int? wakeHour, wakeMinute;
   final List<VoiceBusySlot> busy;
 
-  static const maxBusy = 20;
+  /// Khung giờ bận 7 ngày tới (có ngày, không có tên việc) để AI trả lời
+  /// "mai tui rảnh lúc nào".
+  final List<VoiceBusySlot> week;
+
+  static const maxBusy = 20, maxWeek = 60;
   bool get hasWakeTime => wakeHour != null && wakeMinute != null;
-  bool get isEmpty => honorific == null && !hasWakeTime && busy.isEmpty;
+  bool get isEmpty =>
+      honorific == null && !hasWakeTime && busy.isEmpty && week.isEmpty;
 
   Map<String, Object?> toMap() => {
         'honorific': honorific,
@@ -177,14 +191,34 @@ class VoiceUserContext {
             ? '${wakeHour!.toString().padLeft(2, '0')}:${wakeMinute!.toString().padLeft(2, '0')}'
             : null,
         'busy': busy.take(maxBusy).map((s) => s.toMap()).toList(),
+        if (week.isNotEmpty)
+          'week': week.take(maxWeek).map((s) => s.toMap()).toList(),
       };
 }
 
+/// Ý định AI hiểu từ câu nói. [add] là thêm việc (mặc định, cả bản server cũ).
+enum VoiceIntent { add, agenda, complete, next, answer }
+
 class VoiceTaskInterpretation {
   const VoiceTaskInterpretation(
-      {required this.draft, required this.question, this.onDevice = false});
+      {required this.draft,
+      required this.question,
+      this.onDevice = false,
+      this.intent = VoiceIntent.add,
+      this.queryDate,
+      this.queryDays = 1,
+      this.reply});
   final VoiceTaskDraft draft;
   final String? question;
+  final VoiceIntent intent;
+
+  /// [VoiceIntent.agenda]: ngày đầu và số ngày (1–7) Bác hỏi lịch.
+  final DateTime? queryDate;
+  final int queryDays;
+
+  /// [VoiceIntent.answer]: câu trả lời ngắn của AI, chỉ hiển thị và đọc to.
+  final String? reply;
+  static const maxReply = 300;
 
   /// `true` khi kết quả do bộ hiểu lời nói trên máy tạo (chưa bật Groq).
   final bool onDevice;
@@ -197,7 +231,11 @@ class VoiceTaskInterpretation {
       VoiceTaskInterpretation(
           draft: draft ?? this.draft,
           question: clearQuestion ? null : (question ?? this.question),
-          onDevice: onDevice);
+          onDevice: onDevice,
+          intent: intent,
+          queryDate: queryDate,
+          queryDays: queryDays,
+          reply: reply);
   factory VoiceTaskInterpretation.fromMap(Map<String, dynamic> data) {
     if (data['draft'] is! Map ||
         data['ready'] is! bool ||
@@ -207,10 +245,32 @@ class VoiceTaskInterpretation {
                 (data['question'] as String).length > 240))) {
       throw const FormatException('Invalid voice interpretation');
     }
+    final rawIntent = data['intent'] ?? 'add';
+    final intent =
+        VoiceIntent.values.where((i) => i.name == rawIntent).firstOrNull;
+    final rawDays = data['queryDays'] ?? 1;
+    final rawReply = data['reply'];
+    final queryDate =
+        data['queryDate'] == null ? null : parseDateKey(data['queryDate']);
+    if (intent == null ||
+        rawDays is! int ||
+        rawDays < 1 ||
+        rawDays > 7 ||
+        (data['queryDate'] != null && queryDate == null) ||
+        (rawReply != null &&
+            (rawReply is! String || rawReply.length > maxReply)) ||
+        (intent == VoiceIntent.answer &&
+            (rawReply is! String || rawReply.trim().isEmpty))) {
+      throw const FormatException('Invalid voice intent');
+    }
     final result = VoiceTaskInterpretation(
         draft: VoiceTaskDraft.fromMap(
             Map<String, dynamic>.from(data['draft'] as Map)),
-        question: data['question'] as String?);
+        question: data['question'] as String?,
+        intent: intent,
+        queryDate: queryDate,
+        queryDays: rawDays,
+        reply: (rawReply as String?)?.trim());
     // `ready` của server không xét thời lượng (app tự bổ sung / hỏi lại).
     if (data['ready'] !=
         (result.question == null && result.draft.scheduleComplete)) {

@@ -98,12 +98,33 @@ Future<(VoiceUserContext, List<TaskItem>)> loadVoiceContext(
         .first
         .timeout(const Duration(seconds: 3));
   } catch (_) {/* hồ sơ chưa có hoặc chưa tải được */}
+  final repo = ref.read(taskRepositoryProvider);
   try {
-    tasks = await ref
-        .read(taskRepositoryProvider)
-        .tasksForDay(day)
-        .timeout(const Duration(seconds: 5));
+    tasks = await repo.tasksForDay(day).timeout(const Duration(seconds: 5));
   } catch (_) {/* lịch chưa tải được */}
+  // 7 ngày tới, chỉ giờ / số phút / nhóm (không tên việc), để AI trả lời
+  // "mai tui rảnh lúc nào".
+  final week = <VoiceBusySlot>[];
+  try {
+    final today = vietnamToday();
+    final days = await Future.wait([
+      for (var i = 0; i < 7; i++)
+        repo.tasksForDay(DateTime(today.year, today.month, today.day + i))
+    ]).timeout(const Duration(seconds: 5));
+    for (final (i, list) in days.indexed) {
+      final date = DateTime(today.year, today.month, today.day + i);
+      for (final t in [...list]..sort((a, b) =>
+          (a.hour * 60 + a.minute).compareTo(b.hour * 60 + b.minute))) {
+        if (t.status == TaskStatus.skipped) continue;
+        week.add(VoiceBusySlot(
+            date: date,
+            hour: t.hour,
+            minute: t.minute,
+            durationMinutes: t.durationMinutes,
+            habitKey: t.habitKey));
+      }
+    }
+  } catch (_) {/* lịch tuần chưa tải được: AI vẫn hiểu câu thêm việc */}
   final sorted = [
     ...tasks
   ]..sort((a, b) => (a.hour * 60 + a.minute).compareTo(b.hour * 60 + b.minute));
@@ -119,7 +140,8 @@ Future<(VoiceUserContext, List<TaskItem>)> loadVoiceContext(
                 minute: t.minute,
                 durationMinutes: t.durationMinutes,
                 habitKey: t.habitKey))
-            .toList(growable: false)),
+            .toList(growable: false),
+        week: List.unmodifiable(week.take(VoiceUserContext.maxWeek))),
     tasks
   );
 }
@@ -224,6 +246,18 @@ class VoiceInputViewModel extends Notifier<VoiceDraft> {
           .read(voiceTaskServiceProvider)
           .interpret(turns, contextDate: contextDate, userContext: userContext);
       if (!_active(generation, uid)) return null;
+      // Không phải thêm việc: app tự đọc lịch / đánh dấu trên máy; AI chỉ
+      // phân loại. Câu trả lời tự do của AI chỉ hiển thị và đọc to.
+      if (result.intent != VoiceIntent.add) {
+        state = before;
+        return await switch (result.intent) {
+          VoiceIntent.answer => _answer(result.reply!, generation, uid),
+          VoiceIntent.agenda => _runCommand(VoiceCommandKind.agenda, uid,
+              from: result.queryDate, days: result.queryDays),
+          VoiceIntent.complete => _runCommand(VoiceCommandKind.complete, uid),
+          _ => _runCommand(VoiceCommandKind.next, uid),
+        };
+      }
       result = _withDuration(result, turns);
       String? conflict;
       if (result.ready) {
@@ -267,8 +301,22 @@ class VoiceInputViewModel extends Notifier<VoiceDraft> {
   }
 
   /// "Làm xong rồi" → đánh dấu xong việc hôm nay rồi báo việc tiếp theo;
-  /// "Việc tiếp theo?" → chỉ báo. Không gọi AI, không đoán việc ngày khác.
-  Future<QuickTaskUndo?> _runCommand(VoiceCommandKind kind, String uid) async {
+  /// "Việc tiếp theo?" → chỉ báo; "Công việc ngày mai?" → đọc lịch ngày đó. Không gọi AI, không đoán việc ngày khác.
+  Future<QuickTaskUndo?> _answer(
+      String reply, int generation, String uid) async {
+    await ref
+        .read(analyticsServiceProvider)
+        .logEvent('voice_command', {'action': 'answer', 'success': true});
+    if (!_active(generation, uid)) return null;
+    state = VoiceDraft(reply: reply);
+    await ref.read(speechViewModelProvider.notifier).read(reply);
+    return null;
+  }
+
+  /// [from] / [days]: ngày AI hiểu cho câu hỏi lịch; không có thì tự đọc
+  /// ngày trong câu nói (luật trên máy).
+  Future<QuickTaskUndo?> _runCommand(VoiceCommandKind kind, String uid,
+      {DateTime? from, int days = 1}) async {
     final before = state, generation = ++_generation;
     final analytics = ref.read(analyticsServiceProvider);
     state = state.copyWith(busy: true, interpreting: true);
@@ -276,8 +324,15 @@ class VoiceInputViewModel extends Notifier<VoiceDraft> {
     String reply;
     try {
       await ref.read(speechViewModelProvider.notifier).stop();
-      final day = vietnamToday(), now = vietnamNow();
-      final tasks = await ref.read(taskRepositoryProvider).tasksForDay(day);
+      final today = vietnamToday(), now = vietnamNow();
+      final offset = kind != VoiceCommandKind.agenda
+          ? 0
+          : from != null
+              ? calendarDate(from).difference(today).inDays.clamp(0, 365)
+              : agendaDayOffset(before.text, today);
+      final day = DateTime(today.year, today.month, today.day + offset);
+      final repo = ref.read(taskRepositoryProvider);
+      final tasks = await repo.tasksForDay(day);
       if (!_active(generation, uid)) return null;
       if (kind == VoiceCommandKind.complete) {
         final done = taskToComplete(before.text, tasks, now);
@@ -295,13 +350,23 @@ class VoiceInputViewModel extends Notifier<VoiceDraft> {
           reply = completedSentence(
               done, nextOpenTask(tasks, now, except: done.id));
         }
+      } else if (kind == VoiceCommandKind.agenda) {
+        final parts = [agendaSentence(day, offset, tasks)];
+        for (var i = 1; i < days.clamp(1, 7); i++) {
+          final d = DateTime(day.year, day.month, day.day + i);
+          parts.add(agendaSentence(d, offset + i, await repo.tasksForDay(d)));
+          if (!_active(generation, uid)) return null;
+        }
+        reply = parts.join(' ');
       } else {
         reply = nextTaskSentence(nextOpenTask(tasks, now));
       }
       await analytics.logEvent('voice_command',
           {'action': kind.name, 'success': true, 'changed': change != null});
       if (!_active(generation, uid)) return change;
-      state = VoiceDraft(reply: reply);
+      // Hỏi lịch thì kèm nút mở Lịch đúng ngày đó.
+      state = VoiceDraft(
+          reply: reply, addedDay: kind == VoiceCommandKind.agenda ? day : null);
       await ref.read(speechViewModelProvider.notifier).read(reply);
       return change;
     } catch (e) {
@@ -458,9 +523,12 @@ final voiceInputViewModelProvider =
         VoiceInputViewModel.new);
 
 class SpeechState {
-  const SpeechState({this.speaking = false, this.error});
+  const SpeechState({this.speaking = false, this.error, this.text});
   final bool speaking;
   final String? error;
+
+  /// Câu đang đọc, để mỗi bong bóng biết nút của mình có đang phát không.
+  final String? text;
 }
 
 class SpeechViewModel extends Notifier<SpeechState> {
@@ -487,7 +555,8 @@ class SpeechViewModel extends Notifier<SpeechState> {
   Future<void> toggle(String text) async {
     final service = ref.read(deviceAccessServiceProvider);
     final generation = ++_generation;
-    if (state.speaking) {
+    // Đang đọc câu khác thì chuyển sang đọc câu này thay vì chỉ dừng.
+    if (state.speaking && (state.text == null || state.text == text)) {
       await service.stopSpeaking();
       if (ref.mounted && generation == _generation) state = const SpeechState();
       return;
@@ -500,7 +569,7 @@ class SpeechViewModel extends Notifier<SpeechState> {
     final generation = ++_generation;
     if (state.speaking) await service.stopSpeaking();
     if (!ref.mounted || generation != _generation) return;
-    state = const SpeechState(speaking: true);
+    state = SpeechState(speaking: true, text: text);
     try {
       await service.speak(text);
       if (ref.mounted && generation == _generation) state = const SpeechState();

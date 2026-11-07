@@ -3,7 +3,7 @@ const {test} = require('node:test');
 const assert = require('node:assert/strict');
 const {validateInput,normalizeResult,callGroq,createVoiceTaskService,systemPrompt} = require('../voice-task.cjs');
 const now = Date.UTC(2026,10,6,4,30); // 11:30 Vietnam
-const proposal = {title:'Tưới cây',date:'2026-11-07',hour:8,minute:0,durationMinutes:15,repeat:'daily',weekdays:[],habitKey:'move',issue:'none'};
+const proposal = {intent:'add',queryDate:null,queryDays:null,reply:null,title:'Tưới cây',date:'2026-11-07',hour:8,minute:0,durationMinutes:15,repeat:'daily',weekdays:[],habitKey:'move',issue:'none'};
 const response = value => ({ok:true,json:async()=>({choices:[{finish_reason:'stop',message:{content:JSON.stringify(value)}}]})});
 
 test('voice input bounds conversation and rejects invalid real dates',()=>{
@@ -96,4 +96,33 @@ test('one time range and a follow-up time correction still reach the provider',a
       fetchImpl:async()=>{called=true;return response(proposal);}});
     assert.equal(called,true);
   }
+});
+
+test('non-add intents return a query or a short answer, never a ready draft',()=>{
+  const q = patch => normalizeResult({...proposal,title:null,date:null,hour:null,minute:null,durationMinutes:null,
+    repeat:'once',weekdays:[],habitKey:'purpose',...patch},now);
+  const agenda=q({intent:'agenda',queryDate:'2026-11-07',queryDays:1});
+  assert.equal(agenda.intent,'agenda');assert.equal(agenda.ready,false);assert.equal(agenda.question,null);
+  assert.equal(agenda.queryDate,'2026-11-07');assert.equal(agenda.queryDays,1);
+  // Thiếu ngày thì là hôm nay (giờ Việt Nam).
+  assert.equal(q({intent:'agenda'}).queryDate,'2026-11-06');
+  assert.equal(q({intent:'agenda'}).queryDays,1);
+  assert.equal(q({intent:'complete'}).intent,'complete');
+  assert.equal(q({intent:'next'}).intent,'next');
+  const answer=q({intent:'answer',reply:'  Mai Bác rảnh   từ 10 giờ sáng. '});
+  assert.equal(answer.reply,'Mai Bác rảnh từ 10 giờ sáng.');
+  assert.ok(q({intent:'answer',reply:'x'.repeat(900)}).reply.length<=300);
+  assert.ok(q({intent:'answer',reply:''}).reply);
+  assert.equal(normalizeResult(proposal,now).intent,'add');
+  for(const patch of [{intent:'delete'},{intent:'agenda',queryDays:8},{intent:'agenda',queryDate:'mai'},{intent:'answer',reply:42}])
+    assert.throws(()=>q(patch),e=>e.code==='data-loss');
+});
+test('userContext.week carries dated untitled slots only',()=>{
+  const week=[{date:'2026-11-07',time:'09:30',durationMinutes:30,habitKey:'move'}];
+  assert.deepEqual(validateInput({utterances:['mai rảnh không'],userContext:{week}}).userContext.week,week);
+  for(const bad of [[{...week[0],title:'Đi bộ'}],[{...week[0],date:'mai'}],
+    Array.from({length:61},()=>week[0])])
+    assert.throws(()=>validateInput({utterances:['a'],userContext:{week:bad}}),e=>e.code==='invalid-argument');
+  assert.match(systemPrompt(now),/intent/);
+  assert.match(systemPrompt(now),/115/);
 });

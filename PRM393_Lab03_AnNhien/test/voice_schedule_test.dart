@@ -7,6 +7,8 @@ import 'package:an_nhien/services/profile_setup_service.dart';
 import 'package:an_nhien/services/providers.dart';
 import 'package:an_nhien/services/voice_task_service.dart';
 import 'package:an_nhien/utils/app_error.dart';
+import 'package:an_nhien/viewmodels/caregiver_schedule_view_model.dart'
+    show vietnamToday;
 import 'package:an_nhien/viewmodels/device_access_view_model.dart';
 import 'package:an_nhien/viewmodels/session_view_model.dart';
 import 'package:cloud_functions/cloud_functions.dart';
@@ -187,6 +189,89 @@ void main() {
     test('"9 giờ kém 15 sáng" là 8:45', () {
       final r = say(['Ngày mai 9 giờ kém 15 sáng đi chợ']);
       expect((r.draft.hour, r.draft.minute), (8, 45));
+    });
+  });
+
+  group('AI hiểu ý định câu nói', () {
+    const empty = {
+      'title': null,
+      'date': null,
+      'hour': null,
+      'minute': null,
+      'durationMinutes': null,
+      'repeat': 'once',
+      'weekdays': <int>[],
+      'habitKey': 'purpose',
+    };
+    VoiceTaskInterpretation query(VoiceIntent intent,
+            {DateTime? date, int days = 1, String? reply}) =>
+        VoiceTaskInterpretation(
+            draft: VoiceTaskDraft.fromMap(empty),
+            question: null,
+            intent: intent,
+            queryDate: date,
+            queryDays: days,
+            reply: reply);
+
+    test('đọc kết quả server: bản cũ là thêm việc, ý định lạ thì từ chối', () {
+      Map<String, dynamic> map(Map<String, dynamic> extra) =>
+          {'draft': empty, 'question': null, 'ready': false, ...extra};
+      expect(VoiceTaskInterpretation.fromMap(map({})).intent, VoiceIntent.add);
+      final agenda = VoiceTaskInterpretation.fromMap(
+          map({'intent': 'agenda', 'queryDate': '2026-11-07', 'queryDays': 2}));
+      expect(agenda.intent, VoiceIntent.agenda);
+      expect(agenda.queryDate, DateTime(2026, 11, 7));
+      expect(agenda.queryDays, 2);
+      expect(
+          VoiceTaskInterpretation.fromMap(
+              map({'intent': 'answer', 'reply': ' Dạ. '})).reply,
+          'Dạ.');
+      for (final bad in [
+        {'intent': 'delete'},
+        {'intent': 'answer'},
+        {'intent': 'answer', 'reply': 'x' * 301},
+        {'intent': 'agenda', 'queryDays': 8},
+        {'intent': 'agenda', 'queryDate': 'mai'},
+      ]) {
+        expect(() => VoiceTaskInterpretation.fromMap(map(bad)),
+            throwsFormatException,
+            reason: '$bad');
+      }
+    });
+
+    test('câu hỏi tự do: hiện và đọc to câu AI trả lời, không tạo việc',
+        () async {
+      final service = ScriptedVoiceService(() async => query(VoiceIntent.answer,
+          reply: 'Mai Bác rảnh từ 10 giờ sáng tới trưa.'));
+      final c = await setup(service, tasks: [walk]);
+      final vm = c.read(voiceInputViewModelProvider.notifier)
+        ..edit('Mai tui rảnh lúc nào');
+      expect(await vm.analyze(), isNull);
+      final state = c.read(voiceInputViewModelProvider);
+      expect(state.reply, 'Mai Bác rảnh từ 10 giờ sáng tới trưa.');
+      expect(state.interpretation, isNull);
+      expect(state.busy, isFalse);
+      // Gửi khung giờ bận 7 ngày tới có ngày, không có tên việc.
+      final week = service.contexts.single!.toMap()['week'] as List;
+      expect(week, isNotEmpty);
+      expect((week.first as Map).keys,
+          containsAll(['date', 'time', 'durationMinutes', 'habitKey']));
+      expect(week.toString(), isNot(contains('công viên')));
+    });
+
+    test('AI hiểu là hỏi lịch: app tự đọc lịch các ngày đó trên máy', () async {
+      final today = vietnamToday();
+      final service = ScriptedVoiceService(() async => query(VoiceIntent.agenda,
+          date: DateTime(today.year, today.month, today.day + 1), days: 2));
+      final c = await setup(service, tasks: [walk]);
+      final vm = c.read(voiceInputViewModelProvider.notifier)
+        ..edit('mấy bữa tới tui bận gì');
+      await vm.analyze();
+      final state = c.read(voiceInputViewModelProvider);
+      expect(state.reply, startsWith('Ngày mai,'));
+      expect(state.reply, contains('Ngày kia,'));
+      expect(state.addedDay, DateTime(today.year, today.month, today.day + 1));
+      expect(state.busy, isFalse);
     });
   });
 

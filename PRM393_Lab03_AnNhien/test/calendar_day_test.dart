@@ -76,7 +76,9 @@ void main() {
 
   _test('Trang chủ chỉ hiện việc kế tiếp + 2 việc sau đó', (tester) async {
     await _pump(tester, '/calendar');
-    // 10:00: việc 8:00 còn sót nên là việc kế tiếp theo nextPendingTask.
+    // 10:00: việc 8:00 đã qua giờ thì không hiện; việc kế tiếp là 11:00.
+    expect(
+        find.text('Uống thuốc buổi sáng', skipOffstage: false), findsNothing);
     expect(find.text('Đi bộ công viên', skipOffstage: false), findsOneWidget);
     expect(find.text('Ăn trưa nhẹ nhàng', skipOffstage: false), findsOneWidget);
     expect(find.text('Tiếp theo', skipOffstage: false), findsOneWidget);
@@ -84,6 +86,26 @@ void main() {
     expect(find.text('Tưới rau sáng sớm', skipOffstage: false), findsNothing);
     expect(tester.takeException(), isNull);
     await _close(tester);
+  });
+
+  testWidgets('Trang chủ: việc đang diễn ra vẫn hiện; hết việc thì ẩn thẻ',
+      (tester) async {
+    // 11:15: việc 11:00 (30 phút) đang diễn ra nên vẫn là việc sắp tới.
+    await withClock(Clock.fixed(DateTime.utc(2026, 11, 5, 4, 15)), () async {
+      await _pump(tester, '/calendar');
+      expect(find.text('Đi bộ công viên', skipOffstage: false), findsOneWidget);
+      await _close(tester);
+    });
+    // 23:30: mọi việc đã qua giờ → không còn thẻ "Việc sắp tới".
+    await withClock(Clock.fixed(DateTime.utc(2026, 11, 5, 16, 30)), () async {
+      await _pump(tester, '/calendar');
+      expect(find.text('Việc sắp tới', skipOffstage: false), findsNothing);
+      expect(find.text('Gọi điện cho Mai', skipOffstage: false), findsNothing);
+      expect(find.byKey(const Key('calendar-day-detail'), skipOffstage: false),
+          findsOneWidget);
+      expect(tester.takeException(), isNull);
+      await _close(tester);
+    });
   });
 
   _test('"Xem chi tiết lịch hôm nay" mở toàn bộ lịch trong ngày',
@@ -191,7 +213,8 @@ void main() {
     expect(find.text('Quay lại'), findsNothing);
     await tester.tap(find.text('Khám phá'));
     await tester.pumpAndSettle();
-    expect(find.text('Thói quen'), findsOneWidget); // chip trong tab Khám phá
+    expect(find.text('Thói quen'), findsNothing); // đã gộp vào Khám phá
+    expect(find.text('Gợi ý mỗi ngày'), findsOneWidget);
     await tester.tap(find.text('Trang chủ'));
     await tester.pumpAndSettle();
     expect(c.read(routerProvider).state.uri.path, '/calendar');

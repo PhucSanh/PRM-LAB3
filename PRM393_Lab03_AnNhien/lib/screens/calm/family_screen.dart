@@ -1,3 +1,4 @@
+import '../../widgets/app_dropdown_field.dart';
 import '../../widgets/family_contact_card.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -151,16 +152,24 @@ class FamilyEditorScreen extends ConsumerStatefulWidget {
 }
 
 class _FamilyEditorScreenState extends ConsumerState<FamilyEditorScreen> {
-  final _name = TextEditingController(),
-      _phone = TextEditingController(),
-      _relation = TextEditingController();
+  /// Các mối quan hệ Bác chọn trong danh sách thả xuống.
+  static const relations = [
+    'Chồng',
+    'Vợ',
+    'Con',
+    'Cháu',
+    'Anh chị em',
+    'Bạn bè',
+    'Người thân khác',
+  ];
+  final _name = TextEditingController(), _phone = TextEditingController();
+  String? _relation;
   bool _loaded = false, _dirty = false;
   String? _error;
   @override
   void dispose() {
     _name.dispose();
     _phone.dispose();
-    _relation.dispose();
     super.dispose();
   }
 
@@ -209,7 +218,8 @@ class _FamilyEditorScreenState extends ConsumerState<FamilyEditorScreen> {
       _loaded = true;
       _name.text = person?.name ?? '';
       _phone.text = person?.phone ?? '';
-      _relation.text = person?.relation ?? '';
+      final relation = person?.relation.trim() ?? '';
+      _relation = relation.isEmpty ? null : relation;
     }
     return PopScope(
         canPop: !_dirty && !busy,
@@ -238,11 +248,21 @@ class _FamilyEditorScreenState extends ConsumerState<FamilyEditorScreen> {
                               controller: _name,
                               onChanged: (_) => setState(() => _dirty = true)),
                           const SizedBox(height: AppSpacing.base),
-                          AppTextField(
+                          AppDropdownField<String>(
                               label: 'Mối quan hệ',
-                              controller: _relation,
-                              hint: 'Con, cháu, bạn bè',
-                              onChanged: (_) => setState(() => _dirty = true)),
+                              hint: 'Chọn mối quan hệ',
+                              value: _relation,
+                              // Giữ giá trị cũ gõ tay (không có trong danh sách).
+                              options: [
+                                ...relations,
+                                if (_relation != null &&
+                                    !relations.contains(_relation))
+                                  _relation!,
+                              ],
+                              onChanged: (v) => setState(() {
+                                    _relation = v;
+                                    _dirty = true;
+                                  })),
                           const SizedBox(height: AppSpacing.base),
                           AppTextField(
                               label: 'Số điện thoại',
@@ -279,7 +299,7 @@ class _FamilyEditorScreenState extends ConsumerState<FamilyEditorScreen> {
                                           favorite: person?.favorite ?? false,
                                           name: _name.text.trim(),
                                           phone: _phone.text.trim(),
-                                          relation: _relation.text.trim()),
+                                          relation: _relation ?? ''),
                                       previous: person);
                                   if (context.mounted) {
                                     final messenger =
