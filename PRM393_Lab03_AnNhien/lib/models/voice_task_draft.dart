@@ -7,25 +7,46 @@ class VoiceTaskDraft {
       this.date,
       this.hour,
       this.minute,
+      this.durationMinutes,
       required this.repeat,
       required this.weekdays,
       required this.habitKey});
   final String? title;
   final DateTime? date;
   final int? hour, minute;
+
+  /// Bác làm việc này trong bao lâu (phút). Bắt buộc trước khi lưu.
+  final int? durationMinutes;
   final RepeatRule repeat;
   final List<int> weekdays;
   final String habitKey;
 
-  bool get complete =>
+  static const maxDurationMinutes = 240;
+
+  /// Đủ tên, ngày, giờ, lặp (chưa xét thời lượng).
+  bool get scheduleComplete =>
       title != null &&
       date != null &&
       hour != null &&
       minute != null &&
       (!{RepeatRule.weekly, RepeatRule.someDays}.contains(repeat) ||
           weekdays.isNotEmpty);
+
+  /// Đủ thông tin để lưu: cả lịch lẫn thời lượng.
+  bool get complete => scheduleComplete && durationMinutes != null;
+
+  VoiceTaskDraft withDuration(int minutes) => VoiceTaskDraft(
+      title: title,
+      date: date,
+      hour: hour,
+      minute: minute,
+      durationMinutes: minutes,
+      repeat: repeat,
+      weekdays: weekdays,
+      habitKey: habitKey);
+
   bool isFuture(DateTime now) =>
-      complete &&
+      scheduleComplete &&
       DateTime.utc(date!.year, date!.month, date!.day, hour! - 7, minute!)
           .isAfter(now.toUtc());
   String get repeatLabel => switch (repeat) {
@@ -42,11 +63,14 @@ class VoiceTaskDraft {
   String get timeLabel => hour == null || minute == null
       ? 'Chưa rõ giờ'
       : '${hour!.toString().padLeft(2, '0')}:${minute!.toString().padLeft(2, '0')}';
+  String get durationLabel => durationMinutes == null
+      ? 'Chưa rõ bao lâu'
+      : durationText(durationMinutes!);
   String get reviewText =>
-      '${title ?? 'Chưa rõ tên việc'}. Ngày $dateLabel, lúc $timeLabel. $repeatLabel. Bác kiểm tra lại trước khi lưu nhé.';
+      '${title ?? 'Chưa rõ tên việc'}. Ngày $dateLabel, lúc $timeLabel, làm trong $durationLabel. $repeatLabel. Bác kiểm tra lại trước khi lưu nhé.';
 
   /// Việc mới từ bản nháp đã đủ thông tin. Chỉ gọi khi [complete].
-  TaskItem toTask(String id, {int durationMinutes = 15}) {
+  TaskItem toTask(String id) {
     assert(complete, 'Draft must be complete before saving');
     final day = date!;
     return TaskItem(
@@ -56,7 +80,7 @@ class VoiceTaskDraft {
       hour: hour!,
       minute: minute!,
       repeat: repeat,
-      durationMinutes: durationMinutes,
+      durationMinutes: durationMinutes!,
       startDate: dateKey(day),
       weekdays: {RepeatRule.weekly, RepeatRule.someDays}.contains(repeat)
           ? (weekdays.isEmpty ? [day.weekday] : weekdays)
@@ -71,6 +95,8 @@ class VoiceTaskDraft {
     final repeat =
         RepeatRule.values.where((v) => v.name == data['repeat']).firstOrNull;
     final days = data['weekdays'], habit = data['habitKey'];
+    // Server cũ chưa trả thời lượng: để null, app tự hiểu hoặc hỏi lại.
+    final duration = data['durationMinutes'];
     final date = rawDate is String ? DateTime.tryParse(rawDate) : null;
     if ((title != null &&
             (title is! String || title.trim().isEmpty || title.length > 80)) ||
@@ -78,6 +104,10 @@ class VoiceTaskDraft {
             (rawDate is! String || date == null || dateKey(date) != rawDate)) ||
         (hour != null && (hour is! int || hour < 0 || hour > 23)) ||
         (minute != null && (minute is! int || minute < 0 || minute > 59)) ||
+        (duration != null &&
+            (duration is! int ||
+                duration < 1 ||
+                duration > maxDurationMinutes)) ||
         repeat == null ||
         days is! List ||
         days.length > 7 ||
@@ -100,6 +130,7 @@ class VoiceTaskDraft {
         date: date,
         hour: hour as int?,
         minute: minute as int?,
+        durationMinutes: duration as int?,
         repeat: repeat,
         weekdays:
             List<int>.unmodifiable(days.cast<int>().toSet().toList()..sort()),
@@ -158,6 +189,15 @@ class VoiceTaskInterpretation {
   /// `true` khi kết quả do bộ hiểu lời nói trên máy tạo (chưa bật Groq).
   final bool onDevice;
   bool get ready => question == null && draft.complete;
+
+  VoiceTaskInterpretation copyWith(
+          {VoiceTaskDraft? draft,
+          String? question,
+          bool clearQuestion = false}) =>
+      VoiceTaskInterpretation(
+          draft: draft ?? this.draft,
+          question: clearQuestion ? null : (question ?? this.question),
+          onDevice: onDevice);
   factory VoiceTaskInterpretation.fromMap(Map<String, dynamic> data) {
     if (data['draft'] is! Map ||
         data['ready'] is! bool ||
@@ -171,9 +211,20 @@ class VoiceTaskInterpretation {
         draft: VoiceTaskDraft.fromMap(
             Map<String, dynamic>.from(data['draft'] as Map)),
         question: data['question'] as String?);
-    if (data['ready'] != result.ready) {
+    // `ready` của server không xét thời lượng (app tự bổ sung / hỏi lại).
+    if (data['ready'] !=
+        (result.question == null && result.draft.scheduleComplete)) {
       throw const FormatException('Inconsistent voice interpretation');
     }
     return result;
   }
+}
+
+/// "30 phút", "1 tiếng", "1 tiếng 30 phút" cho người 65+ dễ nghe.
+String durationText(int minutes) {
+  final h = minutes ~/ 60, m = minutes % 60;
+  if (h == 0) return '$m phút';
+  if (m == 0) return '$h tiếng';
+  if (m == 30) return '$h tiếng rưỡi';
+  return '$h tiếng $m phút';
 }

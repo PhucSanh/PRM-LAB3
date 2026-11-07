@@ -3,11 +3,13 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../viewmodels/device_access_view_model.dart';
 import '../../widgets/app_back_bar.dart';
+import '../calm/calendar_screen.dart' show calendarDayRoute;
+import '../../widgets/assistant_bubble.dart';
+import '../../viewmodels/daily_actions_view_model.dart';
 import '../../widgets/app_button.dart';
 import '../../widgets/app_text_field.dart';
 import '../../widgets/calm_parts.dart';
 import '../../widgets/form_parts.dart';
-import '../../widgets/read_aloud_control.dart';
 import '../../widgets/undo_snackbar.dart';
 import '../../widgets/voice_task_review.dart';
 import '../../theme/app_spacing.dart';
@@ -34,6 +36,26 @@ class _VoiceInputScreenState extends ConsumerState<VoiceInputScreen> {
       target.value = TextEditingValue(
           text: text, selection: TextSelection.collapsed(offset: text.length));
     }
+  }
+
+  Future<void> _analyze() async {
+    FocusManager.instance.primaryFocus?.unfocus();
+    final change =
+        await ref.read(voiceInputViewModelProvider.notifier).analyze();
+    if (change == null || !mounted) return;
+    final actions = ref.read(dailyActionsProvider.notifier);
+    final messenger = ScaffoldMessenger.of(context);
+    showUndoSnackbar(context, title: 'Đã đánh dấu xong: ${change.task.title}',
+        onUndo: () async {
+      try {
+        await actions.undo(change);
+      } catch (_) {
+        if (messenger.mounted) {
+          messenger.showSnackBar(const SnackBar(
+              content: Text('Chưa hoàn tác được. Bác thử lại nhé.')));
+        }
+      }
+    });
   }
 
   @override
@@ -66,7 +88,7 @@ class _VoiceInputScreenState extends ConsumerState<VoiceInputScreen> {
           const CalmPageHeader(
               title: 'Nói để thêm việc',
               subtitle:
-                  'Bác nói tên việc, ngày và giờ. Cháu sẽ đọc lại để Bác kiểm tra.',
+                  'Bác nói tên việc, ngày, giờ và làm trong bao lâu. Bác cũng có thể nói “Tôi làm xong rồi” để cháu đánh dấu và báo việc tiếp theo.',
               art: true,
               actions: false),
           const SizedBox(height: AppSpacing.lg),
@@ -83,7 +105,7 @@ class _VoiceInputScreenState extends ConsumerState<VoiceInputScreen> {
               maxLength: 500,
               enabled: !state.busy,
               onChanged: vm.edit,
-              hint: 'Mai lúc 8 giờ sáng nhắc bác tưới cây, mỗi ngày'),
+              hint: 'Mai 8 giờ sáng tưới cây trong 15 phút, mỗi ngày'),
           const SizedBox(height: AppSpacing.base),
           if (!enabled)
             const FieldMessage.hint(
@@ -100,19 +122,24 @@ class _VoiceInputScreenState extends ConsumerState<VoiceInputScreen> {
                 busy: state.interpreting,
                 onPressed:
                     enabled && !state.busy && state.text.trim().isNotEmpty
-                        ? () {
-                            FocusManager.instance.primaryFocus?.unfocus();
-                            vm.analyze();
-                          }
+                        ? _analyze
                         : null),
           SizedBox(key: _resultAnchor, height: AppSpacing.base),
+          if (state.reply != null) ...[
+            AssistantReply(text: state.reply!),
+            if (state.addedDay case final day?) ...[
+              const SizedBox(height: AppSpacing.md),
+              AppButton(
+                  key: const Key('voice-open-day'),
+                  label: 'Xem lịch ngày ${day.day}/${day.month}',
+                  icon: Icons.calendar_month_rounded,
+                  kind: AppButtonKind.secondary,
+                  onPressed: () => context.go(calendarDayRoute(day))),
+            ],
+            const SizedBox(height: AppSpacing.lg),
+          ],
           if (result?.question != null) ...[
-            Semantics(
-                liveRegion: true,
-                child: Text(result!.question!,
-                    style: Theme.of(context).textTheme.titleMedium)),
-            const SizedBox(height: AppSpacing.md),
-            ReadAloudControl(text: result.question!),
+            AssistantReply(text: result!.question!),
             const SizedBox(height: AppSpacing.md),
             AppTextField(
                 label: 'Bác trả lời thêm',
@@ -154,16 +181,14 @@ class _VoiceInputScreenState extends ConsumerState<VoiceInputScreen> {
             if (state.conflict != null) ...[
               const SizedBox(height: AppSpacing.md),
               Semantics(
-                  liveRegion: true, child: FieldMessage.hint(state.conflict!)),
+                  liveRegion: true, child: FieldMessage.error(state.conflict!)),
             ],
-            const SizedBox(height: AppSpacing.md),
-            ReadAloudControl(text: result.draft.reviewText),
             const SizedBox(height: AppSpacing.md),
             AppButton(
                 label: state.adding ? 'Đang thêm vào lịch…' : 'Thêm vào lịch',
                 icon: Icons.check_rounded,
                 busy: state.adding,
-                onPressed: state.busy
+                onPressed: state.busy || state.conflict != null
                     ? null
                     : () async {
                         final draft = result.draft;

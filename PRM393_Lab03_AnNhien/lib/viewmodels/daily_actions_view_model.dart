@@ -7,6 +7,7 @@ import '../utils/app_error.dart';
 import 'calm_feature_providers.dart';
 import 'session_view_model.dart';
 import 'today_view_model.dart';
+import 'schedule_conflict.dart';
 
 DateTime vietnamNow() => clock.now().toUtc().add(const Duration(hours: 7));
 TaskItem? nextPendingTask(List<TaskItem> tasks, DateTime day, DateTime now) {
@@ -22,6 +23,22 @@ TaskItem? nextPendingTask(List<TaskItem> tasks, DateTime day, DateTime now) {
           .where((t) => t.hour * 60 + t.minute >= now.hour * 60 + now.minute)
           .firstOrNull ??
       pending.last;
+}
+
+/// Việc chưa làm còn lại hôm nay theo giờ: chưa kết thúc (giờ bắt đầu +
+/// thời lượng sau [now]), bỏ [except]. Dùng cho Trang chủ.
+List<TaskItem> upcomingTasks(List<TaskItem> tasks, DateTime now,
+    {String? except}) {
+  final minute = now.hour * 60 + now.minute;
+  return tasks
+      .where((t) =>
+          t.id != except &&
+          (t.status == TaskStatus.pending ||
+              t.status == TaskStatus.postponed) &&
+          t.hour * 60 + t.minute + t.durationMinutes > minute)
+      .toList()
+    ..sort(
+        (a, b) => (a.hour * 60 + a.minute).compareTo(b.hour * 60 + b.minute));
 }
 
 class QuickTaskUndo {
@@ -65,9 +82,16 @@ class DailyActionsViewModel extends Notifier<bool> {
       throw const AppException(
           'Bác chọn ngày, giờ sau thời điểm hiện tại nhé.');
     }
+    final repository = ref.read(taskRepositoryProvider);
+    final overlap = overlappingTask(await repository.tasksForDay(target),
+        hour: target.hour,
+        minute: target.minute,
+        durationMinutes: task.durationMinutes,
+        ignoreId: task.id);
+    if (overlap != null) throw ScheduleConflictException(overlap);
     state = true;
     try {
-      final change = await ref.read(taskRepositoryProvider).reschedule(task,
+      final change = await repository.reschedule(task,
           targetDay: target, hour: target.hour, minute: target.minute);
       _refresh();
       return QuickTaskUndo(uid, task, day, move: change);

@@ -62,7 +62,8 @@ class SuggestionCard extends StatelessWidget {
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(AppSpacing.base),
-        child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+        child:
+            Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
           Semantics(
             header: true,
             child: Row(children: [
@@ -70,8 +71,11 @@ class SuggestionCard extends StatelessWidget {
                 child: Container(
                   width: AppSizes.habitIcon,
                   height: AppSizes.habitIcon,
-                  decoration: BoxDecoration(color: scheme.primaryContainer, borderRadius: AppRadius.mdAll),
-                  child: Icon(AppIcons.suggestion, size: AppSizes.icon, color: scheme.primary),
+                  decoration: BoxDecoration(
+                      color: scheme.primaryContainer,
+                      borderRadius: AppRadius.mdAll),
+                  child: Icon(AppIcons.suggestion,
+                      size: AppSizes.icon, color: scheme.primary),
                 ),
               ),
               const SizedBox(width: AppSpacing.base),
@@ -88,19 +92,29 @@ class SuggestionCard extends StatelessWidget {
             if (hidden > 0)
               Text(
                 'và $hidden việc khác',
-                style: theme.textTheme.bodyMedium?.copyWith(color: scheme.onSurfaceVariant),
+                style: theme.textTheme.bodyMedium
+                    ?.copyWith(color: scheme.onSurfaceVariant),
               ),
           ],
           const SizedBox(height: AppSpacing.sm),
           Text(
             'Chưa thêm vào lịch. Bác tự chọn.',
-            style: theme.textTheme.bodyMedium?.copyWith(color: scheme.onSurfaceVariant),
+            style: theme.textTheme.bodyMedium
+                ?.copyWith(color: scheme.onSurfaceVariant),
           ),
           const SizedBox(height: AppSpacing.base),
-          AppButton(label: 'Xem gợi ý', icon: AppIcons.view, kind: AppButtonKind.secondary, onPressed: onOpen),
+          AppButton(
+              label: 'Xem gợi ý',
+              icon: AppIcons.view,
+              kind: AppButtonKind.secondary,
+              onPressed: onOpen),
           if (onDismiss != null) ...[
             const SizedBox(height: AppSpacing.betweenTargets),
-            AppButton(label: 'Bỏ qua gợi ý', icon: AppIcons.x, kind: AppButtonKind.text, onPressed: onDismiss),
+            AppButton(
+                label: 'Bỏ qua gợi ý',
+                icon: AppIcons.x,
+                kind: AppButtonKind.text,
+                onPressed: onDismiss),
           ],
         ]),
       ),

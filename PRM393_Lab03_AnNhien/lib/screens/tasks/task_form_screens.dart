@@ -321,13 +321,12 @@ class _TaskConfigureScreenState extends ConsumerState<TaskConfigureScreen> {
                           }
                         });
                       }
+                      final after = ref.read(taskFormViewModelProvider);
                       if (mounted &&
                           !saved &&
-                          ref
-                              .read(taskFormViewModelProvider)
-                              .isTimeInPastToday &&
-                          ref.read(taskFormViewModelProvider).titleError ==
-                              null) {
+                          (after.isTimeInPastToday ||
+                              after.conflictMessage != null) &&
+                          after.titleError == null) {
                         WidgetsBinding.instance.addPostFrameCallback((_) {
                           final field = _timeAnchor.currentContext;
                           if (mounted && field != null) {
@@ -420,6 +419,12 @@ class _TaskConfigureScreenState extends ConsumerState<TaskConfigureScreen> {
             const FieldMessage.error(
                 'Bác chọn giờ sau thời điểm hiện tại nhé.'),
           ],
+          if (state.conflictMessage != null) ...[
+            const SizedBox(height: AppSpacing.sm),
+            Semantics(
+                liveRegion: true,
+                child: FieldMessage.error(state.conflictMessage!)),
+          ],
           const SizedBox(height: AppSpacing.lg),
           const _SectionTitle(icon: Icons.repeat_rounded, text: 'Lặp lại'),
           if (state.original?.isRescheduled == true)
@@ -480,34 +485,45 @@ class _TaskConfigureScreenState extends ConsumerState<TaskConfigureScreen> {
 
   Future<void> _confirmDelete(
       BuildContext context, TaskFormState state, TaskFormViewModel vm) async {
-    ChangeScope? scope = ChangeScope.once;
-    if (state.repeat != RepeatRule.once) {
-      scope = await showScopeDialog(context, state.title);
-    }
-    if (scope == null || !context.mounted) return;
-    final confirmed = await showConfirmDialog<bool>(context,
+    final repeating = state.repeat != RepeatRule.once;
+    // Một hộp duy nhất: Bác chọn xoá lần này hay xoá hết, nói rõ hậu quả.
+    final scope = await showConfirmDialog<ChangeScope?>(context,
         icon: Icons.delete_outline_rounded,
         title: 'Xóa việc “${state.title}”?',
-        message: scope == ChangeScope.once
-            ? 'Chỉ xóa lần này. Ngày khác vẫn giữ.'
-            : 'Xóa lần này và các lần sau.',
+        message: repeating
+            ? 'Việc này lặp lại. Bác muốn xóa chỉ lần này hay xóa hết?'
+            : 'Việc sẽ được xóa khỏi lịch. Xóa xong vẫn Hoàn tác được.',
         danger: true,
-        options: const [
-          ConfirmOption(
+        options: [
+          const ConfirmOption(
               label: 'Không xóa, giữ lại',
               icon: Icons.close_rounded,
-              value: false,
+              value: null,
               kind: AppButtonKind.primary),
-          ConfirmOption(
-              label: 'Xóa khỏi lịch',
-              icon: Icons.delete_outline_rounded,
-              value: true,
-              kind: AppButtonKind.dangerOutline),
+          if (repeating) ...const [
+            ConfirmOption(
+                label: 'Xóa lần này',
+                icon: Icons.calendar_today_rounded,
+                value: ChangeScope.once,
+                kind: AppButtonKind.dangerOutline),
+            ConfirmOption(
+                label: 'Xóa hết trong lịch',
+                icon: Icons.delete_forever_rounded,
+                value: ChangeScope.all,
+                kind: AppButtonKind.dangerOutline),
+          ] else
+            const ConfirmOption(
+                label: 'Xóa khỏi lịch',
+                icon: Icons.delete_outline_rounded,
+                value: ChangeScope.all,
+                kind: AppButtonKind.dangerOutline),
         ]);
-    if (confirmed != true || !context.mounted) return;
+    if (scope == null || !context.mounted) return;
     if (await vm.delete(scope) && context.mounted) {
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text('Đã xóa ${state.title} khỏi lịch.'),
+          content: Text(scope == ChangeScope.once
+              ? 'Đã xóa ${state.title} của ngày này.'
+              : 'Đã xóa ${state.title} khỏi lịch.'),
           action: SnackBarAction(
               label: 'Hoàn tác', onPressed: vm.undoLastMutation)));
       context.go('/calendar');

@@ -37,6 +37,7 @@ Nguồn: chỉ số thành công M1–M8 (`lab2/PRD.md` mục 10, `lab2/persona.
 | `edit_task` | Lưu thay đổi (S15) | `habit_key` (string), `scope` (string: this / following / all) | F4 – Khang | Bác sửa gì nhiều nhất? |
 | `delete_task` | Xoá (DLG-Delete) | `habit_key` (string), `scope` (string) | F4 – Khang | Việc nào bị bỏ hẳn? |
 | `voice_add_task` | Lưu ở V03 / V04 | `success` (bool), `attempts` (int) | F5 – Khang | Giọng nói hiểu đúng ngay lần đầu? |
+| `voice_command` | Bác nói lệnh ở màn Nói ("làm xong rồi", "việc tiếp theo") | `action` (string: complete / next), `success` (bool), `changed` (bool) | F5 – Khang | Bác có dùng giọng nói để đánh dấu xong không? Không gửi câu nói hay tên việc. |
 | `reminder_action` | Bấm nút ở S14 | `action` (string: start / snooze / skip), `snooze_minutes` (int) | F6 – Khang | Lời nhắc có giúp Bác làm việc? Remote Config `snooze_minutes` có tác dụng? |
 | `view_week` | Mở S07 | `tasks_count` (int) | F7 – Hương | Bác có xem trước lịch tuần? |
 | `export_report` ★ | Upload PDF xong (S07) | `week` (string), `file_size_kb` (int) | F7 – Hương | Ai xuất lịch tuần để gửi con cháu? |

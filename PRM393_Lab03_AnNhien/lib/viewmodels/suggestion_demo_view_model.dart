@@ -35,7 +35,7 @@ class SuggestionDemoViewModel extends Notifier<SuggestionDemoState> {
             .resolve(id, selected, times: times);
         if (ref.mounted && selected.isNotEmpty) {
           ref.invalidate(todayViewModelProvider);
-      ref.invalidate(calendarTasksProvider);
+          ref.invalidate(calendarTasksProvider);
         }
         try {
           await ref.read(analyticsServiceProvider).logEvent(

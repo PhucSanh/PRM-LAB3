@@ -22,6 +22,14 @@
           }
         },
         {
+          "client_id": "784239891940-rigrm6tc1h38vsal7s36spvon2bd1ae3.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.annhien.an_nhien",
+            "certificate_hash": "bb2d674fcb0cee9fba730f159fb982150c865f0c"
+          }
+        },
+        {
           "client_id": "784239891940-jdceof31aq38nmq9h0978e0u88mhsnt4.apps.googleusercontent.com",
           "client_type": 3
         }

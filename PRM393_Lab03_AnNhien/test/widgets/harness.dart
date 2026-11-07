@@ -17,13 +17,19 @@ Future<void> pumpHarness(
   addTearDown(tester.view.reset);
   await tester.pumpWidget(MaterialApp(
     theme: AppTheme.light(),
-    builder: (context, c) =>
-        MediaQuery(data: MediaQuery.of(context).copyWith(textScaler: TextScaler.linear(scale)), child: c!),
+    builder: (context, c) => MediaQuery(
+        data: MediaQuery.of(context)
+            .copyWith(textScaler: TextScaler.linear(scale)),
+        child: c!),
     home: Scaffold(appBar: appBar, body: child),
   ));
   settle ? await tester.pumpAndSettle() : await tester.pump();
 }
 
 /// Dựng một nút mở được hộp thoại / snackbar: bấm [label] để gọi [onTap] với `BuildContext` nằm dưới Scaffold.
-Widget launcher(String label, void Function(BuildContext context) onTap) =>
-    Builder(builder: (context) => Center(child: TextButton(onPressed: () => onTap(context), child: Text(label))));
+Widget launcher(
+        String label, void Function(BuildContext context) onTap) =>
+    Builder(
+        builder: (context) => Center(
+            child: TextButton(
+                onPressed: () => onTap(context), child: Text(label))));

@@ -17,5 +17,6 @@ class FakeAnalyticsService implements AnalyticsService {
   }
 
   @override
-  Future<void> setUserId(String? uid) async => debugPrint('[analytics] userId=$uid');
+  Future<void> setUserId(String? uid) async =>
+      debugPrint('[analytics] userId=$uid');
 }

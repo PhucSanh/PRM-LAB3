@@ -53,6 +53,11 @@ String foldVietnamese(String text) {
 
 // ---------------------------------------------------------------------------
 
+const durationQuestion =
+    'Bác làm việc này trong bao lâu? Ví dụ: 15 phút, nửa tiếng hoặc 1 tiếng.';
+const durationTooLongQuestion =
+    'Một việc dài tối đa 4 tiếng. Bác làm việc này trong bao lâu?';
+
 class _Parsed {
   String? title;
   int? rawHour, minute, wakeOffset, relativeDays;
@@ -60,6 +65,8 @@ class _Parsed {
   String? period;
   DateTime? explicitDate;
   List<int> weekdays = [];
+  int? duration;
+  bool durationTooLong = false;
   bool weekShift = false, repeatList = false, unsupported = false;
   RepeatRule? repeat;
 }
@@ -73,9 +80,23 @@ class _Text {
 
   /// Mọi lần khớp chưa bị đánh dấu; đánh dấu đoạn khớp (hoặc nhóm [group]).
   Iterable<RegExpMatch> take(RegExp pattern, {bool mark = true}) sync* {
-    for (final m in pattern.allMatches(folded).toList()) {
-      if (_overlaps(m.start, m.end)) continue;
-      if (mark) markRange(m.start, m.end);
+    // Phần đã dùng được che bằng dấu cách để lookahead không nhìn thấy nó
+    // ("Mai 10 phút": "10 phút" là thời lượng, không làm "Mai" thành ngày mai).
+    final masked = String.fromCharCodes([
+      for (var i = 0; i < folded.length; i++)
+        used[i] ? 32 : folded.codeUnitAt(i)
+    ]);
+    for (final m in pattern.allMatches(masked).toList()) {
+      // Bỏ khoảng trắng hai đầu: `\s*` có thể lan sang phần đã che.
+      var s = m.start, e = m.end;
+      while (s < e && masked.codeUnitAt(s) == 32) {
+        s++;
+      }
+      while (e > s && masked.codeUnitAt(e - 1) == 32) {
+        e--;
+      }
+      if (_overlaps(s, e)) continue;
+      if (mark) markRange(s, e);
       yield m;
     }
   }
@@ -155,11 +176,87 @@ final _reWeekdays = RegExp(r'(?:\b(moi|cac|hang)\s+)?\b(?:thu\s*(' +
     _dayWord +
     r'\b)*)|chu\s+nhat)\b');
 
-_Parsed _parseOne(String utterance) {
+// Thời lượng: "trong 2 giờ", "1 tiếng rưỡi", "nửa tiếng", "30 phút".
+const _countWord = r'(\d{1,3}|mot|hai|ba|bon|nam)';
+int _count(String token) => switch (token) {
+      'mot' => 1,
+      'hai' => 2,
+      'ba' => 3,
+      'bon' => 4,
+      'nam' => 5,
+      _ => int.parse(token),
+    };
+final _reDurationHours = RegExp(
+    r'\b(?:trong|mat|khoang|tam|chung|lam)\s+(?:(?:khoang|tam|chung)\s+)?' +
+        _countWord +
+        r'\s*(?:gio|tieng)(\s*ruoi)?\b');
+const _durationLead =
+    r'(?:\b(?:trong|mat|khoang|tam|chung|lam)\s+(?:(?:khoang|tam|chung)\s+)?)?';
+final _reDurationTieng = RegExp(_durationLead +
+    r'\b' +
+    _countWord +
+    r'\s*tieng(?:\s*(ruoi)|\s*(\d{1,2})\s*phut)?\b');
+final _reHalfHour = RegExp(_durationLead + r'\bnua\s+tieng\b');
+// "30 phút" đứng sau "8 giờ" / "kém" là giờ làm, không phải thời lượng.
+final _reDurationMinutes = RegExp(
+    _durationLead + r'(?<!\d\s*(?:gio|h|:)\s*)(?<!kem\s*)\b(\d{1,3})\s*phut\b');
+final _reBareNumber = RegExp(r'^\s*(\d{1,3})\s*$');
+
+void _setDuration(_Parsed p, int minutes) {
+  if (minutes < 1) return;
+  if (minutes > VoiceTaskDraft.maxDurationMinutes) {
+    p.durationTooLong = true;
+    p.duration = null;
+  } else {
+    p.durationTooLong = false;
+    p.duration = minutes;
+  }
+}
+
+/// Thời lượng Bác nói trong các câu (câu sau sửa câu trước), hoặc `null`.
+/// Dùng để bổ sung khi server chưa trả `durationMinutes`.
+int? parseDurationMinutes(List<String> utterances) {
+  int? result;
+  for (final (i, u) in utterances.indexed) {
+    final p = _parseOne(u, followUp: i > 0);
+    if (p.duration != null) result = p.duration;
+  }
+  return result;
+}
+
+_Parsed _parseOne(String utterance, {bool followUp = false}) {
   final t = _Text(utterance);
   final p = _Parsed();
   if (_reUnsupported.hasMatch(t.folded)) p.unsupported = true;
   t.take(_reFiller).toList();
+  // Thời lượng lấy trước ngày/giờ: "trong 2 giờ" không phải 2:00,
+  // "Mai 10 phút" không phải "ngày mai".
+  // Thời lượng có "giờ" phải lấy trước khi hiểu giờ làm ("trong 2 giờ").
+  for (final m in t.take(_reDurationHours)) {
+    _setDuration(p, _count(m.group(1)!) * 60 + (m.group(2) != null ? 30 : 0));
+  }
+  for (final m in t.take(_reDurationTieng)) {
+    _setDuration(
+        p,
+        _count(m.group(1)!) * 60 +
+            (m.group(2) != null
+                ? 30
+                : m.group(3) != null
+                    ? int.parse(m.group(3)!)
+                    : 0));
+  }
+  if (t.first(_reHalfHour) != null) _setDuration(p, 30);
+  if (followUp) {
+    final bare = _reBareNumber.firstMatch(t.folded);
+    if (bare != null) {
+      t.markRange(bare.start, bare.end);
+      _setDuration(p, int.parse(bare.group(1)!));
+    }
+  }
+
+  for (final m in t.take(_reDurationMinutes)) {
+    _setDuration(p, int.parse(m.group(1)!));
+  }
 
   if (t.first(_reAfterMeal) != null) p.wakeOffset = 60;
   if (t.first(_reWake) != null) p.wakeOffset = 0;
@@ -368,7 +465,9 @@ VoiceTaskInterpretation interpretVietnamese(List<String> utterances,
         question: 'Bác nói từng việc một nhé. Bác muốn thêm việc nào trước?',
         onDevice: true);
   }
-  final parts = conversation.map(_parseOne).toList();
+  final parts = [
+    for (final (i, u) in conversation.indexed) _parseOne(u, followUp: i > 0)
+  ];
   final p = _Parsed();
   for (final part in parts) {
     p.title ??= part.title;
@@ -382,6 +481,10 @@ VoiceTaskInterpretation interpretVietnamese(List<String> utterances,
     if (part.weekdays.isNotEmpty) p.weekdays = part.weekdays;
     p.weekShift |= part.weekShift;
     p.repeat = part.repeat ?? p.repeat;
+    if (part.duration != null || part.durationTooLong) {
+      p.duration = part.duration;
+      p.durationTooLong = part.durationTooLong;
+    }
   }
   p.unsupported = parts.first.unsupported;
   final today = DateTime(now.year, now.month, now.day);
@@ -451,6 +554,7 @@ VoiceTaskInterpretation interpretVietnamese(List<String> utterances,
       date: date,
       hour: hour,
       minute: hour == null ? null : minute,
+      durationMinutes: p.duration,
       repeat: repeat,
       weekdays: List.unmodifiable(weekdays),
       habitKey: habitKeyFor(p.title));
@@ -472,6 +576,10 @@ VoiceTaskInterpretation interpretVietnamese(List<String> utterances,
   } else if ({RepeatRule.weekly, RepeatRule.someDays}.contains(repeat) &&
       weekdays.isEmpty) {
     question = 'Bác muốn lặp vào những thứ nào trong tuần?';
+  } else if (p.durationTooLong) {
+    question = durationTooLongQuestion;
+  } else if (draft.durationMinutes == null) {
+    question = durationQuestion;
   }
   return VoiceTaskInterpretation(
       draft: draft, question: question, onDevice: true);

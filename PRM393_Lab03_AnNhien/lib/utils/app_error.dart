@@ -8,7 +8,8 @@ class AppException implements Exception {
   final StackTrace? stackTrace;
 
   static const network = AppException('Chưa có mạng. Bác thử lại sau nhé.');
-  static const cancelled = AppException('Bác chưa đăng nhập. Bấm lại khi sẵn sàng.');
+  static const cancelled =
+      AppException('Bác chưa đăng nhập. Bấm lại khi sẵn sàng.');
   static const unknown = AppException('Có lỗi xảy ra. Bác bấm "Thử lại" nhé.');
 
   @override

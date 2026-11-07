@@ -7,6 +7,7 @@ import '../../theme/app_colors.dart';
 import '../../theme/app_icons.dart';
 import '../../viewmodels/calm_feature_providers.dart';
 import '../../viewmodels/task_form_view_model.dart';
+import '../../widgets/assistant_bubble.dart';
 import '../../widgets/calm_parts.dart';
 import '../../widgets/velora_parts.dart';
 import '../../widgets/app_button.dart';
@@ -25,7 +26,8 @@ class ActivitiesScreen extends ConsumerWidget {
     return Scaffold(
         body: SafeArea(
             child: ListView(
-      padding: const EdgeInsets.all(AppSpacing.screen),
+      padding: const EdgeInsets.fromLTRB(AppSpacing.screen, AppSpacing.screen,
+          AppSpacing.screen, AssistantBubble.clearance),
       children: [
         const CalmPageHeader(
             title: 'Hoạt động',

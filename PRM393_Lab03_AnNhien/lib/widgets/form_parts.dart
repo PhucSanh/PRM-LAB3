@@ -32,7 +32,8 @@ class FieldMessage extends StatelessWidget {
         showIcon = true;
 
   /// [showIcon] = false khi đứng ngay dưới dòng lỗi: chữ thụt vào thẳng hàng với câu lỗi (S12e).
-  const FieldMessage.hint(this.text, {super.key, this.showIcon = true}) : isError = false;
+  const FieldMessage.hint(this.text, {super.key, this.showIcon = true})
+      : isError = false;
 
   final String text;
   final bool isError;
@@ -49,7 +50,9 @@ class FieldMessage extends StatelessWidget {
     final line = Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
       if (showIcon)
         ExcludeSemantics(
-          child: Icon(icon, size: AppSizes.icon, color: isError ? scheme.error : scheme.onSurfaceVariant),
+          child: Icon(icon,
+              size: AppSizes.icon,
+              color: isError ? scheme.error : scheme.onSurfaceVariant),
         )
       else
         const SizedBox(width: AppSizes.icon),
@@ -61,4 +64,5 @@ class FieldMessage extends StatelessWidget {
 }
 
 /// Thêm tiền tố "Ví dụ: " cho câu gợi ý nếu chưa có (AppStyleGuide SG-15, "Lỗi nhập" 3 phần).
-String exampleHint(String hint) => hint.startsWith('Ví dụ') ? hint : 'Ví dụ: $hint';
+String exampleHint(String hint) =>
+    hint.startsWith('Ví dụ') ? hint : 'Ví dụ: $hint';

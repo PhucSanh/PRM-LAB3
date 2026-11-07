@@ -32,8 +32,15 @@ final reminderReadPreferenceProvider = StreamProvider<bool>((ref) {
 /// Manual reading remains available even if automatic reading is off.
 class ReminderReadAloudControl extends ConsumerStatefulWidget {
   const ReminderReadAloudControl(
-      {super.key, required this.text, required this.identity});
+      {super.key,
+      required this.text,
+      required this.identity,
+      this.showButton = true});
   final String text, identity;
+
+  /// `false`: chỉ tự đọc theo cài đặt, không hiện nút (nút Đọc to chỉ ở
+  /// màn chi tiết việc).
+  final bool showButton;
   @override
   ConsumerState<ReminderReadAloudControl> createState() =>
       _ReminderReadAloudControlState();
@@ -53,6 +60,8 @@ class _ReminderReadAloudControlState
         }
       });
     }
-    return ReadAloudControl(text: widget.text);
+    return widget.showButton
+        ? ReadAloudControl(text: widget.text)
+        : const SizedBox.shrink();
   }
 }

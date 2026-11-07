@@ -10,6 +10,7 @@ import '../../theme/app_spacing.dart';
 import '../../viewmodels/today_view_model.dart';
 import '../../viewmodels/ui_state.dart';
 import '../../widgets/app_button.dart';
+import '../../widgets/assistant_bubble.dart';
 import '../../widgets/habit_widgets.dart';
 import '../../widgets/state_views.dart';
 import '../../widgets/task_widgets.dart';
@@ -130,8 +131,8 @@ class _TodayContentState extends ConsumerState<_TodayContent> {
     final greeting = 'Chào ${name?.trim().isNotEmpty == true ? name : 'Bác'}';
     return ListView(
       key: ValueKey(_showFlashcards ? 's03-flashcards' : 's03-main'),
-      padding: const EdgeInsets.fromLTRB(
-          AppSpacing.screen, AppSpacing.lg, AppSpacing.screen, AppSpacing.xl),
+      padding: const EdgeInsets.fromLTRB(AppSpacing.screen, AppSpacing.lg,
+          AppSpacing.screen, AssistantBubble.clearance),
       children: [
         _S03Header(
             greeting: greeting,

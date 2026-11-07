@@ -9,7 +9,7 @@ import '../../viewmodels/task_form_view_model.dart';
 import '../../widgets/app_back_bar.dart';
 import '../../widgets/app_button.dart';
 import '../../widgets/velora_parts.dart';
-import '../../widgets/read_aloud_control.dart';
+import '../../widgets/task_detail_parts.dart';
 import '../../widgets/state_views.dart';
 
 class GuidedActivityScreen extends ConsumerWidget {
@@ -28,8 +28,10 @@ class GuidedActivityScreen extends ConsumerWidget {
     return Scaffold(
         body: SafeArea(
             child: VeloraDetailBody(
-      onBack: () =>
-          context.canPop() ? context.pop() : context.go('/activities'),
+      hero: TaskHeroArt(
+          habitKey: activity.habitKey,
+          onBack: () =>
+              context.canPop() ? context.pop() : context.go('/activities')),
       footer: AppButton(
           label: 'Thêm vào lịch',
           icon: Icons.add_alarm_rounded,
@@ -53,9 +55,6 @@ class GuidedActivityScreen extends ConsumerWidget {
           const SizedBox(height: AppSpacing.md),
           Text('${index + 1}. $step', style: text.bodyLarge),
         ],
-        const SizedBox(height: AppSpacing.lg),
-        ReadAloudControl(
-            text: '${activity.title}. ${activity.steps.join('. ')}'),
         if (activity.habitKey == 'family') ...[
           const SizedBox(height: AppSpacing.md),
           AppButton(

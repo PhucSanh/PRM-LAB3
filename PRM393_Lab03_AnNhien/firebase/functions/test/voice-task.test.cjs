@@ -3,7 +3,7 @@ const {test} = require('node:test');
 const assert = require('node:assert/strict');
 const {validateInput,normalizeResult,callGroq,createVoiceTaskService,systemPrompt} = require('../voice-task.cjs');
 const now = Date.UTC(2026,10,6,4,30); // 11:30 Vietnam
-const proposal = {title:'Tưới cây',date:'2026-11-07',hour:8,minute:0,repeat:'daily',weekdays:[],habitKey:'move',issue:'none'};
+const proposal = {title:'Tưới cây',date:'2026-11-07',hour:8,minute:0,durationMinutes:15,repeat:'daily',weekdays:[],habitKey:'move',issue:'none'};
 const response = value => ({ok:true,json:async()=>({choices:[{finish_reason:'stop',message:{content:JSON.stringify(value)}}]})});
 
 test('voice input bounds conversation and rejects invalid real dates',()=>{
@@ -13,7 +13,7 @@ test('voice input bounds conversation and rejects invalid real dates',()=>{
 });
 test('voice draft is ready only with complete future data and recurrence',()=>{
   assert.equal(normalizeResult(proposal,now).ready,true);
-  for(const patch of [{title:null},{date:null},{hour:null},{minute:null},{date:'2026-11-06',hour:8},
+  for(const patch of [{title:null},{date:null},{hour:null},{minute:null},{durationMinutes:null},{durationMinutes:300},{date:'2026-11-06',hour:8},
     {repeat:'weekly',weekdays:[]},{issue:'ambiguous'},{issue:'multiple'},{issue:'unsupported'}]) {
     const result=normalizeResult({...proposal,...patch},now);
     assert.equal(result.ready,false);assert.ok(result.question);
@@ -23,7 +23,7 @@ test('voice draft is ready only with complete future data and recurrence',()=>{
 });
 test('voice response validation rejects schema or calendar errors',()=>{
   for(const patch of [{date:'2026-02-31'},{date:'tomorrow'},{hour:24},{minute:60},{hour:8.5},{title:'x'.repeat(81)},
-    {repeat:'forever'},{habitKey:'admin'},{weekdays:[0]},{execute:true},{issue:'delete'}])
+    {repeat:'forever'},{habitKey:'admin'},{weekdays:[0]},{execute:true},{issue:'delete'},{durationMinutes:0},{durationMinutes:'30'}])
     assert.throws(()=>normalizeResult({...proposal,...patch},now),e=>e.code==='data-loss');
 });
 test('Vietnam time is used at midnight and past timestamps never become ready',()=>{

@@ -20,6 +20,8 @@ class VoiceTaskReview extends StatelessWidget {
           const SizedBox(height: AppSpacing.sm),
           Text('Giờ: ${draft.timeLabel}'),
           const SizedBox(height: AppSpacing.sm),
+          Text('Làm trong: ${draft.durationLabel}'),
+          const SizedBox(height: AppSpacing.sm),
           Text('Lặp: ${draft.repeatLabel}'),
           const SizedBox(height: AppSpacing.md),
           const Text('Đây là bản nháp. Bác kiểm tra lại rồi mới lưu nhé.'),

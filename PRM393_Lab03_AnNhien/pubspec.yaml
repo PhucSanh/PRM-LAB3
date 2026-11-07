@@ -56,6 +56,8 @@ flutter:
           weight: 700
   assets:
     - assets/caregiver/
+    # Ảnh thói quen (CC0, nguồn ở docs/image-credits.md).
+    - assets/images/habits/
     - assets/fonts/DejaVuSans.ttf
     - assets/fonts/NotoSerifDisplay-LICENSE.txt
   # TODO(A – Sanh, F0): thêm font Be Vietnam Pro vào assets/fonts/ rồi mở khối dưới.
