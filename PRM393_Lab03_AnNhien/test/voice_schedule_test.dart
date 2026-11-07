@@ -18,7 +18,8 @@ import 'support/demo_container.dart';
 import 'voice_task_test.dart' show ScriptedVoiceService, ready;
 
 /// Thứ Sáu 06/11/2026, 10:00 giờ Việt Nam.
-final now = DateTime(2026, 11, 6, 10);
+// Ghi rõ UTC+7 để mốc thời gian không phụ thuộc múi giờ của máy chạy test.
+final now = DateTime.parse('2026-11-06T10:00:00+07:00');
 const wake = VoiceUserContext(honorific: 'ba', wakeHour: 5, wakeMinute: 30);
 
 VoiceTaskInterpretation say(List<String> turns,
