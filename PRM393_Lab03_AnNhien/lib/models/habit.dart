@@ -1,6 +1,7 @@
 /// Một trong 9 thói quen Power 9 (Firestore: habits/{key}, nạp sẵn, không hard-code trong app).
 class Habit {
-  const Habit({required this.key, required this.name, required this.description});
+  const Habit(
+      {required this.key, required this.name, required this.description});
 
   final String key;
   final String name;

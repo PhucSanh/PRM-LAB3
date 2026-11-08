@@ -84,24 +84,30 @@ class VeloraFeaturedCard extends StatelessWidget {
 /// Continuous landscape behind an ivory sheet. Content remains fully scrollable.
 class VeloraDetailBody extends StatelessWidget {
   const VeloraDetailBody(
-      {super.key, required this.children, this.onBack, this.footer});
+      {super.key, required this.children, this.onBack, this.footer, this.hero});
   final List<Widget> children;
   final VoidCallback? onBack;
   final Widget? footer;
+
+  /// Thay phần minh hoạ đầu trang (tự vẽ nút Quay lại nếu cần).
+  final Widget? hero;
   @override
   Widget build(BuildContext context) {
     final list = ListView(padding: EdgeInsets.zero, children: [
-      Stack(children: [
-        const BotanicalScene(height: 290, branch: false, edgeToEdge: true),
-        if (onBack != null)
-          Positioned(
-              top: 12,
-              left: 16,
-              child: IconButton.filledTonal(
-                  tooltip: 'Quay lại',
-                  onPressed: onBack,
-                  icon: const Icon(Icons.arrow_back_rounded))),
-      ]),
+      if (hero != null)
+        hero!
+      else
+        Stack(children: [
+          const BotanicalScene(height: 290, branch: false, edgeToEdge: true),
+          if (onBack != null)
+            Positioned(
+                top: 12,
+                left: 16,
+                child: IconButton.filledTonal(
+                    tooltip: 'Quay lại',
+                    onPressed: onBack,
+                    icon: const Icon(Icons.arrow_back_rounded))),
+        ]),
       Transform.translate(
           offset: const Offset(0, -28),
           child: Container(

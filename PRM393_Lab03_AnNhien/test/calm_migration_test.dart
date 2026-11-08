@@ -224,7 +224,6 @@ void main() {
     expect(router.routeInformationProvider.value.uri.path, '/calendar');
     for (final (label, path, section) in [
       ('Khám phá', '/activities', 'explore'),
-      ('Thói quen', '/activities', 'habits'),
       ('Gia đình', '/family', ''),
       ('Cá nhân', '/account', ''),
     ]) {
@@ -309,10 +308,10 @@ void main() {
       (tester) async {
     final container = await pumpApp(tester, '/week/2026-11-06');
     final router = container.read(routerProvider);
-    expect(router.routeInformationProvider.value.uri.path, '/calendar');
+    expect(router.routeInformationProvider.value.uri.path, '/calendar/day');
     await tester.scrollUntilVisible(find.text(task.title).last, 250,
         scrollable: find.byType(Scrollable).first);
-    expect(find.text(task.title), findsNWidgets(2));
+    expect(find.text(task.title), findsOneWidget);
     router.go('/week/2026-11-06/task/${task.id}');
     await tester.pumpAndSettle();
     expect(find.text(task.title), findsOneWidget);
@@ -382,19 +381,21 @@ void main() {
     final container = await pumpApp(tester, '/family');
     await tapText(tester, 'Thêm người thân');
     await tester.enterText(find.byType(TextField).at(0), 'Cô An');
-    await tester.enterText(find.byType(TextField).at(1), 'Bạn');
-    await tester.enterText(find.byType(TextField).at(2), '12');
+    // Mối quan hệ: chọn trong danh sách thả xuống.
+    await tapText(tester, 'Chọn mối quan hệ');
+    await tester.tap(find.text('Bạn bè').last);
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byType(TextField).at(1), '12');
     await tapText(tester, 'Lưu người thân');
     expect(find.text('Vui lòng kiểm tra lại số điện thoại.'), findsOneWidget);
     expect(find.text('Cô An'), findsOneWidget);
-    await tester.enterText(find.byType(TextField).at(2), '0901234567');
+    await tester.enterText(find.byType(TextField).at(1), '0901234567');
     await tapText(tester, 'Lưu người thân');
-    expect(
-        (await container.read(familyListProvider.future))
-            .where((person) => person.name == 'Cô An')
-            .single
-            .phone,
-        '0901234567');
+    final saved = (await container.read(familyListProvider.future))
+        .where((person) => person.name == 'Cô An')
+        .single;
+    expect(saved.phone, '0901234567');
+    expect(saved.relation, 'Bạn bè');
     await tapText(tester, 'Hoàn tác');
     expect(
         (await container.read(familyListProvider.future))
@@ -513,6 +514,110 @@ void main() {
                 'goldens/consistent_${name}_${scale.toInt()}x.png'));
         await closeApp(tester);
       });
+    }
+  }
+
+  group('Bong bóng trợ lý AI', () {
+    for (final width in [360.0, 412.0]) {
+      for (final scale in [1.0, 2.0]) {
+        for (final route in ['/calendar', '/activities', '/family']) {
+          testReferenceWidgets(
+              '$route · $width dp · ×$scale: nổi góc phải dưới',
+              (tester) async {
+            await pumpApp(tester, route, width: width, scale: scale);
+            final bubble = find.byKey(const Key('assistant-bubble'));
+            expect(bubble.hitTestable(), findsOneWidget);
+            final rect = tester.getRect(bubble);
+            expect(rect.right, greaterThan(width * .75));
+            expect(rect.width, greaterThanOrEqualTo(72));
+            if (route == '/calendar') {
+              // Không che nút "Thêm hoạt động" đang ghim ở đáy.
+              expect(find.text('Thêm hoạt động').hitTestable(), findsOneWidget);
+              final add = tester.getRect(find.text('Thêm hoạt động'));
+              expect(rect.bottom, lessThanOrEqualTo(add.top));
+            }
+            expect(tester.takeException(), isNull);
+            await closeApp(tester);
+          });
+        }
+      }
+    }
+    testReferenceWidgets('bấm bong bóng mở màn Nói để thêm việc',
+        (tester) async {
+      await pumpApp(tester, '/calendar', width: 360);
+      await tester.tap(find.byKey(const Key('assistant-bubble')));
+      await tester.pumpAndSettle();
+      expect(find.text('Nói để thêm việc'), findsWidgets);
+      expect(find.byKey(const Key('assistant-bubble')), findsNothing);
+      await closeApp(tester);
+    });
+    testReferenceWidgets('chế độ Con cháu không có bong bóng', (tester) async {
+      await pumpApp(tester, '/caregiver/schedule',
+          width: 360, role: UserRole.caregiver);
+      expect(find.byKey(const Key('assistant-bubble')), findsNothing);
+      await closeApp(tester);
+    });
+  });
+
+  group('Nút Đọc to', () {
+    testReferenceWidgets('hướng dẫn hoạt động có nút đọc cả màn',
+        (tester) async {
+      await pumpApp(tester, '/activities/guides/breathe-5', width: 360);
+      expect(find.text('Đọc to', skipOffstage: false), findsOneWidget);
+      await closeApp(tester);
+    });
+    testReferenceWidgets('chỉ một nút trong màn Xem chi tiết việc',
+        (tester) async {
+      await pumpApp(tester, '/calendar/task/real-task?date=2026-11-05',
+          width: 360);
+      expect(find.text('Đọc to', skipOffstage: false), findsOneWidget);
+      await closeApp(tester);
+    });
+    for (final route in [
+      '/calendar',
+      '/today/voice',
+    ]) {
+      testReferenceWidgets('$route không còn nút Đọc to', (tester) async {
+        await pumpApp(tester, route, width: 360);
+        expect(find.text('Đọc to', skipOffstage: false), findsNothing);
+        await closeApp(tester);
+      });
+    }
+  });
+
+  // Quét responsive toàn app: 360 / 412 dp, chữ ×1 và ×2, không tràn.
+  for (final width in [360.0, 412.0]) {
+    for (final scale in [1.0, 2.0]) {
+      for (final route in [
+        '/calendar',
+        '/calendar/task/real-task?date=2026-11-05',
+        '/calendar/export',
+        '/activities',
+        '/activities?section=saved',
+        '/activities?section=habits',
+        '/activities/guides/breathe-5',
+        '/activities/guides/call-5',
+        '/activities/habits/move',
+        '/family',
+        '/family/add',
+        '/today',
+        '/today/add',
+        '/today/voice',
+        '/inbox',
+        '/account',
+        '/settings',
+        '/settings/reminders',
+        '/settings/help',
+        '/settings/data',
+        '/reminder/real-task?date=2026-11-05',
+      ]) {
+        testReferenceWidgets('responsive $route · $width dp · ×$scale',
+            (tester) async {
+          await pumpApp(tester, route, width: width, height: 800, scale: scale);
+          expect(tester.takeException(), isNull);
+          await closeApp(tester);
+        });
+      }
     }
   }
 }

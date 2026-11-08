@@ -12,6 +12,7 @@ import '../../viewmodels/account_view_model.dart';
 import '../../viewmodels/calm_feature_providers.dart';
 import '../../viewmodels/suggestion_inbox_view_model.dart';
 import '../../viewmodels/ui_state.dart';
+import '../../widgets/assistant_bubble.dart';
 import '../../widgets/calm_parts.dart';
 import '../../widgets/app_back_bar.dart';
 import '../../widgets/app_button.dart';
@@ -34,7 +35,11 @@ class FamilyScreen extends ConsumerWidget {
     return Scaffold(
         body: SafeArea(
             child: ListView(
-      padding: const EdgeInsets.all(AppSpacing.screen),
+      padding: EdgeInsets.fromLTRB(
+          AppSpacing.screen,
+          AppSpacing.screen,
+          AppSpacing.screen,
+          caregiver ? AppSpacing.screen : AssistantBubble.clearance),
       children: [
         const CalmPageHeader(
             title: 'Gia đình',
@@ -203,7 +208,8 @@ class _FamilyEditorScreenState extends ConsumerState<FamilyEditorScreen> {
       _loaded = true;
       _name.text = person?.name ?? '';
       _phone.text = person?.phone ?? '';
-      _relation = person?.relation.isNotEmpty == true ? person!.relation : null;
+      final relation = person?.relation.trim() ?? '';
+      _relation = relation.isEmpty ? null : relation;
     }
     return PopScope(
         canPop: !_dirty && !busy,

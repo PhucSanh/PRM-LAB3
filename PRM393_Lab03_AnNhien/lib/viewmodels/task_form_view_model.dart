@@ -7,12 +7,14 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/task_item.dart';
 import '../services/providers.dart';
 import 'today_view_model.dart';
+import 'schedule_conflict.dart';
 
 enum TaskFormMode { create, edit }
 
 enum TaskSaveState { editing, saving, offline, saved, error }
 
-enum ChangeScope { once, thisAndFollowing }
+/// [all]: xoá cả chuỗi lặp khỏi lịch (mọi lần).
+enum ChangeScope { once, thisAndFollowing, all }
 
 /// Dữ liệu tạm của F4. Date và [weekdays] chưa thuộc contract TaskRepository,
 /// nên chỉ tồn tại trong form cho tới khi nhóm chốt schema occurrence.
@@ -32,6 +34,7 @@ class TaskFormState {
     this.remind = true,
     this.showValidation = false,
     this.errorMessage,
+    this.conflictMessage,
     this.editingId,
     this.original,
   });
@@ -50,6 +53,9 @@ class TaskFormState {
   final bool remind;
   final bool showValidation;
   final String? errorMessage;
+
+  /// Trùng giờ với việc đã có: một khung giờ chỉ một việc.
+  final String? conflictMessage;
   final String? editingId;
   final TaskItem? original;
 
@@ -111,6 +117,8 @@ class TaskFormState {
     bool? showValidation,
     String? errorMessage,
     bool clearError = false,
+    String? conflictMessage,
+    bool clearConflict = false,
     String? editingId,
     TaskItem? original,
   }) =>
@@ -129,6 +137,8 @@ class TaskFormState {
         remind: remind ?? this.remind,
         showValidation: showValidation ?? this.showValidation,
         errorMessage: clearError ? null : errorMessage ?? this.errorMessage,
+        conflictMessage:
+            clearConflict ? null : conflictMessage ?? this.conflictMessage,
         editingId: editingId ?? this.editingId,
         original: original ?? this.original,
       );
@@ -228,14 +238,18 @@ class TaskFormViewModel extends Notifier<TaskFormState> {
           clearError: true);
   void setTitle(String value) => state =
       state.copyWith(title: value, showValidation: false, clearError: true);
-  void setDate(DateTime value) => state = state.copyWith(date: value);
+  void setDate(DateTime value) =>
+      state = state.copyWith(date: value, clearConflict: true);
   void setTime({required int hour, required int minute, required bool isAm}) =>
-      state = state.copyWith(hour: hour, minute: minute, isAm: isAm);
-  void setRepeat(RepeatRule value) => state = state.copyWith(repeat: value);
-  void setWeekdays(Set<int> value) => state = state.copyWith(weekdays: value);
+      state = state.copyWith(
+          hour: hour, minute: minute, isAm: isAm, clearConflict: true);
+  void setRepeat(RepeatRule value) =>
+      state = state.copyWith(repeat: value, clearConflict: true);
+  void setWeekdays(Set<int> value) =>
+      state = state.copyWith(weekdays: value, clearConflict: true);
   void setDuration(int value) {
     if (value >= 1 && value <= 240) {
-      state = state.copyWith(durationMinutes: value);
+      state = state.copyWith(durationMinutes: value, clearConflict: true);
     }
   }
 
@@ -243,8 +257,20 @@ class TaskFormViewModel extends Notifier<TaskFormState> {
   void restoreEditing() => state =
       state.copyWith(saveState: TaskSaveState.editing, clearError: true);
 
+  /// Chặn bấm Lưu lần hai khi đang kiểm tra trùng giờ (trước khi `saving`).
+  bool _checking = false;
+
   Future<bool> save({ChangeScope? scope}) async {
-    if (state.saveState == TaskSaveState.saving) return false;
+    if (_checking || state.saveState == TaskSaveState.saving) return false;
+    _checking = true;
+    try {
+      return await _save(scope);
+    } finally {
+      _checking = false;
+    }
+  }
+
+  Future<bool> _save(ChangeScope? scope) async {
     if (state.title.trim().isEmpty ||
         state.title.trim().length > 80 ||
         state.isTimeInPastToday) {
@@ -274,8 +300,24 @@ class TaskFormViewModel extends Notifier<TaskFormState> {
           ? state.weekdays.toList()
           : const [],
     );
-    state =
-        state.copyWith(saveState: TaskSaveState.saving, showValidation: false);
+    final occurrenceOnly = before != null &&
+        (before.isRescheduled ||
+            (before.repeat != RepeatRule.once && scope == ChangeScope.once));
+    TaskItem? overlap;
+    try {
+      overlap = await findScheduleConflict(
+          ref.read(taskRepositoryProvider), task,
+          ignoreId: before?.id, onlyDay: occurrenceOnly ? _editDay : null);
+    } catch (_) {/* chưa tải được lịch: không chặn, lưu như cũ */}
+    if (!ref.mounted) return false;
+    if (overlap != null) {
+      state = state.copyWith(conflictMessage: overlapMessage(overlap));
+      return false;
+    }
+    state = state.copyWith(
+        saveState: TaskSaveState.saving,
+        showValidation: false,
+        clearConflict: true);
     try {
       final repository = ref.read(taskRepositoryProvider);
       if (before != null && repository is ScopedTaskRepository) {
@@ -333,14 +375,18 @@ class TaskFormViewModel extends Notifier<TaskFormState> {
     try {
       final repository = ref.read(taskRepositoryProvider);
       if (repository is ScopedTaskRepository) {
-        _scopedUndo = await (repository as ScopedTaskRepository)
-            .changeOccurrence(
+        _scopedUndo =
+            await (repository as ScopedTaskRepository).changeOccurrence(
                 task,
                 _editDay ?? DateTime.now(),
                 null,
-                scope == ChangeScope.once
-                    ? schedule.ChangeScope.occurrence
-                    : schedule.ChangeScope.future);
+                switch (scope) {
+                  ChangeScope.once => task.repeat == RepeatRule.once
+                      ? schedule.ChangeScope.all
+                      : schedule.ChangeScope.occurrence,
+                  ChangeScope.thisAndFollowing => schedule.ChangeScope.future,
+                  ChangeScope.all => schedule.ChangeScope.all,
+                });
       } else {
         await repository.delete(task.id);
       }

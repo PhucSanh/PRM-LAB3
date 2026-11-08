@@ -18,6 +18,7 @@ class FakeReportService implements ReportService {
       await Future<void>.delayed(const Duration(milliseconds: 200));
       yield UploadProgress(f);
     }
-    yield const UploadProgress(1, downloadUrl: 'https://example.com/fake-report.pdf');
+    yield const UploadProgress(1,
+        downloadUrl: 'https://example.com/fake-report.pdf');
   }
 }

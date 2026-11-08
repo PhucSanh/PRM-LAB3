@@ -109,6 +109,10 @@ void main() {
     final vm = c.read(taskFormViewModelProvider.notifier)..startCreate();
     final first = vm.save();
     expect(await vm.save(), isFalse);
+    // Lần đầu còn kiểm tra trùng giờ trước khi ghi.
+    for (var i = 0; i < 300 && pending.writes == 0; i++) {
+      await Future<void>.delayed(const Duration(milliseconds: 10));
+    }
     expect(pending.writes, 1);
     pending.release.complete();
     expect(await first, isTrue);

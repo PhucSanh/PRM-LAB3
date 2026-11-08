@@ -32,6 +32,10 @@ void main() {
         now);
     expect(plans.length, 1);
     expect(plans.single.time, DateTime.utc(2026, 10, 4, 1));
+    // Thông báo ghi tên việc, giờ và thời lượng (không còn câu chung chung).
+    expect(plans.single.title, 'Đến giờ: Đi bộ');
+    expect(plans.single.body, startsWith('08:00 · làm trong '));
+    expect(plans.single.body, contains('phút'));
     expect(planReminders('u', [ScheduleOccurrence(task, day)], now).single.id,
         plans.single.id);
     expect(

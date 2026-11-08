@@ -4,6 +4,11 @@ import '../screens/suggestion/suggestion_popup_listener.dart';
 import '../theme/app_icons.dart';
 import '../theme/app_spacing.dart';
 import 'app_button.dart';
+import 'assistant_bubble.dart';
+
+/// Trang "Lịch của Bác" (toàn bộ lịch theo ngày) thuộc tab Lịch.
+bool isCalendarTab(String path) =>
+    path == '/calendar/day' || path == '/today/all';
 
 /// Reference-style five-item navigation for Bác; caregiver keeps its work areas.
 /// Explorer and habits share their existing branch, with explicit query state.
@@ -27,20 +32,18 @@ class AppShell extends StatelessWidget {
           ]
         : [
             (Icons.home_rounded, 'Trang chủ'),
+            // Khám phá + Thói quen gộp một tab (mục con chọn bằng chip).
             (Icons.search_rounded, 'Khám phá'),
-            (Icons.timer_outlined, 'Thói quen'),
+            (AppIcons.tabWeek, 'Lịch'),
             (Icons.favorite_border_rounded, 'Gia đình'),
             (Icons.account_circle_outlined, 'Cá nhân'),
           ];
     final selected = caregiver
         ? navigationShell.currentIndex
         : switch (navigationShell.currentIndex) {
-            1 => uri.queryParameters['section'] == 'habits' ||
-                    uri.path.contains('/habits/')
-                ? 2
-                : 1,
+            1 => 1,
             2 => 3,
-            _ => 0,
+            _ => isCalendarTab(uri.path) ? 2 : 0,
           };
     void select(int index) {
       if (caregiver) {
@@ -49,12 +52,13 @@ class AppShell extends StatelessWidget {
       } else {
         switch (index) {
           case 0:
-            navigationShell.goBranch(0,
-                initialLocation: navigationShell.currentIndex == 0);
+            // Tab Lịch dùng chung nhánh với Trang chủ, nên nhớ trang cuối của
+            // nhánh sẽ mở nhầm Lịch: Trang chủ luôn về trang đầu của nhánh.
+            navigationShell.goBranch(0, initialLocation: true);
           case 1:
             context.go('/activities?section=explore');
           case 2:
-            context.go('/activities?section=habits');
+            context.go('/calendar/day');
           case 3:
             navigationShell.goBranch(2,
                 initialLocation: navigationShell.currentIndex == 2);
@@ -73,25 +77,31 @@ class AppShell extends StatelessWidget {
         uri.path.startsWith('/today/task/')) {
       return content;
     }
+    final bubble = !caregiver && AssistantBubble.shellPaths.contains(uri.path)
+        ? const AssistantBubble()
+        : null;
     if (MediaQuery.sizeOf(context).width >= 600) {
       return Scaffold(
+          floatingActionButton: bubble,
           body: Row(children: [
-        SafeArea(
-            child: NavigationRail(
-                selectedIndex: selected,
-                onDestinationSelected: select,
-                labelType: NavigationRailLabelType.all,
-                destinations: [
-              for (final (icon, label) in destinations)
-                NavigationRailDestination(icon: Icon(icon), label: Text(label))
-            ])),
-        const VerticalDivider(width: 1),
-        Expanded(child: content)
-      ]));
+            SafeArea(
+                child: NavigationRail(
+                    selectedIndex: selected,
+                    onDestinationSelected: select,
+                    labelType: NavigationRailLabelType.all,
+                    destinations: [
+                  for (final (icon, label) in destinations)
+                    NavigationRailDestination(
+                        icon: Icon(icon), label: Text(label))
+                ])),
+            const VerticalDivider(width: 1),
+            Expanded(child: content)
+          ]));
     }
     if (!caregiver && MediaQuery.textScalerOf(context).scale(20) > 32) {
       return Scaffold(
         body: content,
+        floatingActionButton: bubble,
         bottomNavigationBar: SafeArea(
           top: false,
           child: Padding(
@@ -145,6 +155,7 @@ class AppShell extends StatelessWidget {
     }
     return Scaffold(
         body: content,
+        floatingActionButton: bubble,
         bottomNavigationBar: Material(
             color: Theme.of(context).scaffoldBackgroundColor,
             child: SafeArea(

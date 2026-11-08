@@ -5,15 +5,34 @@ import 'package:timezone/data/latest.dart' as tzdata;
 import 'package:timezone/timezone.dart' as tz;
 import '../models/app_notification.dart';
 import '../models/task_item.dart';
+import '../models/voice_task_draft.dart' show durationText;
 import '../utils/app_error.dart';
 import 'caregiver_schedule_service.dart';
 import 'reminder_service.dart';
 
 class PlannedReminder {
-  const PlannedReminder(this.id, this.taskId, this.time);
+  const PlannedReminder(this.id, this.taskId, this.time,
+      {this.title = reminderFallbackTitle, this.body = reminderFallbackBody});
   final int id;
   final String taskId;
   final DateTime time;
+
+  /// Chữ trên thông báo: tên việc, giờ và thời lượng để Bác biết ngay việc gì.
+  final String title, body;
+}
+
+const reminderFallbackTitle = 'An Nhiên nhắc Bác';
+const reminderFallbackBody = 'Đến giờ xem việc trong lịch của Bác.';
+
+/// "Đến giờ: Tưới cây" / "08:00 · làm trong 15 phút. Chạm để xem cách làm."
+(String, String) reminderText(TaskItem task) {
+  String two(int n) => n.toString().padLeft(2, '0');
+  final name = task.title.trim().isEmpty ? 'việc của Bác' : task.title.trim();
+  return (
+    'Đến giờ: $name',
+    '${two(task.hour)}:${two(task.minute)} · làm trong '
+        '${durationText(task.durationMinutes)}. Chạm để xem cách làm.'
+  );
 }
 
 /// Pure planner: next 30 days, <=128 pending notifications, stable IDs per UID.
@@ -51,7 +70,8 @@ List<PlannedReminder> planReminders(
     while (!ids.add(hash)) {
       hash = (hash + 1) & 0x3fffffff;
     }
-    result.add(PlannedReminder(hash, t.id, time));
+    final (title, body) = reminderText(t);
+    result.add(PlannedReminder(hash, t.id, time, title: title, body: body));
     if (result.length == 128) break;
   }
   return result;
@@ -59,7 +79,8 @@ List<PlannedReminder> planReminders(
 
 /// Android channels are immutable once created: use one stable channel per
 /// vibration choice so changing preference affects new/rescheduled reminders.
-NotificationDetails reminderNotificationDetails(bool vibrate) =>
+NotificationDetails reminderNotificationDetails(bool vibrate,
+        {String? bigText}) =>
     NotificationDetails(
         android: AndroidNotificationDetails(
             vibrate ? 'an_nhien_reminders' : 'an_nhien_reminders_no_vibration',
@@ -68,10 +89,15 @@ NotificationDetails reminderNotificationDetails(bool vibrate) =>
             enableVibration: vibrate,
             importance: Importance.high,
             priority: Priority.high,
+            // Hiện đủ chữ (tên việc dài) thay vì cắt bằng "…".
+            styleInformation:
+                bigText == null ? null : BigTextStyleInformation(bigText),
             icon: 'ic_notification'));
 
-/// Android native notification service. Inexact alarms avoid a special alarm
-/// permission; Android may delay delivery under battery saving.
+/// Android native notification service. Báo đúng phút bằng báo thức chính xác
+/// (`USE_EXACT_ALARM` cho app lịch/nhắc việc, Android 13+ cấp sẵn khi cài;
+/// Android 12 dùng `SCHEDULE_EXACT_ALARM`). Máy không cho phép thì quay về
+/// báo thức không chính xác (có thể trễ vài phút) thay vì lỗi.
 class LocalReminderService implements ReminderService {
   LocalReminderService(this.currentUid,
       {FlutterLocalNotificationsPlugin? plugin})
@@ -165,19 +191,37 @@ class LocalReminderService implements ReminderService {
         if (granted) await onPermissionGranted?.call();
         return granted;
       });
-  Future<void> _place(PlannedReminder plan, String uid) => sdk.zonedSchedule(
+
+  /// Báo thức chính xác được phép không (Android 12+ có thể bị tắt).
+  Future<bool> _canExact() async {
+    try {
+      return await _android?.canScheduleExactNotifications() ?? false;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  Future<void> _place(PlannedReminder plan, String uid, {bool? exact}) async {
+    final useExact = exact ?? await _canExact();
+    await sdk.zonedSchedule(
       id: plan.id,
-      title: 'An Nhiên nhắc Bác',
-      body: 'Đến giờ xem việc trong lịch của Bác.',
+      title: plan.title,
+      body: plan.body,
       scheduledDate:
           tz.TZDateTime.from(plan.time, tz.getLocation('Asia/Ho_Chi_Minh')),
-      notificationDetails: _details,
-      androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
+      notificationDetails:
+          reminderNotificationDetails(vibrate, bigText: plan.body),
+      androidScheduleMode: useExact
+          ? AndroidScheduleMode.exactAllowWhileIdle
+          : AndroidScheduleMode.inexactAllowWhileIdle,
       payload: jsonEncode({
         'uid': uid,
         'taskId': plan.taskId,
         'date': dateKey(plan.time.toUtc().add(const Duration(hours: 7)))
-      }));
+      }),
+    );
+  }
+
   Future<void> sync(List<ScheduleOccurrence> occurrences) => _run(() async {
         final uid = currentUid();
         if (uid == null) return;
@@ -187,9 +231,10 @@ class LocalReminderService implements ReminderService {
           if (generation != _generation || uid != currentUid()) return;
           await sdk.cancelAllPendingNotifications();
           if (!await hasPermission()) return;
+          final exact = await _canExact();
           for (final plan in plans) {
             if (generation != _generation || uid != currentUid()) return;
-            await _place(plan, uid);
+            await _place(plan, uid, exact: exact);
           }
         });
       });
@@ -216,9 +261,10 @@ class LocalReminderService implements ReminderService {
             ScheduleOccurrence(
                 normalized, calendarDate(now).add(Duration(days: i)))
         ];
+        final exact = await _canExact();
         for (final plan in planReminders(uid, list, DateTime.now())) {
           if (currentUid() != uid) return;
-          await _place(plan, uid);
+          await _place(plan, uid, exact: exact);
         }
       });
   @override
@@ -247,12 +293,14 @@ class LocalReminderService implements ReminderService {
         }
         final today =
             dateKey(DateTime.now().toUtc().add(const Duration(hours: 7)));
+        // Giữ tên việc của lời nhắc cũ cho lời nhắc lại.
+        String? title, body;
         for (final request in await sdk.pendingNotificationRequests()) {
           final payload = jsonDecode(request.payload ?? '{}') as Map;
-          if (payload['uid'] == uid &&
-              payload['taskId'] == taskId &&
-              payload['date'] == today) {
-            await sdk.cancel(id: request.id);
+          if (payload['uid'] == uid && payload['taskId'] == taskId) {
+            title ??= request.title;
+            body ??= request.body;
+            if (payload['date'] == today) await sdk.cancel(id: request.id);
           }
         }
         var hash = 0;
@@ -260,7 +308,9 @@ class LocalReminderService implements ReminderService {
           hash = (hash * 31 + n) & 0x3fffffff;
         }
         final plan = PlannedReminder(hash | 0x40000000, taskId,
-            DateTime.now().toUtc().add(Duration(minutes: minutes)));
+            DateTime.now().toUtc().add(Duration(minutes: minutes)),
+            title: title ?? reminderFallbackTitle,
+            body: body ?? reminderFallbackBody);
         await _place(plan, uid);
       });
   @override

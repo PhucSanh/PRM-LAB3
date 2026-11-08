@@ -15,7 +15,8 @@ class _CenteredColumn extends StatelessWidget {
   Widget build(BuildContext context) {
     return Center(
       child: SingleChildScrollView(
-        padding: const EdgeInsets.symmetric(horizontal: AppSpacing.screen, vertical: AppSpacing.lg),
+        padding: const EdgeInsets.symmetric(
+            horizontal: AppSpacing.screen, vertical: AppSpacing.lg),
         child: Column(mainAxisSize: MainAxisSize.min, children: children),
       ),
     );
@@ -37,17 +38,20 @@ class LoadingView extends StatelessWidget {
         IconCircle(
           child: SizedBox.square(
             dimension: AppSizes.stateIcon,
-            child:
-                CircularProgressIndicator(strokeWidth: AppSizes.spinnerStrokeLarge, color: theme.colorScheme.primary),
+            child: CircularProgressIndicator(
+                strokeWidth: AppSizes.spinnerStrokeLarge,
+                color: theme.colorScheme.primary),
           ),
         ),
         const SizedBox(height: AppSpacing.lg),
-        Text(message, style: theme.textTheme.titleLarge, textAlign: TextAlign.center),
+        Text(message,
+            style: theme.textTheme.titleLarge, textAlign: TextAlign.center),
         if (hint != null) ...[
           const SizedBox(height: AppSpacing.sm),
           Text(
             hint!,
-            style: theme.textTheme.bodyLarge?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+            style: theme.textTheme.bodyLarge
+                ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
             textAlign: TextAlign.center,
           ),
         ],
@@ -79,17 +83,24 @@ class EmptyView extends StatelessWidget {
     return _CenteredColumn(children: [
       IconCircle(icon: icon),
       const SizedBox(height: AppSpacing.lg),
-      Semantics(header: true, child: Text(title, style: theme.textTheme.titleLarge, textAlign: TextAlign.center)),
+      Semantics(
+          header: true,
+          child: Text(title,
+              style: theme.textTheme.titleLarge, textAlign: TextAlign.center)),
       if (message != null) ...[
         const SizedBox(height: AppSpacing.sm),
         Text(
           message!,
-          style: theme.textTheme.bodyLarge?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+          style: theme.textTheme.bodyLarge
+              ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
           textAlign: TextAlign.center,
         ),
       ],
       if (action != null) ...[const SizedBox(height: AppSpacing.lg), action!],
-      if (secondaryAction != null) ...[const SizedBox(height: AppSpacing.betweenTargets), secondaryAction!],
+      if (secondaryAction != null) ...[
+        const SizedBox(height: AppSpacing.betweenTargets),
+        secondaryAction!
+      ],
     ]);
   }
 }
@@ -123,21 +134,30 @@ class ErrorView extends StatelessWidget {
         const IconCircle(icon: AppIcons.alert, danger: true),
         const SizedBox(height: AppSpacing.lg),
         if (title != null) ...[
-          Semantics(header: true, child: Text(title!, style: theme.textTheme.titleLarge, textAlign: TextAlign.center)),
+          Semantics(
+              header: true,
+              child: Text(title!,
+                  style: theme.textTheme.titleLarge,
+                  textAlign: TextAlign.center)),
           const SizedBox(height: AppSpacing.sm),
         ],
-        Text(message, style: theme.textTheme.bodyLarge, textAlign: TextAlign.center),
+        Text(message,
+            style: theme.textTheme.bodyLarge, textAlign: TextAlign.center),
         if (detail != null) ...[
           const SizedBox(height: AppSpacing.sm),
           Text(
             detail!,
-            style: theme.textTheme.bodyLarge?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+            style: theme.textTheme.bodyLarge
+                ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
             textAlign: TextAlign.center,
           ),
         ],
         const SizedBox(height: AppSpacing.lg),
         AppButton(label: retryLabel, icon: AppIcons.retry, onPressed: onRetry),
-        for (final a in extraActions) ...[const SizedBox(height: AppSpacing.betweenTargets), a],
+        for (final a in extraActions) ...[
+          const SizedBox(height: AppSpacing.betweenTargets),
+          a
+        ],
       ]),
     );
   }

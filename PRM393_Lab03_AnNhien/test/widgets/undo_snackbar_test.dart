@@ -5,13 +5,16 @@ import 'package:flutter_test/flutter_test.dart';
 import 'harness.dart';
 
 void main() {
-  Future<void> open(WidgetTester tester, VoidCallback onUndo, {double scale = 1.3}) async {
+  Future<void> open(WidgetTester tester, VoidCallback onUndo,
+      {double scale = 1.3}) async {
     await pumpHarness(
       tester,
       launcher(
         'Xong',
-        (c) =>
-            showUndoSnackbar(c, title: 'Đã ghi: Đi bộ xong lúc 9:42 sáng.', subtitle: 'Giỏi lắm Bác!', onUndo: onUndo),
+        (c) => showUndoSnackbar(c,
+            title: 'Đã ghi: Đi bộ xong lúc 9:42 sáng.',
+            subtitle: 'Giỏi lắm Bác!',
+            onUndo: onUndo),
       ),
       scale: scale,
     );
@@ -20,7 +23,8 @@ void main() {
   }
 
   for (final scale in [1.3, 2.0]) {
-    testWidgets('2 tầng chữ, còn sau 10 giây, không tràn ở 360 dp ×$scale', (tester) async {
+    testWidgets('2 tầng chữ, còn sau 10 giây, không tràn ở 360 dp ×$scale',
+        (tester) async {
       await open(tester, () {}, scale: scale);
       expect(find.text('Đã ghi: Đi bộ xong lúc 9:42 sáng.'), findsOneWidget);
       expect(find.text('Giỏi lắm Bác!'), findsOneWidget);
@@ -33,7 +37,8 @@ void main() {
     });
   }
 
-  testWidgets('nút Hoàn tác cao ≥ 48, bấm thì gọi onUndo và đóng', (tester) async {
+  testWidgets('nút Hoàn tác cao ≥ 48, bấm thì gọi onUndo và đóng',
+      (tester) async {
     var undone = 0;
     await open(tester, () => undone++);
     final undo = find.widgetWithText(OutlinedButton, 'Hoàn tác');

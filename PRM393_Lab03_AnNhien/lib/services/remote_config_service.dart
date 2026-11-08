@@ -14,7 +14,8 @@ abstract interface class RemoteConfigService {
 }
 
 class FakeRemoteConfigService implements RemoteConfigService {
-  FakeRemoteConfigService([Map<String, Object>? values]) : _values = {..._defaults, ...?values};
+  FakeRemoteConfigService([Map<String, Object>? values])
+      : _values = {..._defaults, ...?values};
 
   static const _defaults = <String, Object>{
     RemoteConfigKeys.snoozeMinutes: 10,

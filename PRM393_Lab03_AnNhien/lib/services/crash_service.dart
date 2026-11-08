@@ -10,11 +10,13 @@ abstract interface class CrashService {
 
 class FakeCrashService implements CrashService {
   @override
-  Future<void> recordError(Object error, StackTrace? stack, {String? reason}) async =>
+  Future<void> recordError(Object error, StackTrace? stack,
+          {String? reason}) async =>
       debugPrint('[crash] non-fatal: $error ($reason)');
 
   @override
-  Future<void> setCustomKey(String key, Object value) async => debugPrint('[crash] $key=$value');
+  Future<void> setCustomKey(String key, Object value) async =>
+      debugPrint('[crash] $key=$value');
 
   @override
   Future<void> setUserId(String uid) async {}

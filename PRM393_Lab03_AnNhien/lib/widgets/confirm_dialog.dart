@@ -7,7 +7,10 @@ import 'icon_circle.dart';
 /// Một lựa chọn trong [ConfirmDialog]. Bấm → đóng hộp thoại và trả [value].
 class ConfirmOption<T> {
   const ConfirmOption(
-      {required this.label, required this.icon, required this.value, this.kind = AppButtonKind.secondary});
+      {required this.label,
+      required this.icon,
+      required this.value,
+      this.kind = AppButtonKind.secondary});
 
   /// Nhãn nhắc lại đúng việc (AppStyleGuide SG-16, SG-18): "Đúng, đã xong", không "Có".
   final String label;
@@ -33,10 +36,13 @@ class ConfirmDetail extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.only(top: AppSpacing.sm),
       child: Row(children: [
-        leading ?? Icon(icon, size: AppSizes.icon, color: theme.colorScheme.primary),
+        leading ??
+            Icon(icon, size: AppSizes.icon, color: theme.colorScheme.primary),
         const SizedBox(width: AppSpacing.md),
         Expanded(
-          child: Text(text, style: theme.textTheme.bodyLarge?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
+          child: Text(text,
+              style: theme.textTheme.bodyLarge
+                  ?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
         ),
       ]),
     );
@@ -78,21 +84,29 @@ class ConfirmDialog<T> extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return Dialog(
-      insetPadding: const EdgeInsets.symmetric(horizontal: AppSpacing.screen, vertical: AppSpacing.lg),
+      insetPadding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.screen, vertical: AppSpacing.lg),
       child: SingleChildScrollView(
         padding: const EdgeInsets.all(AppSpacing.lg),
         child: Column(mainAxisSize: MainAxisSize.min, children: [
-          IconCircle(icon: icon, color: iconColor, background: iconBackground, danger: danger),
+          IconCircle(
+              icon: icon,
+              color: iconColor,
+              background: iconBackground,
+              danger: danger),
           const SizedBox(height: AppSpacing.base),
           Semantics(
             header: true,
-            child: Text(title, style: theme.dialogTheme.titleTextStyle, textAlign: TextAlign.center),
+            child: Text(title,
+                style: theme.dialogTheme.titleTextStyle,
+                textAlign: TextAlign.center),
           ),
           if (message != null) ...[
             const SizedBox(height: AppSpacing.sm),
             Text(
               message!,
-              style: theme.textTheme.bodyLarge?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+              style: theme.textTheme.bodyLarge
+                  ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
               textAlign: TextAlign.center,
             ),
           ],

@@ -2,6 +2,7 @@ import '../../widgets/upcoming_activity_card.dart';
 import '../../widgets/quick_task_actions.dart';
 import '../../viewmodels/daily_actions_view_model.dart';
 import '../../widgets/read_aloud_control.dart';
+import '../../widgets/assistant_bubble.dart';
 import '../today/task_detail_screen.dart' show runTaskAction;
 import '../../viewmodels/today_view_model.dart';
 import 'package:flutter/material.dart';
@@ -21,6 +22,39 @@ import '../../widgets/habit_widgets.dart';
 import '../../widgets/state_views.dart';
 import '../../widgets/task_widgets.dart';
 import '../../widgets/undo_snackbar.dart';
+import '../../widgets/task_detail_parts.dart';
+import '../../widgets/caregiver_parts.dart' show repeatLabel;
+import '../../models/habit_guide.dart';
+import '../../models/voice_task_draft.dart' show durationText;
+
+String _hhmm(int totalMinutes) {
+  final m = totalMinutes % (24 * 60);
+  return '${(m ~/ 60).toString().padLeft(2, '0')}:'
+      '${(m % 60).toString().padLeft(2, '0')}';
+}
+
+/// "08:00 – 08:30".
+String taskTimeRange(TaskItem t) {
+  final start = t.hour * 60 + t.minute;
+  return '${_hhmm(start)} – ${_hhmm(start + t.durationMinutes)}';
+}
+
+/// Toàn bộ nội dung màn Chi tiết việc để nút Đọc to đọc lần lượt.
+String taskDetailSpokenText(
+        TaskItem t, DateTime day, HabitGuide guide, String benefit) =>
+    [
+      '${t.title}.',
+      'Trạng thái: ${t.status.label}.',
+      '${calendarLabel(day)}, từ ${t.hour} giờ ${t.minute} phút, '
+          'làm trong ${durationText(t.durationMinutes)}.',
+      'Lặp lại: ${repeatLabel(t)}.',
+      t.remind ? 'Đang bật lời nhắc.' : 'Chưa bật lời nhắc.',
+      'Vì sao tốt cho Bác: $benefit',
+      'Bác chuẩn bị: ${guide.prepare.map((p) => p.$2).join(', ')}.',
+      'Cách làm:',
+      for (final (i, step) in guide.steps.indexed) 'Bước ${i + 1}: $step',
+      'Lưu ý: ${guide.note}',
+    ].join(' ');
 
 String calendarLabel(DateTime date) {
   const days = [
@@ -35,14 +69,124 @@ String calendarLabel(DateTime date) {
   return '${days[date.weekday - 1]}, ${date.day}/${date.month}/${date.year}';
 }
 
-class CalendarScreen extends ConsumerStatefulWidget {
-  const CalendarScreen({super.key, this.date});
-  final DateTime? date;
+/// Nút "Thêm hoạt động" ghim ở đáy Trang chủ và trang Lịch trong ngày.
+class _AddActivityBar extends ConsumerWidget {
+  const _AddActivityBar({required this.dayKey});
+  final String dayKey;
   @override
-  ConsumerState<CalendarScreen> createState() => _CalendarScreenState();
+  Widget build(BuildContext context, WidgetRef ref) => SafeArea(
+        top: false,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(AppSpacing.screen, AppSpacing.sm,
+              AppSpacing.screen, AppSpacing.sm),
+          child: AppButton(
+            label: 'Thêm hoạt động',
+            kind: AppButtonKind.tonal,
+            icon: Icons.add_rounded,
+            onPressed: () async {
+              await context.push('/today/add?date=$dayKey');
+              ref.invalidate(calendarTasksProvider(dayKey));
+            },
+          ),
+        ),
+      );
 }
 
-class _CalendarScreenState extends ConsumerState<CalendarScreen> {
+String calendarDayRoute(DateTime day) => '/calendar/day?date=${dateKey(day)}';
+
+/// Trang chủ: chỉ việc sắp tới hôm nay (việc kế tiếp + tối đa 2 việc sau đó,
+/// theo giờ). Toàn bộ lịch trong ngày nằm ở [CalendarDayScreen].
+class CalendarScreen extends ConsumerWidget {
+  const CalendarScreen({super.key});
+
+  /// Số hoạt động hiện thêm sau việc kế tiếp.
+  static const moreUpcoming = 2;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final today = vietnamToday(), key = dateKey(today);
+    final text = Theme.of(context).textTheme;
+    final tasks = ref.watch(calendarTasksProvider(key));
+    void open(TaskItem task) => context
+        .push('/calendar/task/${Uri.encodeComponent(task.id)}?date=$key');
+    return Scaffold(
+        floatingActionButton: const AssistantBubble(),
+        bottomNavigationBar: _AddActivityBar(dayKey: key),
+        body: SafeArea(
+            child: RefreshIndicator(
+          onRefresh: () async => ref.refresh(calendarTasksProvider(key).future),
+          child: ListView(
+              padding: const EdgeInsets.fromLTRB(
+                  AppSpacing.screen,
+                  AppSpacing.screen,
+                  AppSpacing.screen,
+                  AssistantBubble.clearance),
+              children: [
+                const VeloraGreeting(),
+                const SizedBox(height: AppSpacing.lg),
+                tasks.when(
+                  loading: () =>
+                      const LoadingView(message: 'Đang tải hoạt động…'),
+                  error: (_, __) => ErrorView(
+                      message: 'Chưa thể tải lịch. Vui lòng thử lại.',
+                      onRetry: () =>
+                          ref.invalidate(calendarTasksProvider(key))),
+                  data: (items) {
+                    // Chỉ việc hôm nay chưa làm và chưa kết thúc theo giờ
+                    // hiện tại: đang diễn ra hoặc chưa tới giờ. Việc đã qua
+                    // giờ không hiện ở đây (xem trong lịch ngày). Không còn
+                    // việc nào thì không hiện thẻ.
+                    final upcoming = upcomingTasks(items, vietnamNow());
+                    if (upcoming.isEmpty) return const SizedBox.shrink();
+                    final next = upcoming.first;
+                    final later = upcoming.skip(1).take(moreUpcoming).toList();
+                    return Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          UpcomingActivityCard(
+                              task: next,
+                              day: today,
+                              canComplete: true,
+                              onOpen: () => open(next)),
+                          if (later.isNotEmpty) ...[
+                            const SizedBox(height: AppSpacing.lg),
+                            Semantics(
+                                header: true,
+                                child:
+                                    Text('Tiếp theo', style: text.titleLarge)),
+                            const SizedBox(height: AppSpacing.md),
+                            for (final task in later) ...[
+                              VeloraScheduleCard(
+                                  task: task, onTap: () => open(task)),
+                              const SizedBox(height: AppSpacing.md),
+                            ],
+                          ],
+                        ]);
+                  },
+                ),
+                const SizedBox(height: AppSpacing.base),
+                AppButton(
+                    key: const Key('calendar-day-detail'),
+                    label: 'Xem chi tiết lịch hôm nay',
+                    icon: Icons.view_agenda_outlined,
+                    kind: AppButtonKind.secondary,
+                    onPressed: () => context.go(calendarDayRoute(today))),
+                const SizedBox(height: AppSpacing.xl),
+                const VeloraHomeDiscovery(),
+              ]),
+        )));
+  }
+}
+
+/// Toàn bộ lịch của một ngày, có chuyển ngày trước / sau và chọn ngày.
+class CalendarDayScreen extends ConsumerStatefulWidget {
+  const CalendarDayScreen({super.key, this.date});
+  final DateTime? date;
+  @override
+  ConsumerState<CalendarDayScreen> createState() => _CalendarDayScreenState();
+}
+
+class _CalendarDayScreenState extends ConsumerState<CalendarDayScreen> {
   @override
   void initState() {
     super.initState();
@@ -50,19 +194,28 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
   }
 
   void _sync() {
-    if (widget.date != null) {
-      Future.microtask(() {
-        if (mounted) {
-          ref.read(calendarDateProvider.notifier).select(widget.date!);
-        }
-      });
-    }
+    Future.microtask(() {
+      if (mounted) {
+        ref
+            .read(calendarDateProvider.notifier)
+            .select(widget.date ?? vietnamToday());
+      }
+    });
   }
 
   @override
-  void didUpdateWidget(covariant CalendarScreen old) {
+  void didUpdateWidget(covariant CalendarDayScreen old) {
     super.didUpdateWidget(old);
     if (old.date != widget.date) _sync();
+  }
+
+  Future<void> _pick(DateTime date) async {
+    final picked = await showDatePicker(
+        context: context,
+        initialDate: date,
+        firstDate: DateTime(2020),
+        lastDate: DateTime(2100));
+    if (picked != null) ref.read(calendarDateProvider.notifier).select(picked);
   }
 
   @override
@@ -72,69 +225,23 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
     final key = dateKey(date), text = Theme.of(context).textTheme;
     final tasks = ref.watch(calendarTasksProvider(key));
     return Scaffold(
-        bottomNavigationBar: SafeArea(
-          top: false,
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(AppSpacing.screen, AppSpacing.sm,
-                AppSpacing.screen, AppSpacing.sm),
-            child: AppButton(
-              label: 'Thêm hoạt động',
-              kind: AppButtonKind.tonal,
-              icon: Icons.add_rounded,
-              onPressed: () async {
-                await context.push('/today/add?date=$key');
-                if (mounted) ref.invalidate(calendarTasksProvider(key));
-              },
-            ),
-          ),
-        ),
+        // Là tab "Lịch": chỉ có nút Quay lại khi được mở chồng lên màn khác.
+        appBar: context.canPop()
+            ? AppBackBar.adaptive(context, onBack: () => context.pop())
+            : null,
+        floatingActionButton: const AssistantBubble(),
+        bottomNavigationBar: _AddActivityBar(dayKey: key),
         body: SafeArea(
             child: RefreshIndicator(
           onRefresh: () async => ref.refresh(calendarTasksProvider(key).future),
           child: ListView(
-              padding: const EdgeInsets.all(AppSpacing.screen),
+              padding: const EdgeInsets.fromLTRB(AppSpacing.screen,
+                  AppSpacing.sm, AppSpacing.screen, AssistantBubble.clearance),
               children: [
-                const VeloraGreeting(),
-                const SizedBox(height: AppSpacing.lg),
-                if (tasks.asData?.value case final items?)
-                  if (nextPendingTask(items, date, vietnamNow())
-                      case final task?) ...[
-                    UpcomingActivityCard(
-                        task: task,
-                        day: date,
-                        canComplete: key == dateKey(vietnamToday()),
-                        onOpen: () => context.push(
-                            '/calendar/task/${Uri.encodeComponent(task.id)}?date=$key')),
-                    const SizedBox(height: AppSpacing.lg),
-                  ],
-                LayoutBuilder(builder: (context, box) {
-                  final action = TextButton(
-                      style: TextButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: AppSpacing.sm)),
-                      onPressed: () async {
-                        final picked = await showDatePicker(
-                            context: context,
-                            initialDate: date,
-                            firstDate: DateTime(2020),
-                            lastDate: DateTime(2100));
-                        if (picked != null) vm.select(picked);
-                      },
-                      child: const Text('Xem lịch'));
-                  if (MediaQuery.textScalerOf(context).scale(20) > 28) {
-                    return Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text('Lịch của Bác', style: text.titleLarge),
-                          action
-                        ]);
-                  }
-                  return Row(children: [
-                    Expanded(
-                        child: Text('Lịch của Bác', style: text.titleLarge)),
-                    action
-                  ]);
-                }),
+                Semantics(
+                    header: true,
+                    child: Text('Lịch của Bác', style: text.headlineSmall)),
+                const SizedBox(height: AppSpacing.sm),
                 Row(children: [
                   IconButton(
                       tooltip: 'Ngày trước',
@@ -142,14 +249,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
                       icon: const Icon(Icons.chevron_left_rounded)),
                   Expanded(
                       child: TextButton(
-                          onPressed: () async {
-                            final picked = await showDatePicker(
-                                context: context,
-                                initialDate: date,
-                                firstDate: DateTime(2020),
-                                lastDate: DateTime(2100));
-                            if (picked != null) vm.select(picked);
-                          },
+                          onPressed: () => _pick(date),
                           child: Text(calendarLabel(date),
                               textAlign: TextAlign.center))),
                   IconButton(
@@ -186,6 +286,9 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
                       : Column(
                           crossAxisAlignment: CrossAxisAlignment.stretch,
                           children: [
+                              Text('${items.length} hoạt động',
+                                  style: text.titleMedium),
+                              const SizedBox(height: AppSpacing.md),
                               for (final task in items) ...[
                                 VeloraScheduleCard(
                                     task: task,
@@ -201,15 +304,6 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
                               ],
                             ]),
                 ),
-                const SizedBox(height: AppSpacing.lg),
-                const SizedBox(height: AppSpacing.base),
-                const VeloraHomeDiscovery(),
-                const SizedBox(height: AppSpacing.lg),
-                AppButton(
-                    label: 'Lưu lịch tuần PDF',
-                    icon: Icons.picture_as_pdf_rounded,
-                    kind: AppButtonKind.secondary,
-                    onPressed: () => context.push('/calendar/export')),
               ]),
         )));
   }
@@ -267,9 +361,9 @@ class CalmTaskDetailScreen extends ConsumerWidget {
                 const SizedBox(height: AppSpacing.lg),
                 ReminderReadAloudControl(
                     identity: '${task.id}-$key',
+                    showButton: false,
                     text:
                         '${task.title}. ${task.hour} giờ ${task.minute} phút.'),
-                const SizedBox(height: AppSpacing.lg),
                 if (today && !task.isDone && task.status != TaskStatus.skipped)
                   QuickTaskActions(task: task, day: day)
                 else
@@ -287,34 +381,61 @@ class CalmTaskDetailScreen extends ConsumerWidget {
               ]);
         }
 
+        final guide = habitGuideOf(task.habitKey);
+        final benefit = [
+          HabitStyle.descriptionOf(task.habitKey),
+          guide.benefit,
+        ].where((s) => s.isNotEmpty).join(' ');
         return VeloraDetailBody(
-            onBack: () => context.canPop()
-                ? context.pop()
-                : context.go('/calendar?date=$key'),
+            hero: TaskHeroArt(
+                habitKey: task.habitKey,
+                onBack: () => context.canPop()
+                    ? context.pop()
+                    : context.go(calendarDayRoute(day))),
             children: [
+              Text(HabitStyle.nameOf(task.habitKey).toUpperCase(),
+                  style: text.labelLarge?.copyWith(
+                      color: Theme.of(context).colorScheme.primary,
+                      letterSpacing: 1)),
+              const SizedBox(height: AppSpacing.xs),
               Text(task.title, style: text.headlineMedium),
-              if (autoRead)
-                ReminderReadAloudControl(
-                    identity: '${task.id}-$key',
-                    text:
-                        '${task.title}. ${task.hour} giờ ${task.minute} phút. ${calendarLabel(day)}.'),
-              const SizedBox(height: AppSpacing.base),
-              Text(calendarLabel(day), style: text.bodyMedium),
-              Text(
-                  '${task.hour.toString().padLeft(2, '0')}:${task.minute.toString().padLeft(2, '0')} · ${task.durationMinutes} phút',
-                  style: text.titleMedium),
-              const SizedBox(height: AppSpacing.base),
+              const SizedBox(height: AppSpacing.md),
               Align(
                   alignment: AlignmentDirectional.centerStart,
                   child: TaskStatusChip(status: task.status)),
               const SizedBox(height: AppSpacing.lg),
-              Text(HabitStyle.nameOf(task.habitKey), style: text.titleMedium),
-              const SizedBox(height: AppSpacing.sm),
-              Text(
-                  task.remind
-                      ? 'Đã bật lời nhắc cho hoạt động này.'
-                      : 'Hoạt động này không bật lời nhắc.',
-                  style: text.bodyMedium),
+              // Nút Đọc to duy nhất của app cho một việc: đọc cả màn chi tiết.
+              ReadAloudControl(
+                  text: taskDetailSpokenText(task, day, guide, benefit)),
+              const SizedBox(height: AppSpacing.lg),
+              TaskInfoGrid(tiles: [
+                TaskInfoTile(
+                    icon: Icons.event_rounded,
+                    label: 'Ngày',
+                    value: calendarLabel(day)),
+                TaskInfoTile(
+                    icon: Icons.schedule_rounded,
+                    label: 'Giờ làm',
+                    value: taskTimeRange(task)),
+                TaskInfoTile(
+                    icon: Icons.hourglass_bottom_rounded,
+                    label: 'Làm trong',
+                    value: durationText(task.durationMinutes)),
+                TaskInfoTile(
+                    icon: Icons.repeat_rounded,
+                    label: 'Lặp lại',
+                    value: repeatLabel(task)),
+                TaskInfoTile(
+                    icon: task.remind
+                        ? Icons.notifications_active_rounded
+                        : Icons.notifications_off_outlined,
+                    label: 'Nhắc nhở',
+                    value: task.remind ? 'Đang bật' : 'Đang tắt'),
+                TaskInfoTile(
+                    icon: HabitStyle.iconOf(task.habitKey),
+                    label: 'Nhóm thói quen',
+                    value: HabitStyle.nameOf(task.habitKey)),
+              ]),
               const SizedBox(height: AppSpacing.lg),
               if (today && !task.isDone)
                 AppButton(
@@ -410,6 +531,38 @@ class CalmTaskDetailScreen extends ConsumerWidget {
                 Text(
                     'Bạn đang xem lịch của ngày khác. Trạng thái chỉ có thể cập nhật trong ngày diễn ra hoạt động.',
                     style: text.bodyMedium),
+              const SizedBox(height: AppSpacing.xl),
+              Semantics(
+                  header: true,
+                  child: Text('Vì sao tốt cho Bác', style: text.titleLarge)),
+              const SizedBox(height: AppSpacing.sm),
+              Text(benefit, style: text.bodyLarge),
+              if (habitPhotosOf(task.habitKey).skip(1).toList() case final more
+                  when more.isNotEmpty) ...[
+                const SizedBox(height: AppSpacing.xl),
+                Semantics(
+                    header: true,
+                    child: Text('Hình ảnh', style: text.titleLarge)),
+                const SizedBox(height: AppSpacing.md),
+                HabitPhotoStrip(
+                    photos: more,
+                    label: 'Ảnh minh hoạ ${HabitStyle.nameOf(task.habitKey)}'),
+              ],
+              const SizedBox(height: AppSpacing.xl),
+              Semantics(
+                  header: true,
+                  child: Text('Bác chuẩn bị', style: text.titleLarge)),
+              const SizedBox(height: AppSpacing.md),
+              PrepareGallery(items: guide.prepare),
+              const SizedBox(height: AppSpacing.xl),
+              Semantics(
+                  header: true,
+                  child: Text('Cách làm', style: text.titleLarge)),
+              const SizedBox(height: AppSpacing.md),
+              TaskStepList(steps: guide.steps),
+              const SizedBox(height: AppSpacing.md),
+              TaskNoteCard(text: guide.note),
+              const SizedBox(height: AppSpacing.xl),
             ]);
       },
     )));

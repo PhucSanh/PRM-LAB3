@@ -4,6 +4,43 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
+  group('formatTimeOfDay', () {
+    test('viết giờ kiểu nói hằng ngày (SG-10)', () {
+      expect(formatTimeOfDay(const TimeOfDay(hour: 6, minute: 0)), '6:00 sáng');
+      expect(
+          formatTimeOfDay(const TimeOfDay(hour: 9, minute: 30)), '9:30 sáng');
+      expect(
+          formatTimeOfDay(const TimeOfDay(hour: 0, minute: 5)), '12:05 sáng');
+      expect(
+          formatTimeOfDay(const TimeOfDay(hour: 12, minute: 0)), '12:00 chiều');
+      expect(
+          formatTimeOfDay(const TimeOfDay(hour: 15, minute: 0)), '3:00 chiều');
+      expect(
+          formatTimeOfDay(const TimeOfDay(hour: 20, minute: 15)), '8:15 tối');
+    });
+
+    test(
+        'wholeHourInWords: giờ chẵn viết "3 giờ chiều", giờ lẻ giữ "9:30 sáng"',
+        () {
+      expect(
+          formatTimeOfDay(const TimeOfDay(hour: 15, minute: 0),
+              wholeHourInWords: true),
+          '3 giờ chiều');
+      expect(
+          formatTimeOfDay(const TimeOfDay(hour: 9, minute: 30),
+              wholeHourInWords: true),
+          '9:30 sáng');
+    });
+
+    test('speakTimeOfDay: câu đọc không có dấu ":"', () {
+      expect(speakTimeOfDay(const TimeOfDay(hour: 6, minute: 0)), '6 giờ sáng');
+      expect(speakTimeOfDay(const TimeOfDay(hour: 9, minute: 30)),
+          '9 giờ 30 sáng');
+      expect(
+          speakTimeOfDay(const TimeOfDay(hour: 18, minute: 5)), '6 giờ 05 tối');
+    });
+  });
+
   for (final scale in [1.0, 2.0]) {
     testWidgets(
         'wheel preserves minute precision and confirms only on save at $scale',

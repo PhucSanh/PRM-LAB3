@@ -207,7 +207,6 @@ void main() {
       'Mai',
       'Con gái',
       '“Mẹ ơi, mai mình đi bộ với cô Tám nhé?”',
-      'Đọc to',
       'Bác muốn nhận việc nào?',
       'Đi bộ nhẹ nhàng',
       'Thư giãn nhẹ nhàng',
@@ -220,7 +219,6 @@ void main() {
     const g07 = [
       'Đã thêm vào lịch',
       '1 việc của Mai đã vào lịch ngày mai.',
-      'Đọc to',
       '1 việc đã nhận',
       'Đi bộ nhẹ nhàng',
       'Vận động tự nhiên · 20 phút',
@@ -236,7 +234,6 @@ void main() {
       'Quay lại',
       'Đã bỏ qua gợi ý',
       'Chưa việc nào của Mai vào lịch ngày mai.',
-      'Đọc to',
       '2 việc đã bỏ qua',
       'Đi bộ nhẹ nhàng',
       'Thư giãn nhẹ nhàng',

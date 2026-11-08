@@ -35,20 +35,26 @@ class SwitchRow extends StatelessWidget {
     void toggle() => onChanged?.call(!value);
 
     // "Đang bật / Đang tắt" nằm dưới câu phụ (N07 đặt dưới công tắc) để cột chữ không bị bóp hẹp.
-    final texts = Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+    final texts =
+        Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
       Text(title, style: theme.textTheme.titleMedium),
       if (subtitle != null) ...[
         const SizedBox(height: AppSpacing.xs),
-        Text(subtitle!, style: theme.textTheme.bodyMedium?.copyWith(color: scheme.onSurfaceVariant)),
+        Text(subtitle!,
+            style: theme.textTheme.bodyMedium
+                ?.copyWith(color: scheme.onSurfaceVariant)),
       ],
       const SizedBox(height: AppSpacing.xs),
       Text(
         value ? 'Đang bật' : 'Đang tắt',
-        style: theme.textTheme.labelMedium?.copyWith(color: value ? scheme.primary : scheme.onSurfaceVariant),
+        style: theme.textTheme.labelMedium
+            ?.copyWith(color: value ? scheme.primary : scheme.onSurfaceVariant),
       ),
     ]);
     final trackColor = WidgetStateProperty.resolveWith(
-      (states) => states.contains(WidgetState.selected) ? scheme.primary : scheme.outline,
+      (states) => states.contains(WidgetState.selected)
+          ? scheme.primary
+          : scheme.outline,
     );
     final control = Switch(
       value: value,
@@ -62,7 +68,8 @@ class SwitchRow extends StatelessWidget {
         : Container(
             width: AppSizes.habitIcon,
             height: AppSizes.habitIcon,
-            decoration: BoxDecoration(color: scheme.primaryContainer, borderRadius: AppRadius.mdAll),
+            decoration: BoxDecoration(
+                color: scheme.primaryContainer, borderRadius: AppRadius.mdAll),
             child: Icon(icon, size: AppSizes.icon, color: scheme.primary),
           );
     final head = Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
@@ -98,7 +105,8 @@ class SwitchRow extends StatelessWidget {
             constraints: const BoxConstraints(minHeight: AppSizes.minTarget),
             child: Padding(
               padding: const EdgeInsets.symmetric(vertical: AppSpacing.xs),
-              child: Align(alignment: AlignmentDirectional.centerStart, child: content),
+              child: Align(
+                  alignment: AlignmentDirectional.centerStart, child: content),
             ),
           ),
         ),

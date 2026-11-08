@@ -7,6 +7,8 @@ import 'package:an_nhien/services/profile_setup_service.dart';
 import 'package:an_nhien/services/providers.dart';
 import 'package:an_nhien/services/voice_task_service.dart';
 import 'package:an_nhien/utils/app_error.dart';
+import 'package:an_nhien/viewmodels/caregiver_schedule_view_model.dart'
+    show vietnamToday;
 import 'package:an_nhien/viewmodels/device_access_view_model.dart';
 import 'package:an_nhien/viewmodels/session_view_model.dart';
 import 'package:cloud_functions/cloud_functions.dart';
@@ -65,9 +67,10 @@ void main() {
   test('choosing one task discards the previous multi-task draft', () {
     final r = interpretVietnamese([
       'Mai 8 giờ sáng tưới cây, 9 giờ sáng đi bộ.',
-      'Mai 8 giờ sáng tưới cây',
+      'Mai 8 giờ sáng tưới cây nửa tiếng',
     ], now: DateTime(2026, 11, 6, 11, 30));
     expect(r.ready, isTrue);
+    expect(r.draft.durationMinutes, 30);
     expect(r.draft.title!.toLowerCase(), contains('tưới cây'));
     expect(r.draft.title!.toLowerCase(), isNot(contains('đi bộ')));
     expect(r.draft.hour, 8);
@@ -75,7 +78,8 @@ void main() {
 
   group('bộ hiểu lời nói trên máy', () {
     test('đủ tên việc, ngày, giờ và lặp thì sẵn sàng', () {
-      final r = say(['Mai lúc 8 giờ sáng nhắc bác tưới cây, mỗi ngày']);
+      final r =
+          say(['Mai lúc 8 giờ sáng nhắc bác tưới cây trong 15 phút, mỗi ngày']);
       expect(r.question, isNull);
       expect(r.ready, true);
       expect(r.onDevice, true);
@@ -84,6 +88,7 @@ void main() {
       expect((r.draft.hour, r.draft.minute), (8, 0));
       expect(r.draft.repeat, RepeatRule.daily);
       expect(r.draft.habitKey, 'move');
+      expect(r.draft.durationMinutes, 15);
     });
 
     test('"8 giờ" chưa rõ sáng/tối thì hỏi lại, câu bổ sung được ghép', () {
@@ -91,14 +96,16 @@ void main() {
       expect(first.ready, false);
       expect(first.draft.hour, isNull);
       expect(first.question, contains('buổi sáng'));
-      final second = say(['Tưới cây lúc 8 giờ ngày mai', 'buổi tối']);
+      final second =
+          say(['Tưới cây lúc 8 giờ ngày mai', 'buổi tối, trong 20 phút']);
       expect(second.ready, true);
+      expect(second.draft.durationMinutes, 20);
       expect((second.draft.hour, second.draft.minute), (20, 0));
       expect(second.draft.title, 'Tưới cây');
     });
 
     test('"nhắc tôi … tối nay" không nhầm "tôi" với buổi tối', () {
-      final r = say(['Nhắc tôi 9 giờ rưỡi tối nay uống thuốc']);
+      final r = say(['Nhắc tôi 9 giờ rưỡi tối nay uống thuốc 5 phút']);
       expect(r.ready, true);
       expect(r.draft.title, 'Uống thuốc');
       expect(dateKey(r.draft.date!), '2026-11-06');
@@ -106,17 +113,18 @@ void main() {
     });
 
     test('nhiều thứ trong tuần thành lặp một số ngày', () {
-      final r = say(['Uống trà với bạn 3 giờ chiều thứ hai, tư, sáu']);
+      final r = say(['Uống trà với bạn 3 giờ chiều thứ hai, tư, sáu 1 tiếng']);
       expect(r.ready, true);
       expect(r.draft.repeat, RepeatRule.someDays);
       expect(r.draft.weekdays, [1, 3, 5]);
       expect(r.draft.habitKey, 'tea');
+      expect(r.draft.durationMinutes, 60);
       // Hôm nay thứ Sáu, 15:00 chưa qua → bắt đầu từ hôm nay.
       expect(dateKey(r.draft.date!), '2026-11-06');
     });
 
     test('ngày tháng đã qua trong năm thì hiểu là năm sau', () {
-      final r = say(['Ngày 3/2 lúc 20 giờ gọi cho Mai']);
+      final r = say(['Ngày 3/2 lúc 20 giờ gọi cho Mai 10 phút']);
       expect(r.ready, true);
       expect(dateKey(r.draft.date!), '2027-02-03');
       expect(r.draft.title, 'Gọi cho Mai');
@@ -124,7 +132,8 @@ void main() {
     });
 
     test('dùng giờ thức dậy trong hồ sơ của Bác', () {
-      final r = say(['Sáng mai khi thức dậy tập thể dục'], context: wake);
+      final r =
+          say(['Sáng mai khi thức dậy tập thể dục 30 phút'], context: wake);
       expect(r.ready, true);
       expect((r.draft.hour, r.draft.minute), (5, 30));
       expect(r.draft.title, 'Tập thể dục');
@@ -140,7 +149,7 @@ void main() {
     });
 
     test('"sau khi đi bộ" dùng khung giờ đã có trong ngày', () {
-      final r = say(['Ngày mai sau khi đi bộ uống trà'],
+      final r = say(['Ngày mai sau khi đi bộ uống trà mất 15 phút'],
           context: const VoiceUserContext(busy: [
             VoiceBusySlot(
                 hour: 9, minute: 30, durationMinutes: 30, habitKey: 'move')
@@ -156,9 +165,114 @@ void main() {
       expect(say(['ngày mai 8 giờ sáng']).question, contains('việc gì'));
     });
 
+    test('thiếu thời lượng thì hỏi "trong bao lâu", trả lời được ghép', () {
+      final first = say(['Mai 8 giờ sáng tưới cây']);
+      expect(first.ready, false);
+      expect(first.question, contains('bao lâu'));
+      expect(say(['Mai 8 giờ sáng tưới cây', '45']).draft.durationMinutes, 45);
+      expect(
+          say(['Mai 8 giờ sáng tưới cây', '1 tiếng rưỡi'])
+              .draft
+              .durationMinutes,
+          90);
+      expect(say(['Mai 8 giờ 30 phút sáng tưới cây']).question,
+          contains('bao lâu'),
+          reason: '"30 phút" sau "8 giờ" là giờ, không phải thời lượng');
+      expect(
+          say(['Mai 8 giờ sáng đi dạo trong 2 giờ']).draft,
+          isA<VoiceTaskDraft>()
+              .having((d) => d.hour, 'hour', 8)
+              .having((d) => d.durationMinutes, 'duration', 120));
+      expect(say(['Mai 8 giờ sáng đi dạo 5 tiếng']).question,
+          contains('tối đa 4 tiếng'));
+    });
+
     test('"9 giờ kém 15 sáng" là 8:45', () {
       final r = say(['Ngày mai 9 giờ kém 15 sáng đi chợ']);
       expect((r.draft.hour, r.draft.minute), (8, 45));
+    });
+  });
+
+  group('AI hiểu ý định câu nói', () {
+    const empty = {
+      'title': null,
+      'date': null,
+      'hour': null,
+      'minute': null,
+      'durationMinutes': null,
+      'repeat': 'once',
+      'weekdays': <int>[],
+      'habitKey': 'purpose',
+    };
+    VoiceTaskInterpretation query(VoiceIntent intent,
+            {DateTime? date, int days = 1, String? reply}) =>
+        VoiceTaskInterpretation(
+            draft: VoiceTaskDraft.fromMap(empty),
+            question: null,
+            intent: intent,
+            queryDate: date,
+            queryDays: days,
+            reply: reply);
+
+    test('đọc kết quả server: bản cũ là thêm việc, ý định lạ thì từ chối', () {
+      Map<String, dynamic> map(Map<String, dynamic> extra) =>
+          {'draft': empty, 'question': null, 'ready': false, ...extra};
+      expect(VoiceTaskInterpretation.fromMap(map({})).intent, VoiceIntent.add);
+      final agenda = VoiceTaskInterpretation.fromMap(
+          map({'intent': 'agenda', 'queryDate': '2026-11-07', 'queryDays': 2}));
+      expect(agenda.intent, VoiceIntent.agenda);
+      expect(agenda.queryDate, DateTime(2026, 11, 7));
+      expect(agenda.queryDays, 2);
+      expect(
+          VoiceTaskInterpretation.fromMap(
+              map({'intent': 'answer', 'reply': ' Dạ. '})).reply,
+          'Dạ.');
+      for (final bad in [
+        {'intent': 'delete'},
+        {'intent': 'answer'},
+        {'intent': 'answer', 'reply': 'x' * 301},
+        {'intent': 'agenda', 'queryDays': 8},
+        {'intent': 'agenda', 'queryDate': 'mai'},
+      ]) {
+        expect(() => VoiceTaskInterpretation.fromMap(map(bad)),
+            throwsFormatException,
+            reason: '$bad');
+      }
+    });
+
+    test('câu hỏi tự do: hiện và đọc to câu AI trả lời, không tạo việc',
+        () async {
+      final service = ScriptedVoiceService(() async => query(VoiceIntent.answer,
+          reply: 'Mai Bác rảnh từ 10 giờ sáng tới trưa.'));
+      final c = await setup(service, tasks: [walk]);
+      final vm = c.read(voiceInputViewModelProvider.notifier)
+        ..edit('Mai tui rảnh lúc nào');
+      expect(await vm.analyze(), isNull);
+      final state = c.read(voiceInputViewModelProvider);
+      expect(state.reply, 'Mai Bác rảnh từ 10 giờ sáng tới trưa.');
+      expect(state.interpretation, isNull);
+      expect(state.busy, isFalse);
+      // Gửi khung giờ bận 7 ngày tới có ngày, không có tên việc.
+      final week = service.contexts.single!.toMap()['week'] as List;
+      expect(week, isNotEmpty);
+      expect((week.first as Map).keys,
+          containsAll(['date', 'time', 'durationMinutes', 'habitKey']));
+      expect(week.toString(), isNot(contains('công viên')));
+    });
+
+    test('AI hiểu là hỏi lịch: app tự đọc lịch các ngày đó trên máy', () async {
+      final today = vietnamToday();
+      final service = ScriptedVoiceService(() async => query(VoiceIntent.agenda,
+          date: DateTime(today.year, today.month, today.day + 1), days: 2));
+      final c = await setup(service, tasks: [walk]);
+      final vm = c.read(voiceInputViewModelProvider.notifier)
+        ..edit('mấy bữa tới tui bận gì');
+      await vm.analyze();
+      final state = c.read(voiceInputViewModelProvider);
+      expect(state.reply, startsWith('Ngày mai,'));
+      expect(state.reply, contains('Ngày kia,'));
+      expect(state.addedDay, DateTime(today.year, today.month, today.day + 1));
+      expect(state.busy, isFalse);
     });
   });
 
@@ -184,7 +298,7 @@ void main() {
       expect(sent.toMap().toString(), isNot(contains('công viên')));
     });
 
-    test('báo trùng giờ với việc đã có nhưng vẫn cho thêm', () async {
+    test('trùng giờ với việc đã có thì không cho thêm', () async {
       final c = await setup(
           FakeVoiceTaskService(
               result: VoiceTaskInterpretation(
@@ -193,6 +307,7 @@ void main() {
                       date: DateTime(2030, 2, 4),
                       hour: 9,
                       minute: 45,
+                      durationMinutes: 15,
                       repeat: RepeatRule.once,
                       weekdays: const [],
                       habitKey: 'tea'),
@@ -202,7 +317,13 @@ void main() {
       await vm.analyze();
       expect(c.read(voiceInputViewModelProvider).conflict,
           contains('Đi bộ quanh công viên'));
-      expect(await vm.addToSchedule(), isNotNull);
+      expect(await vm.addToSchedule(), isNull);
+      expect(
+          (await c
+                  .read(taskRepositoryProvider)
+                  .tasksForDay(DateTime(2030, 2, 4)))
+              .map((t) => t.title),
+          isNot(contains('Uống trà')));
     });
 
     test('Thêm vào lịch lưu đúng việc, ghi analytics; Hoàn tác xoá lại',
@@ -240,6 +361,7 @@ void main() {
                   date: DateTime(2020),
                   hour: 8,
                   minute: 0,
+                  durationMinutes: 15,
                   repeat: RepeatRule.once,
                   weekdays: const [],
                   habitKey: 'move'),
@@ -261,7 +383,7 @@ void main() {
           ScriptedVoiceService(
               () async => throw const VoiceUnavailableException()),
           local);
-      final r = await off.interpret(['Mai 8 giờ sáng tưới cây']);
+      final r = await off.interpret(['Mai 8 giờ sáng tưới cây 15 phút']);
       expect(r.onDevice, true);
       expect(r.ready, true);
       final quota = FallbackVoiceTaskService(

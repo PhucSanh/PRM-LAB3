@@ -31,8 +31,15 @@ class TaskStatusChip extends StatelessWidget {
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
     // Màu "Chưa làm" chỉ có trong AppColors (DESIGN.md warning-*), chưa có vai trò tương ứng trong ColorScheme.
-    final (IconData icon, Color bg, Color fg, Color iconColor, Color? border) = switch (status) {
-      TaskStatus.done => (AppIcons.checkCircle, scheme.primary, scheme.onPrimary, scheme.onPrimary, null),
+    final (IconData icon, Color bg, Color fg, Color iconColor, Color? border) =
+        switch (status) {
+      TaskStatus.done => (
+          AppIcons.checkCircle,
+          scheme.primary,
+          scheme.onPrimary,
+          scheme.onPrimary,
+          null
+        ),
       TaskStatus.pending => (
           AppIcons.radioOff,
           AppColors.warningContainer,
@@ -56,18 +63,22 @@ class TaskStatusChip extends StatelessWidget {
         ),
     };
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.base, vertical: AppSpacing.xs),
+      padding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.base, vertical: AppSpacing.xs),
       decoration: BoxDecoration(
         color: bg,
         borderRadius: BorderRadius.circular(AppRadius.full),
-        border: border == null ? null : Border.all(color: border, width: AppSizes.border),
+        border: border == null
+            ? null
+            : Border.all(color: border, width: AppSizes.border),
       ),
       child: Row(mainAxisSize: MainAxisSize.min, children: [
         Icon(icon, size: AppSizes.iconInChip, color: iconColor),
         const SizedBox(width: AppSpacing.sm),
         Flexible(
-          child:
-              Text(status.label, style: theme.textTheme.labelMedium?.copyWith(color: fg, fontWeight: FontWeight.w700)),
+          child: Text(status.label,
+              style: theme.textTheme.labelMedium
+                  ?.copyWith(color: fg, fontWeight: FontWeight.w700)),
         ),
       ]),
     );
@@ -113,7 +124,8 @@ class TaskRow extends StatelessWidget {
     return Semantics(
       container: true,
       button: onTap != null,
-      label: '${speakTimeOfDay(time)}, $title, ${status.label.toLowerCase()}. $subline',
+      label:
+          '${speakTimeOfDay(time)}, $title, ${status.label.toLowerCase()}. $subline',
       excludeSemantics: true,
       onTap: onTap,
       child: HabitAccentCard(
@@ -123,21 +135,26 @@ class TaskRow extends StatelessWidget {
           HabitBadge(habitKey: habitKey),
           const SizedBox(width: AppSpacing.md),
           Expanded(
-            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            child:
+                Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
               Text(
                 formatTimeOfDay(time, wholeHourInWords: true),
-                style: theme.textTheme.labelMedium?.copyWith(color: scheme.onSurfaceVariant),
+                style: theme.textTheme.labelMedium
+                    ?.copyWith(color: scheme.onSurfaceVariant),
               ),
               Text(title, style: theme.textTheme.titleMedium),
               const SizedBox(height: AppSpacing.xs),
               TaskStatusChip(status: status),
               const SizedBox(height: AppSpacing.xs),
-              Text(subline, style: theme.textTheme.bodyMedium?.copyWith(color: scheme.onSurfaceVariant)),
+              Text(subline,
+                  style: theme.textTheme.bodyMedium
+                      ?.copyWith(color: scheme.onSurfaceVariant)),
             ]),
           ),
           if (showChevron) ...[
             const SizedBox(width: AppSpacing.xs),
-            Icon(AppIcons.chevronRight, size: AppSizes.icon, color: scheme.onSurfaceVariant),
+            Icon(AppIcons.chevronRight,
+                size: AppSizes.icon, color: scheme.onSurfaceVariant),
           ],
         ]),
       ),
@@ -178,7 +195,9 @@ class NextTaskCard extends StatelessWidget {
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
     final habitName = HabitStyle.nameOf(habitKey);
-    final detail = durationMinutes == null ? habitName : '$durationMinutes phút · $habitName';
+    final detail = durationMinutes == null
+        ? habitName
+        : '$durationMinutes phút · $habitName';
     final timeText = formatTimeOfDay(time, wholeHourInWords: true);
 
     final info = Semantics(
@@ -192,15 +211,17 @@ class NextTaskCard extends StatelessWidget {
         borderRadius: AppRadius.mdAll,
         child: ConstrainedBox(
           constraints: const BoxConstraints(minHeight: AppSizes.minTarget),
-          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          child:
+              Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
             Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
               Icon(AppIcons.bell, size: AppSizes.icon, color: scheme.primary),
               const SizedBox(width: AppSpacing.sm),
               Expanded(
                 child: Text(
                   'Việc tiếp theo · $timeText',
-                  style: theme.textTheme.labelMedium
-                      ?.copyWith(color: scheme.onPrimaryContainer, fontWeight: FontWeight.w700),
+                  style: theme.textTheme.labelMedium?.copyWith(
+                      color: scheme.onPrimaryContainer,
+                      fontWeight: FontWeight.w700),
                 ),
               ),
             ]),
@@ -209,11 +230,15 @@ class NextTaskCard extends StatelessWidget {
               HabitBadge(habitKey: habitKey),
               const SizedBox(width: AppSpacing.md),
               Expanded(
-                child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  Text(title, style: theme.textTheme.titleMedium),
-                  const SizedBox(height: AppSpacing.xs),
-                  Text(detail, style: theme.textTheme.bodyMedium?.copyWith(color: scheme.onSurfaceVariant)),
-                ]),
+                child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(title, style: theme.textTheme.titleMedium),
+                      const SizedBox(height: AppSpacing.xs),
+                      Text(detail,
+                          style: theme.textTheme.bodyMedium
+                              ?.copyWith(color: scheme.onSurfaceVariant)),
+                    ]),
               ),
             ]),
           ]),
@@ -222,11 +247,20 @@ class NextTaskCard extends StatelessWidget {
     );
 
     final buttons = [
-      AppButton(label: 'Đã xong', icon: AppIcons.checkCircle, onPressed: onDone),
+      AppButton(
+          label: 'Đã xong', icon: AppIcons.checkCircle, onPressed: onDone),
       if (onLater != null)
-        AppButton(label: 'Dời lại', icon: AppIcons.later, kind: AppButtonKind.secondary, onPressed: onLater),
+        AppButton(
+            label: 'Dời lại',
+            icon: AppIcons.later,
+            kind: AppButtonKind.secondary,
+            onPressed: onLater),
       if (onSkip != null)
-        AppButton(label: 'Hôm nay bỏ qua', icon: AppIcons.skipToday, kind: AppButtonKind.text, onPressed: onSkip),
+        AppButton(
+            label: 'Hôm nay bỏ qua',
+            icon: AppIcons.skipToday,
+            kind: AppButtonKind.text,
+            onPressed: onSkip),
     ];
 
     return Material(
@@ -238,7 +272,8 @@ class NextTaskCard extends StatelessWidget {
       clipBehavior: Clip.antiAlias,
       child: Padding(
         padding: const EdgeInsets.all(AppSpacing.screen),
-        child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+        child:
+            Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
           info,
           for (final button in buttons) ...[
             const SizedBox(height: AppSpacing.betweenTargets),

@@ -21,6 +21,7 @@ VoiceTaskInterpretation ready() => VoiceTaskInterpretation(
         date: future,
         hour: 8,
         minute: 30,
+        durationMinutes: 20,
         repeat: RepeatRule.someDays,
         weekdays: const [1, 3, 5],
         habitKey: 'move'),
@@ -90,6 +91,7 @@ void main() {
     expect(form.minute, 30);
     expect(form.repeat, RepeatRule.someDays);
     expect(form.weekdays, {1, 3, 5});
+    expect(form.durationMinutes, 20);
     expect(await c.read(taskRepositoryProvider).tasksForDay(future), isEmpty);
   });
   test('editing original sentence invalidates previous AI result', () async {
@@ -144,6 +146,7 @@ void main() {
                 date: DateTime(2020),
                 hour: 8,
                 minute: 0,
+                durationMinutes: 15,
                 repeat: RepeatRule.once,
                 weekdays: const [],
                 habitKey: 'move'),
@@ -164,6 +167,7 @@ void main() {
         'date': '2030-02-03',
         'hour': 8,
         'minute': 30,
+        'durationMinutes': 30,
         'repeat': 'once',
         'weekdays': <int>[],
         'habitKey': 'move'
@@ -217,10 +221,31 @@ void main() {
         'weekdays': [8]
       },
       {'repeat': 'forever'},
-      {'title': 'x' * 81}
+      {'title': 'x' * 81},
+      {'durationMinutes': 0},
+      {'durationMinutes': 241},
+      {'durationMinutes': '30'},
     ]) {
       expect(() => VoiceTaskDraft.fromMap({...map, ...patch}),
           throwsFormatException);
     }
+  });
+  test('server cũ chưa trả thời lượng: vẫn hợp lệ nhưng chưa sẵn sàng', () {
+    final r = VoiceTaskInterpretation.fromMap({
+      'ready': true,
+      'question': null,
+      'draft': {
+        'title': 'Tưới cây',
+        'date': '2030-02-03',
+        'hour': 8,
+        'minute': 30,
+        'repeat': 'once',
+        'weekdays': <int>[],
+        'habitKey': 'move'
+      }
+    });
+    expect(r.draft.scheduleComplete, true);
+    expect(r.draft.durationMinutes, isNull);
+    expect(r.ready, false);
   });
 }

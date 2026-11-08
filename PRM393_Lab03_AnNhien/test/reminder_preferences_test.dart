@@ -114,10 +114,8 @@ void main() {
         expect(device.spoken, contains('Tưới rau'));
       } else {
         expect(device.spoken, isNull);
-        await tester.ensureVisible(find.text('Đọc to'));
-        await tester.tap(find.text('Đọc to'));
-        await tester.pumpAndSettle();
-        expect(device.spoken, contains('Tưới rau'));
+        // Nút Đọc to chỉ nằm ở màn chi tiết việc, không ở màn lời nhắc.
+        expect(find.text('Đọc to'), findsNothing);
       }
       expect(tester.takeException(), isNull);
       await tester.pumpWidget(const SizedBox.shrink());

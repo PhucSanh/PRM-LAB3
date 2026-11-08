@@ -21,8 +21,9 @@ class FirebaseCallableClient {
               'Mã chưa đúng hoặc đã hết hạn. Nhờ mẹ tạo mã mới rồi thử lại.',
             'resource-exhausted' =>
               'Đã thử nhiều lần. Chờ 10 phút rồi thử lại nhé.',
-            'already-exists'=>'Yêu cầu này đã được lưu với nội dung khác. Quay lại tạo lịch mới nhé.',
-        'permission-denied' =>
+            'already-exists' =>
+              'Yêu cầu này đã được lưu với nội dung khác. Quay lại tạo lịch mới nhé.',
+            'permission-denied' =>
               'Cần chọn đúng vai trò hoặc ghép nối lại với máy của mẹ.',
             'unavailable' ||
             'deadline-exceeded' =>

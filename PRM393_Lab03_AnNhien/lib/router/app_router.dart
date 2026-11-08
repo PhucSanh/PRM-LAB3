@@ -258,7 +258,7 @@ final routerProvider = Provider<GoRouter>((ref) {
             path: '/dev/widgets',
             builder: (_, __) => const WidgetGallery(animate: false)),
       // Legacy routes remain valid after the navigation migration.
-      GoRoute(path: '/week', redirect: (_, __) => '/calendar'),
+      GoRoute(path: '/week', redirect: (_, __) => '/calendar/day'),
       GoRoute(
           path: '/week/:date',
           redirect: (_, state) =>
@@ -319,8 +319,12 @@ final routerProvider = Provider<GoRouter>((ref) {
           StatefulShellBranch(routes: [
             GoRoute(
                 path: '/calendar',
-                builder: (_, state) => CalendarScreen(
-                    date: parseDateKey(state.uri.queryParameters['date'])),
+                // Link cũ `/calendar?date=…` mở trang lịch đầy đủ của ngày đó.
+                redirect: (_, state) => state.uri.path == '/calendar' &&
+                        state.uri.queryParameters['date'] != null
+                    ? '/calendar/day?date=${Uri.encodeComponent(state.uri.queryParameters['date']!)}'
+                    : null,
+                builder: (_, __) => const CalendarScreen(),
                 routes: [
                   GoRoute(
                       path: 'task/:id',
@@ -329,6 +333,12 @@ final routerProvider = Provider<GoRouter>((ref) {
                           date:
                               parseDateKey(state.uri.queryParameters['date'])))
                 ]),
+            // Tab "Lịch": toàn bộ lịch theo ngày. Ngang hàng với /calendar để
+            // là gốc của tab (không chồng lên Trang chủ, không có Quay lại).
+            GoRoute(
+                path: '/calendar/day',
+                builder: (_, state) => CalendarDayScreen(
+                    date: parseDateKey(state.uri.queryParameters['date']))),
             // F3 Hôm nay – Khang
             GoRoute(
                 path: '/today',
@@ -363,7 +373,8 @@ final routerProvider = Provider<GoRouter>((ref) {
                       builder: (_, __) => const VoiceInputScreen()),
                   // F7 Lịch tuần – Hương
                   GoRoute(
-                      path: 'all', builder: (_, __) => const CalendarScreen()),
+                      path: 'all',
+                      builder: (_, __) => const CalendarDayScreen()),
                   // F12 Gợi ý lịch (phía Bác) – Sanh
                   GoRoute(
                       path: 'suggestions/:id',
