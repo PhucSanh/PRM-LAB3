@@ -4,6 +4,10 @@ import '../services/assistant_service.dart';
 import '../services/assistant_contact_filter.dart';
 import '../models/task_item.dart';
 import '../models/relative.dart';
+import '../models/user_profile.dart';
+import '../utils/app_error.dart';
+import 'account_view_model.dart';
+import 'caregiver_schedule_view_model.dart';
 import '../services/providers.dart';
 import 'device_access_view_model.dart';
 import 'session_view_model.dart';
@@ -42,6 +46,8 @@ class AssistantViewModel extends Notifier<AssistantState> {
   @override
   AssistantState build() {
     ref.watch(sessionProvider.select((s) => s.value?.uid));
+    ref.watch(
+        profileProvider.select((p) => (p.value?.role, p.value?.pairedMomUid)));
     _generation++;
     ref.onDispose(() {
       _generation++;
@@ -95,7 +101,9 @@ class AssistantViewModel extends Notifier<AssistantState> {
       final reply = await ref.read(assistantServiceProvider).reply(history);
       if (!ref.mounted || generation != _generation) return;
       var answer = reply.text;
-      final day = reply.day ?? clock.now();
+      final caregiver =
+          ref.read(profileProvider).value?.role == UserRole.caregiver;
+      final day = reply.day ?? (caregiver ? vietnamToday() : clock.now());
       var tasks = <TaskItem>[];
       var contacts = <Relative>[];
       if ([
@@ -103,7 +111,21 @@ class AssistantViewModel extends Notifier<AssistantState> {
         AssistantAction.editTask,
         AssistantAction.deleteTask
       ].contains(reply.action)) {
-        tasks = [...await ref.read(taskRepositoryProvider).tasksForDay(day)];
+        if (caregiver) {
+          final mom = ref.read(pairedMomUidProvider);
+          if (mom == null)
+            throw const AppException(
+                'Cần ghép nối với máy của cha/mẹ để xem lịch.');
+          final date = DateTime(day.year, day.month, day.day);
+          tasks = (await ref
+                  .read(caregiverScheduleServiceProvider)
+                  .watch(mom, date, date)
+                  .first)
+              .map((o) => o.task)
+              .toList();
+        } else {
+          tasks = [...await ref.read(taskRepositoryProvider).tasksForDay(day)];
+        }
         if (!ref.mounted || generation != _generation) return;
         tasks.sort((a, b) =>
             (a.hour * 60 + a.minute).compareTo(b.hour * 60 + b.minute));
