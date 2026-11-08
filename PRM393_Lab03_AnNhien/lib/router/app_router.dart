@@ -48,6 +48,7 @@ import '../widgets/dev/widget_gallery.dart';
 import '../screens/tasks/task_form_screens.dart';
 import '../screens/calm/calendar_screen.dart';
 import '../screens/calm/activities_screen.dart';
+import '../screens/calm/activity_flashcards_screen.dart';
 import '../screens/calm/family_screen.dart';
 
 /// Route map theo architecture.md mục 7.2 (gốc: flutter-handoff.md Lab 2). Chủ file: A – Sanh.
@@ -390,6 +391,9 @@ final routerProvider = Provider<GoRouter>((ref) {
                 builder: (_, state) => ActivitiesScreen(
                     section: state.uri.queryParameters['section'] ?? 'explore'),
                 routes: [
+                  GoRoute(
+                      path: 'discover',
+                      builder: (_, __) => const ActivityFlashcardsScreen()),
                   GoRoute(
                       path: 'guides/:id',
                       builder: (_, state) => GuidedActivityScreen(
