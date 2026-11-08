@@ -186,6 +186,8 @@ void main() {
                 of: find.byType(ListView).first,
                 matching: find.byType(Scrollable))
             .first);
+    await tester.ensureVisible(find.textContaining('15:00'));
+    await tester.pumpAndSettle();
     await tester.tap(find.textContaining('15:00'));
     await tester.pumpAndSettle();
     task = c.read(caregiverFormViewModelProvider).task;
@@ -268,8 +270,12 @@ void main() {
     vm.consent(false);
     expect(await vm.submit(), false);
     expect(c.read(caregiverFormViewModelProvider).conflicts, isNotEmpty);
-    schedules.fail = true;
+    // Direct writes cannot override the shared schedule conflict rule.
     expect(await vm.submit(allowConflict: true), false);
+    vm.updateTask(
+        c.read(caregiverFormViewModelProvider).task.copyWith(hour: 10));
+    schedules.fail = true;
+    expect(await vm.submit(), false);
     expect(c.read(caregiverFormViewModelProvider).task.title, 'Đi bộ cùng mẹ');
     schedules.fail = false;
     expect(await vm.submit(allowConflict: true), true);
