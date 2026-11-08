@@ -1,6 +1,7 @@
 {
   "firestore": {
-    "rules": "firebase/firestore.rules"
+    "rules": "firebase/firestore.rules",
+    "indexes": "firebase/firestore.indexes.json"
   },
   "storage": {
     "rules": "firebase/storage.rules"
@@ -45,5 +46,26 @@
   "functions": {
     "source": "firebase/functions",
     "codebase": "an-nhien"
+  },
+  "hosting": {
+    "public": "admin-web",
+    "ignore": [
+      "firebase-config.example.js",
+      "README.md",
+      "**/.*",
+      "**/node_modules/**"
+    ],
+    "headers": [
+      {
+        "source": "**/*.js",
+        "headers": [
+          {
+            "key": "Cache-Control",
+            "value": "no-cache"
+          }
+        ]
+      }
+    ],
+    "site": "prm393-145c9-admin"
   }
 }
