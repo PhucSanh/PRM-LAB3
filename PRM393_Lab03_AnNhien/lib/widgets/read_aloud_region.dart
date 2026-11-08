@@ -4,7 +4,12 @@ import '../viewmodels/device_access_view_model.dart';
 
 /// Reads only the text inside this content block, using its latest values.
 class ReadAloudRegion extends StatefulWidget {
-  const ReadAloudRegion({super.key, required this.child});
+  const ReadAloudRegion(
+      {super.key, required this.child, this.inline = false, this.text});
+  final bool inline;
+
+  /// Explicit speech content when the card shows only a short preview.
+  final String? text;
   final Widget child;
   @override
   State<ReadAloudRegion> createState() => _ReadAloudRegionState();
@@ -35,7 +40,11 @@ class _ReadAloudRegionState extends State<ReadAloudRegion> {
       e.visitChildren(visit);
     }
 
-    (_content.currentContext as Element?)?.visitChildren(visit);
+    if (widget.text != null) {
+      parts.add(widget.text!);
+    } else {
+      (_content.currentContext as Element?)?.visitChildren(visit);
+    }
     if (parts.isEmpty) return;
     final keep = container.listen(speechViewModelProvider, (_, __) {});
     setState(() {
@@ -57,20 +66,28 @@ class _ReadAloudRegionState extends State<ReadAloudRegion> {
 
   @override
   Widget build(BuildContext context) {
+    final speaker = IconButton(
+      tooltip: _reading ? 'Dừng đọc khung này' : 'Đọc khung này',
+      onPressed: _read,
+      icon:
+          Icon(_reading ? Icons.stop_circle_outlined : Icons.volume_up_rounded),
+    );
+    final content = KeyedSubtree(key: _content, child: widget.child);
     return Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Row(mainAxisAlignment: MainAxisAlignment.end, children: [
-            IconButton(
-                tooltip: _reading ? 'Dừng đọc khung này' : 'Đọc khung này',
-                onPressed: _read,
-                icon: Icon(_reading
-                    ? Icons.stop_circle_outlined
-                    : Icons.volume_up_rounded)),
-          ]),
-          KeyedSubtree(key: _content, child: widget.child),
-          if (_error != null) Text(_error!),
-        ]);
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        if (widget.inline)
+          Row(crossAxisAlignment: CrossAxisAlignment.center, children: [
+            Expanded(child: content),
+            speaker,
+          ])
+        else ...[
+          Align(alignment: AlignmentDirectional.centerEnd, child: speaker),
+          content,
+        ],
+        if (_error != null) Text(_error!),
+      ],
+    );
   }
 }

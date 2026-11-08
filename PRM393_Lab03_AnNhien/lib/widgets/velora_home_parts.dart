@@ -141,29 +141,30 @@ class VeloraScheduleCard extends StatelessWidget {
             child: Padding(
                 padding: const EdgeInsets.all(AppSpacing.base),
                 child: ReadAloudRegion(
+                    inline: true,
                     child: Row(children: [
-                  Container(
-                      width: 48,
-                      height: 56,
-                      decoration: BoxDecoration(
-                          color: colors.primary, borderRadius: AppRadius.mdAll),
-                      child: Icon(HabitStyle.iconOf(task.habitKey),
-                          color: colors.onPrimary)),
-                  const SizedBox(width: AppSpacing.md),
-                  Expanded(
-                      child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                        Text(task.title,
-                            style: theme.textTheme.bodyLarge
-                                ?.copyWith(fontWeight: FontWeight.w600)),
-                        const SizedBox(height: AppSpacing.xs),
-                        Text(
-                            '$time · ${task.durationMinutes} phút · ${task.status.label}',
-                            style: theme.textTheme.bodySmall
-                                ?.copyWith(color: colors.onSurfaceVariant)),
-                      ])),
-                  const Icon(Icons.chevron_right_rounded),
-                ])))));
+                      Container(
+                          width: 48,
+                          height: 56,
+                          decoration: BoxDecoration(
+                              color: colors.primary,
+                              borderRadius: AppRadius.mdAll),
+                          child: Icon(HabitStyle.iconOf(task.habitKey),
+                              color: colors.onPrimary)),
+                      const SizedBox(width: AppSpacing.md),
+                      Expanded(
+                          child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                            Text(task.title,
+                                style: theme.textTheme.bodyLarge
+                                    ?.copyWith(fontWeight: FontWeight.w600)),
+                            const SizedBox(height: AppSpacing.xs),
+                            Text(
+                                '$time · ${task.durationMinutes} phút · ${task.status.label}',
+                                style: theme.textTheme.bodySmall
+                                    ?.copyWith(color: colors.onSurfaceVariant)),
+                          ])),
+                    ])))));
   }
 }
