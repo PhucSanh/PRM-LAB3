@@ -15,6 +15,8 @@ test('FCM chunks at 500, keeps private content out of tray and sets stable tag',
   assert.deepEqual(batches.map(b=>b.tokens.length),[500,1]);
   assert.equal(batches[0].android.notification.tag,'notice');
   assert.equal(batches[0].android.notification.channelId,'an_nhien_updates');
+  assert.equal(batches[0].android.notification.sound,'default');
+  assert.equal(batches[0].android.notification.defaultVibrateTimings,true);
   assert.equal(batches[0].data.recipient_uid,'user');
   assert.equal(batches[0].data.kind,'family');
   assert.equal(JSON.stringify(batches).includes('Private'),false);
@@ -35,4 +37,12 @@ test('trusted admin campaign content reaches FCM notification',async()=>{
  const f=fixture(1);let notification;
  await sendInboxPush(f.db,{sendEachForMulticast:async message=>{notification=message.notification;return {responses:[{success:true}]};}},{uid:'user',id:'campaign',data:{event:'admin_campaign',campaignId:'trusted',title:'Vận động',body:'Đi bộ nhẹ nhé'}},f.now);
  assert.deepEqual(notification,{title:'Vận động',body:'Đi bộ nhẹ nhé'});
+});
+test('completion push signals progress without exposing task details on lock screen',async()=>{
+ const f=fixture(1);let message;
+ await sendInboxPush(f.db,{sendEachForMulticast:async m=>{message=m;return {responses:[{success:true}]};}},
+ {uid:'user',id:'completed',data:{event:'task_completed',kind:'family',title:'Private task',body:'Private health detail',parentUid:'parent',route:'/caregiver/schedule?date=2026-11-08'}},f.now);
+ assert.equal(message.notification.title,'Bác đã hoàn thành một việc');
+ assert.equal(message.data.route,'/caregiver/schedule?date=2026-11-08');
+ assert.equal(JSON.stringify(message).includes('Private'),false);
 });
