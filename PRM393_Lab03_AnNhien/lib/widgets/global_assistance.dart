@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/task_item.dart';
+import '../models/user_profile.dart';
+import '../viewmodels/account_view_model.dart';
+import '../viewmodels/caregiver_form_view_model.dart';
 import '../router/app_router.dart';
 import '../services/assistant_service.dart';
 import '../theme/app_spacing.dart';
@@ -9,6 +12,7 @@ import '../viewmodels/device_access_view_model.dart';
 import '../viewmodels/family_actions_view_model.dart';
 import 'app_button.dart';
 import 'assistant_mascot.dart';
+import 'assistant_bubble.dart';
 import 'form_parts.dart';
 import 'voice_task_review.dart';
 import 'undo_snackbar.dart';
@@ -42,7 +46,12 @@ class _GlobalAssistanceState extends ConsumerState<GlobalAssistance> {
   }
 
   void _routeChanged() {
-    if (mounted) ref.read(speechViewModelProvider.notifier).stop();
+    if (mounted) {
+      ref.read(speechViewModelProvider.notifier).stop();
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) setState(() {});
+      });
+    }
   }
 
   Future<bool> _handleBack() async {
@@ -117,6 +126,11 @@ class _GlobalAssistanceState extends ConsumerState<GlobalAssistance> {
   Widget build(BuildContext context) {
     ref.watch(speechViewModelProvider);
     final colors = Theme.of(context).colorScheme;
+    final path = _router.routeInformationProvider.value.uri.path;
+    // Tab roots already expose a voice assistant. Avoid two overlapping targets.
+    final showPet = path != '/calendar' &&
+        path != '/calendar/day' &&
+        !AssistantBubble.shellPaths.contains(path);
     ref.listen(assistantViewModelProvider, (before, next) {
       if (!_open || next.action == null || before?.action == next.action) {
         return;
@@ -147,7 +161,7 @@ class _GlobalAssistanceState extends ConsumerState<GlobalAssistance> {
                   Offset(point.dx.clamp(0.0, maxX), point.dy.clamp(0.0, maxY));
               return Stack(fit: StackFit.expand, children: [
                 KeyedSubtree(key: _screenKey, child: widget.child),
-                if (!_open)
+                if (!_open && showPet)
                   Positioned(
                       left: position.dx,
                       top: position.dy,
@@ -224,11 +238,27 @@ class _GlobalAssistanceState extends ConsumerState<GlobalAssistance> {
                                                 : _ConversationPanel(
                                                     onNavigate: _navigate,
                                                     onRead: _readScreen,
-                                                    onCreate: (text) =>
-                                                        setState(() {
-                                                          _initialTask = text;
-                                                          _addingTask = true;
-                                                        }))),
+                                                    onCreate: (text) {
+                                                      if (ref
+                                                              .read(
+                                                                  profileProvider)
+                                                              .value
+                                                              ?.role ==
+                                                          UserRole.caregiver) {
+                                                        ref
+                                                            .read(
+                                                                caregiverFormViewModelProvider
+                                                                    .notifier)
+                                                            .start();
+                                                        _navigate(
+                                                            '/caregiver/task/new');
+                                                        return;
+                                                      }
+                                                      setState(() {
+                                                        _initialTask = text;
+                                                        _addingTask = true;
+                                                      });
+                                                    })),
                                       ]))))))
                 ],
               ]);
@@ -267,6 +297,8 @@ class _ConversationPanelState extends ConsumerState<_ConversationPanel> {
 
   @override
   Widget build(BuildContext context) {
+    final caregiver =
+        ref.watch(profileProvider).value?.role == UserRole.caregiver;
     final state = ref.watch(assistantViewModelProvider);
     final vm = ref.read(assistantViewModelProvider.notifier);
     final colors = Theme.of(context).colorScheme;
@@ -367,12 +399,13 @@ class _ConversationPanelState extends ConsumerState<_ConversationPanel> {
                     icon: state.action == AssistantAction.editTask
                         ? Icons.edit_calendar_rounded
                         : Icons.delete_outline_rounded,
-                    onPressed: () => widget.onNavigate(
-                        '/today/task/${Uri.encodeComponent(task.id)}/edit?date=${dateKey(state.day!)}')),
+                    onPressed: () => widget.onNavigate(caregiver
+                        ? '/caregiver/task/${Uri.encodeComponent(task.id)}?date=${dateKey(state.day!)}'
+                        : '/today/task/${Uri.encodeComponent(task.id)}/edit?date=${dateKey(state.day!)}')),
               ],
               const SizedBox(height: AppSpacing.base),
               const Text(
-                  'Cháu sẽ mở việc Bác chọn để Bác sửa hoặc bấm Xoá và chọn phạm vi trước khi xác nhận.'),
+                  'Cháu sẽ mở việc Bác chọn để Bác kiểm tra và xác nhận thay đổi.'),
             ],
             if (state.action == AssistantAction.callFamily) ...[
               const Text(

@@ -150,6 +150,7 @@ Future<TimeOfDay?> showTimeWheel(
   BuildContext context, {
   TimeOfDay? initial,
   String title = 'Giờ làm',
+  DateTime? date,
   IconData icon = AppIcons.clock,
 }) =>
     showDialog<TimeOfDay>(
@@ -157,6 +158,7 @@ Future<TimeOfDay?> showTimeWheel(
         builder: (_) => TimeGridDialog(
             initial: initial ?? const TimeOfDay(hour: 8, minute: 0),
             title: title,
+            date: date,
             icon: icon));
 
 /// Giữ tên public để các màn dùng chung API; giao diện hiện là bánh xe giờ/phút.
@@ -165,9 +167,11 @@ class TimeGridDialog extends StatefulWidget {
       {super.key,
       required this.initial,
       required this.title,
+      this.date,
       this.icon = AppIcons.clock});
   final TimeOfDay initial;
   final String title;
+  final DateTime? date;
   final IconData icon;
   @override
   State<TimeGridDialog> createState() => _TimeGridDialogState();
@@ -179,6 +183,10 @@ class _TimeGridDialogState extends State<TimeGridDialog> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final scale = MediaQuery.textScalerOf(context).scale(1);
+    final date = widget.date;
+    final isPast = date != null &&
+        DateTime(date.year, date.month, date.day, _value.hour, _value.minute)
+            .isBefore(DateTime.now());
     return Dialog(
         insetPadding: const EdgeInsets.all(AppSpacing.screen),
         child: SingleChildScrollView(
@@ -209,14 +217,18 @@ class _TimeGridDialogState extends State<TimeGridDialog> {
                               () => _value = TimeOfDay.fromDateTime(date))))),
               Semantics(
                   liveRegion: true,
-                  child: Text('Bác chọn: ${formatTimeOfDay(_value)}',
+                  child: Text(
+                      isPast
+                          ? 'Bác chọn giờ sau thời điểm hiện tại nhé.'
+                          : 'Bác chọn: ${formatTimeOfDay(_value)}',
                       style: theme.textTheme.titleMedium,
                       textAlign: TextAlign.center)),
               const SizedBox(height: AppSpacing.base),
               AppButton(
                   label: 'Lưu giờ',
                   icon: AppIcons.save,
-                  onPressed: () => Navigator.of(context).pop(_value)),
+                  onPressed:
+                      isPast ? null : () => Navigator.of(context).pop(_value)),
               const SizedBox(height: AppSpacing.betweenTargets),
               AppButton(
                   label: 'Hủy',

@@ -94,7 +94,8 @@ void main() {
         .descendant(
             of: find.byType(ListView).first, matching: find.byType(Scrollable))
         .first;
-    await tester.scrollUntilVisible(find.text('Đổi ngày hoặc lịch lặp'), 250,
+    await tester.scrollUntilVisible(
+        find.widgetWithText(AppButton, 'Đổi ngày hoặc lịch lặp'), 250,
         scrollable: scroll);
     await tester.tap(find.text('Đổi ngày hoặc lịch lặp'));
     await tester.pumpAndSettle();
@@ -162,6 +163,8 @@ void main() {
         find.byWidgetPredicate((w) => w is AppButton && w.label == 'Ghép nối'));
     expect(action().onPressed, isNull);
     final field = find.byType(TextField);
+    await tester.scrollUntilVisible(field, 200,
+        scrollable: find.byType(Scrollable).last);
     await tester.enterText(field, '12a 3456');
     await tester.pumpAndSettle();
     expect(tester.widget<TextField>(field).controller!.text, '123456');
@@ -186,6 +189,8 @@ void main() {
                 of: find.byType(ListView).first,
                 matching: find.byType(Scrollable))
             .first);
+    await tester.ensureVisible(find.textContaining('15:00'));
+    await tester.pumpAndSettle();
     await tester.tap(find.textContaining('15:00'));
     await tester.pumpAndSettle();
     task = c.read(caregiverFormViewModelProvider).task;
@@ -268,8 +273,12 @@ void main() {
     vm.consent(false);
     expect(await vm.submit(), false);
     expect(c.read(caregiverFormViewModelProvider).conflicts, isNotEmpty);
-    schedules.fail = true;
+    // Direct writes cannot override the shared schedule conflict rule.
     expect(await vm.submit(allowConflict: true), false);
+    vm.updateTask(
+        c.read(caregiverFormViewModelProvider).task.copyWith(hour: 10));
+    schedules.fail = true;
+    expect(await vm.submit(), false);
     expect(c.read(caregiverFormViewModelProvider).task.title, 'Đi bộ cùng mẹ');
     schedules.fail = false;
     expect(await vm.submit(allowConflict: true), true);

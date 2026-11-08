@@ -14,7 +14,9 @@ async function sendInboxPush(db, messaging, {uid,id,data}, now=Date.now()) {
     const chunk=fresh.slice(offset,offset+500);
     const result=await messaging.sendEachForMulticast({
       tokens:chunk.map(doc=>doc.data().token),
-      notification:{title:'An Nhiên',body:'Bạn có thông báo mới. Mở An Nhiên để xem nhé.'},
+      notification: data.event==='admin_campaign' && data.campaignId
+        ? {title:data.title,body:data.body}
+        : {title:'An Nhiên',body:'Bạn có thông báo mới. Mở An Nhiên để xem nhé.'},
       data:{notification_id:id,recipient_uid:uid,
         parent_uid:typeof data.parentUid==='string'?data.parentUid:'',
         kind:['family','reminder'].includes(data.kind)?data.kind:'system',

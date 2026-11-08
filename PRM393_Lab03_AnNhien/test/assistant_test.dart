@@ -2,6 +2,9 @@ import 'dart:async';
 import 'package:an_nhien/app.dart';
 import 'package:an_nhien/models/task_item.dart';
 import 'package:an_nhien/models/relative.dart';
+import 'package:an_nhien/models/user_profile.dart';
+import 'package:an_nhien/services/caregiver_schedule_service.dart';
+import 'package:an_nhien/viewmodels/account_view_model.dart';
 import 'package:an_nhien/router/app_router.dart';
 import 'package:an_nhien/services/assistant_service.dart';
 import 'package:an_nhien/services/providers.dart';
@@ -26,7 +29,51 @@ class TestAssistant implements AssistantService {
 }
 
 void main() {
-  test('call action only offers the requested relation, including local replies',
+  test('caregiver assistant reads paired parent schedule instead of own tasks',
+      () async {
+    final assistant = TestAssistant()
+      ..result = const AssistantReply('Lịch', AssistantAction.schedule);
+    final schedules = FakeCaregiverScheduleService([
+      const TaskItem(
+          id: 'parent',
+          title: 'Việc của mẹ',
+          habitKey: 'move',
+          hour: 9,
+          minute: 0),
+    ]);
+    addTearDown(schedules.dispose);
+    final c = demoContainer(
+        role: UserRole.caregiver,
+        assistant: assistant,
+        schedules: schedules,
+        device: TestDevice(),
+        tasks: [
+          const TaskItem(
+              id: 'child',
+              title: 'Việc riêng của con',
+              habitKey: 'move',
+              hour: 10,
+              minute: 0),
+        ]);
+    addTearDown(c.dispose);
+    final session = c.listen(sessionProvider, (_, __) {});
+    addTearDown(session.close);
+    await c.read(sessionProvider.future);
+    final profile = c.listen(profileProvider, (_, __) {});
+    addTearDown(profile.close);
+    await c.read(profileProvider.future);
+    await c.read(assistantViewModelProvider.notifier).send('Xem lịch của mẹ');
+    expect(
+        c.read(assistantViewModelProvider).tasks.map((t) => t.id), ['parent']);
+    assistant.result =
+        const AssistantReply('Chọn việc', AssistantAction.editTask);
+    await c.read(assistantViewModelProvider.notifier).send('Sửa lịch');
+    expect(
+        c.read(assistantViewModelProvider).tasks.map((t) => t.id), ['parent']);
+  });
+
+  test(
+      'call action only offers the requested relation, including local replies',
       () async {
     final assistant = TestAssistant()
       ..result = const AssistantReply('Chọn người', AssistantAction.callFamily);
@@ -42,7 +89,8 @@ void main() {
         id: 'wife', name: 'Lan', relation: 'Vợ', phone: '0987654321'));
     final vm = c.read(assistantViewModelProvider.notifier);
     await vm.send('Gọi cho con trai');
-    expect(c.read(assistantViewModelProvider).contacts.map((p) => p.id), ['son']);
+    expect(
+        c.read(assistantViewModelProvider).contacts.map((p) => p.id), ['son']);
     await vm.send('Gọi cháu gái');
     expect(c.read(assistantViewModelProvider).contacts, isEmpty);
     expect(c.read(assistantViewModelProvider).messages.last.text,

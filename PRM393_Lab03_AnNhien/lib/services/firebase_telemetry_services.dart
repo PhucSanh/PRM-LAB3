@@ -1,3 +1,6 @@
+import 'dart:async';
+import 'package:flutter/widgets.dart';
+import 'package:cloud_functions/cloud_functions.dart';
 import 'package:firebase_analytics/firebase_analytics.dart';
 import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:firebase_remote_config/firebase_remote_config.dart';
@@ -5,8 +8,44 @@ import 'analytics_service.dart';
 import 'crash_service.dart';
 import 'remote_config_service.dart';
 
-class FirebaseAnalyticsService implements AnalyticsService {
-  FirebaseAnalyticsService(this.sdk);
+class FirebaseAnalyticsService
+    with WidgetsBindingObserver
+    implements AnalyticsService {
+  FirebaseAnalyticsService(this.sdk, {FirebaseFunctions? functions})
+      : _functions = functions ??
+            FirebaseFunctions.instanceFor(region: 'asia-southeast1') {
+    WidgetsBinding.instance.addObserver(this);
+  }
+  final FirebaseFunctions _functions;
+  String? _uid;
+  DateTime? _lastHeartbeat;
+  bool _heartbeatPending = false;
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      unawaited(_recordActivity());
+    }
+  }
+
+  Future<void> _recordActivity() async {
+    if (_uid == null || _heartbeatPending) return;
+    final now = DateTime.now();
+    if (_lastHeartbeat != null &&
+        now.difference(_lastHeartbeat!) < const Duration(minutes: 1)) {
+      return;
+    }
+    final uid = _uid;
+    _heartbeatPending = true;
+    try {
+      await _functions.httpsCallable('recordAppActivity').call<void>();
+      if (_uid == uid) _lastHeartbeat = now;
+    } catch (_) {/* Analytics failure must not block app use. */} finally {
+      _heartbeatPending = false;
+    }
+  }
+
+  void dispose() => WidgetsBinding.instance.removeObserver(this);
   final FirebaseAnalytics sdk;
   // Telemetry must not turn a successful user action into a UI failure.
   @override
@@ -18,6 +57,9 @@ class FirebaseAnalyticsService implements AnalyticsService {
 
   @override
   Future<void> setUserId(String? uid) async {
+    if (_uid != uid) _lastHeartbeat = null;
+    _uid = uid;
+    unawaited(_recordActivity());
     try {
       await sdk.setUserId(id: uid);
     } catch (_) {/* best effort */}

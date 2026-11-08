@@ -89,16 +89,19 @@ class _CaregiverFormScreenState extends ConsumerState<CaregiverFormScreen> {
     var ok = await vm.submit();
     if (!mounted) return;
     if (!ok && ref.read(caregiverFormViewModelProvider).conflicts.isNotEmpty) {
+      final input = ref.read(caregiverFormViewModelProvider);
+      final canSend = input.original == null && input.needsConsent;
       final send = await showConfirmDialog<bool>(context,
           icon: Icons.schedule_rounded,
           title: 'Có việc trùng giờ',
           message:
               'Lịch trùng giờ với việc đã có trong lịch. Mẹ có thể khó làm cả hai việc.',
-          options: const [
-            ConfirmOption(
+          options: [
+            const ConfirmOption(
                 label: 'Đổi giờ khác', icon: Icons.edit_rounded, value: false),
-            ConfirmOption(
-                label: 'Vẫn gửi', icon: Icons.send_rounded, value: true)
+            if (canSend)
+              const ConfirmOption(
+                  label: 'Vẫn gửi', icon: Icons.send_rounded, value: true)
           ]);
       if (!mounted) return;
       if (send == true) {

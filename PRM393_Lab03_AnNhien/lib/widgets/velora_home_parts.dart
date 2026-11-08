@@ -84,7 +84,7 @@ class VeloraHomeDiscovery extends ConsumerWidget {
                     eyebrow: 'DÀNH CHO BÁC',
                     title: featured.name,
                     label: 'Khám phá',
-                    onPressed: () => open(featured)),
+                    onPressed: () => context.push('/activities/discover')),
                 const SizedBox(height: AppSpacing.lg),
                 Row(children: [
                   Expanded(

@@ -131,7 +131,7 @@ void main() {
     const UserProfile(uid: 'u', role: UserRole.elder): '/welcome',
     const UserProfile(uid: 'u', role: UserRole.elder, onboarded: true):
         '/calendar',
-    const UserProfile(uid: 'u', role: UserRole.caregiver): '/caregiver/pair',
+    const UserProfile(uid: 'u', role: UserRole.caregiver): '/activities',
     const UserProfile(uid: 'u', role: UserRole.caregiver, pairedMomUid: 'mom'):
         '/caregiver/schedule',
   }.entries) {
@@ -147,6 +147,20 @@ void main() {
       router.go('/sign-in');
       await tester.pumpAndSettle();
       expect(router.routeInformationProvider.value.uri.path, entry.value);
+      if (entry.key.role == UserRole.caregiver && entry.key.pairedMomUid == null) {
+        // Pairing is optional: browsing and settings remain reachable.
+        for (final path in ['/settings', '/caregiver/schedule', '/activities']) {
+          router.go(path);
+          await tester.pumpAndSettle();
+          expect(router.routeInformationProvider.value.uri.path, path);
+        }
+        router.go('/caregiver/pair');
+        await tester.pumpAndSettle();
+        await tester.ensureVisible(find.text('Để sau, khám phá ứng dụng'));
+        await tester.tap(find.text('Để sau, khám phá ứng dụng'));
+        await tester.pumpAndSettle();
+        expect(router.routeInformationProvider.value.uri.path, '/activities');
+      }
       await auth.signOut();
       await tester.pumpAndSettle();
       expect(router.routeInformationProvider.value.uri.path, '/sign-in');
@@ -176,7 +190,7 @@ void main() {
       await vm.submit();
       await tester.pumpAndSettle();
       expect(router.routeInformationProvider.value.uri.path,
-          role == UserRole.elder ? '/welcome' : '/caregiver/pair');
+          role == UserRole.elder ? '/welcome' : '/activities');
       expect((await tester.runAsync(() => profiles.watch('new').first))!.role,
           role);
       router.go('/account');

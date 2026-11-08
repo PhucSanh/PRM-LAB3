@@ -64,3 +64,24 @@ exports.talkToAssistant = onCall({...options,secrets:[groqKey],timeoutSeconds:30
     throw new HttpsError('internal','Chưa kết nối được với trợ lý. Bác thử lại nhé.');
   }
 });
+
+// Admin web APIs. Custom claim is checked server-side on every request.
+const {createAdminService} = require('./admin.cjs');
+const {onSchedule} = require('firebase-functions/v2/scheduler');
+const adminService=createAdminService(db);
+const adminCallable=fn=>onCall({...options,timeoutSeconds:120},async request=>{
+  try{return await fn(request.auth,request.data||{});}
+  catch(error){if(error instanceof HttpsError)throw error;console.error('Admin API failed',{code:error.code||'unknown'});throw new HttpsError('internal','Không tải được dữ liệu. Vui lòng thử lại.');}
+});
+exports.adminDashboard=adminCallable(adminService.dashboard);
+exports.adminCreateCampaign=adminCallable(adminService.createCampaign);
+exports.adminCancelCampaign=adminCallable(adminService.cancelCampaign);
+exports.recordAppActivity=adminCallable(adminService.recordActivity);
+exports.dispatchAdminCampaign=onDocumentCreated({...options,document:'adminCampaigns/{id}',retry:true},event=>adminService.dispatchCampaign(event.params.id));
+exports.processAdminCampaignQueue=onSchedule({...options,schedule:'every 1 minutes',timeZone:'Asia/Bangkok',timeoutSeconds:120},()=>adminService.processQueue());
+
+const {getAuth}=require('firebase-admin/auth');
+const {createAdminLogin}=require('./admin-login.cjs');
+const adminPassword=defineSecret('ADMIN_LOGIN_PASSWORD');
+const adminSignIn=createAdminLogin(db,getAuth(),{getPassword:()=>adminPassword.value()});
+exports.adminSignIn=onCall({...options,secrets:[adminPassword],concurrency:8},adminSignIn);

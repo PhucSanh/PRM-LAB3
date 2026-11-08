@@ -67,8 +67,11 @@ final habitRepositoryProvider = Provider<HabitRepository>(
     (ref) => FirebaseHabitRepository(ref.watch(_userDataProvider)));
 final familyRepositoryProvider = Provider<FamilyRepository>(
     (ref) => FirebaseFamilyRepository(ref.watch(_userDataProvider)));
-final analyticsServiceProvider = Provider<AnalyticsService>(
-    (ref) => FirebaseAnalyticsService(FirebaseAnalytics.instance));
+final analyticsServiceProvider = Provider<AnalyticsService>((ref) {
+  final service = FirebaseAnalyticsService(FirebaseAnalytics.instance);
+  ref.onDispose(service.dispose);
+  return service;
+});
 final crashServiceProvider = Provider<CrashService>(
     (ref) => FirebaseCrashService(FirebaseCrashlytics.instance));
 final remoteConfigServiceProvider = Provider<RemoteConfigService>(
