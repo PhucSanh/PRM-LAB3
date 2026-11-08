@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/task_item.dart';
+import '../models/user_profile.dart';
+import '../viewmodels/account_view_model.dart';
+import '../viewmodels/caregiver_form_view_model.dart';
 import '../router/app_router.dart';
 import '../services/assistant_service.dart';
 import '../theme/app_spacing.dart';
@@ -224,11 +227,27 @@ class _GlobalAssistanceState extends ConsumerState<GlobalAssistance> {
                                                 : _ConversationPanel(
                                                     onNavigate: _navigate,
                                                     onRead: _readScreen,
-                                                    onCreate: (text) =>
-                                                        setState(() {
-                                                          _initialTask = text;
-                                                          _addingTask = true;
-                                                        }))),
+                                                    onCreate: (text) {
+                                                      if (ref
+                                                              .read(
+                                                                  profileProvider)
+                                                              .value
+                                                              ?.role ==
+                                                          UserRole.caregiver) {
+                                                        ref
+                                                            .read(
+                                                                caregiverFormViewModelProvider
+                                                                    .notifier)
+                                                            .start();
+                                                        _navigate(
+                                                            '/caregiver/task/new');
+                                                        return;
+                                                      }
+                                                      setState(() {
+                                                        _initialTask = text;
+                                                        _addingTask = true;
+                                                      });
+                                                    })),
                                       ]))))))
                 ],
               ]);
@@ -267,6 +286,8 @@ class _ConversationPanelState extends ConsumerState<_ConversationPanel> {
 
   @override
   Widget build(BuildContext context) {
+    final caregiver =
+        ref.watch(profileProvider).value?.role == UserRole.caregiver;
     final state = ref.watch(assistantViewModelProvider);
     final vm = ref.read(assistantViewModelProvider.notifier);
     final colors = Theme.of(context).colorScheme;
@@ -367,12 +388,13 @@ class _ConversationPanelState extends ConsumerState<_ConversationPanel> {
                     icon: state.action == AssistantAction.editTask
                         ? Icons.edit_calendar_rounded
                         : Icons.delete_outline_rounded,
-                    onPressed: () => widget.onNavigate(
-                        '/today/task/${Uri.encodeComponent(task.id)}/edit?date=${dateKey(state.day!)}')),
+                    onPressed: () => widget.onNavigate(caregiver
+                        ? '/caregiver/task/${Uri.encodeComponent(task.id)}?date=${dateKey(state.day!)}'
+                        : '/today/task/${Uri.encodeComponent(task.id)}/edit?date=${dateKey(state.day!)}')),
               ],
               const SizedBox(height: AppSpacing.base),
               const Text(
-                  'Cháu sẽ mở việc Bác chọn để Bác sửa hoặc bấm Xoá và chọn phạm vi trước khi xác nhận.'),
+                  'Cháu sẽ mở việc Bác chọn để Bác kiểm tra và xác nhận thay đổi.'),
             ],
             if (state.action == AssistantAction.callFamily) ...[
               const Text(

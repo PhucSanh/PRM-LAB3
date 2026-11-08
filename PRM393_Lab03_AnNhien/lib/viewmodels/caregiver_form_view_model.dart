@@ -159,7 +159,8 @@ class CaregiverFormViewModel extends Notifier<CaregiverFormState> {
               task.id != input.original?.id &&
               schedulesConflict(candidate, task))
           .toList();
-      if (!allowConflict && conflicts.isNotEmpty) {
+      final canSendSuggestion = input.original == null && input.needsConsent;
+      if (conflicts.isNotEmpty && (!allowConflict || !canSendSuggestion)) {
         if (ref.mounted) {
           state = input.copyWith(
               conflicts: conflicts,
