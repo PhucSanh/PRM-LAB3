@@ -13,7 +13,7 @@ import 'form_parts.dart';
 class AssistantBubble extends ConsumerWidget {
   const AssistantBubble({super.key});
 
-  static const double size = 72;
+  static const double size = 60;
 
   /// Khoảng trống cuối danh sách để nội dung cuối không nằm dưới bong bóng.
   static const double clearance = size + AppSpacing.lg;
@@ -48,15 +48,7 @@ class AssistantBubble extends ConsumerWidget {
             foregroundColor: colors.onPrimary,
             elevation: 4,
             shape: const CircleBorder(),
-            child: Stack(clipBehavior: Clip.none, children: [
-              const Icon(AppIcons.mic, size: AppSizes.icon + 8),
-              Positioned(
-                right: -AppSpacing.sm,
-                top: -AppSpacing.sm,
-                child: Icon(Icons.auto_awesome_rounded,
-                    size: AppSizes.icon * .7, color: colors.onPrimary),
-              ),
-            ]),
+            child: const Icon(Icons.auto_awesome_rounded, size: 30),
           ),
         ),
       ),

@@ -42,7 +42,7 @@ class HabitPhotoFeature extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context), colors = theme.colorScheme;
-    final onPhoto = colors.surface;
+    const onPhoto = Colors.white;
     return Semantics(
       button: true,
       label: '$title. ${subtitle ?? ''}',
@@ -81,7 +81,7 @@ class HabitPhotoFeature extends StatelessWidget {
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         _Chip(text: eyebrow),
-                        const SizedBox(height: 88),
+                        const SizedBox(height: 48),
                         Text(title,
                             style: theme.textTheme.headlineSmall
                                 ?.copyWith(color: onPhoto)),
@@ -101,7 +101,7 @@ class HabitPhotoFeature extends StatelessWidget {
                                     ?.copyWith(color: onPhoto)),
                           ),
                           const SizedBox(width: AppSpacing.sm),
-                          Icon(Icons.arrow_forward_rounded,
+                          const Icon(Icons.arrow_forward_rounded,
                               color: onPhoto, size: AppSizes.icon),
                         ]),
                       ]),
