@@ -16,12 +16,14 @@ async function sendInboxPush(db, messaging, {uid,id,data}, now=Date.now()) {
       tokens:chunk.map(doc=>doc.data().token),
       notification: data.event==='admin_campaign' && data.campaignId
         ? {title:data.title,body:data.body}
-        : {title:'An Nhiên',body:'Bạn có thông báo mới. Mở An Nhiên để xem nhé.'},
+        : data.event==='task_completed'
+          ? {title:'Bác đã hoàn thành một việc',body:'Mở lịch để xem cập nhật từ người thân.'}
+          : {title:'An Nhiên',body:'Bạn có thông báo mới. Mở An Nhiên để xem nhé.'},
       data:{notification_id:id,recipient_uid:uid,
         parent_uid:typeof data.parentUid==='string'?data.parentUid:'',
         kind:['family','reminder'].includes(data.kind)?data.kind:'system',
         route:typeof data.route==='string'?data.route:'/inbox'},
-      android:{priority:'high',notification:{tag:id,channelId:'an_nhien_updates',icon:'ic_notification'}},
+      android:{priority:'high',notification:{tag:id,channelId:'an_nhien_updates',icon:'ic_notification',sound:'default',defaultVibrateTimings:true}},
     });
     await Promise.all(result.responses.map((response,i)=>
       response.error?.code==='messaging/registration-token-not-registered'?chunk[i].ref.delete():null));

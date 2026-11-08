@@ -49,6 +49,23 @@ void main() {
           ..addFont(rootBundle.load('fonts/MaterialIcons-Regular.otf')))
         .load();
   });
+  testWidgets('linked caregiver sees completed progress for the selected day',
+      (tester) async {
+    final schedules = FakeCaregiverScheduleService([
+      seed().copyWith(status: TaskStatus.done),
+      seed().copyWith(id: 'tea', title: 'Uống trà', hour: 10),
+    ]);
+    final c = demoContainer(
+        schedules: schedules, initialRoute: '/caregiver/schedule');
+    await mount(tester, c);
+    expect(find.text('Lịch của Bác'), findsOneWidget);
+    await tester.scrollUntilVisible(find.text('Đã hoàn thành 1/2 việc'), 180,
+        scrollable: find.byType(Scrollable).first);
+    expect(find.text('Đã hoàn thành 1/2 việc'), findsOneWidget);
+    await unmount(tester, c);
+    await schedules.dispose();
+  });
+
   testWidgets('untouched form exits without discard dialog', (tester) async {
     final c = demoContainer();
     await mount(tester, c);
@@ -212,7 +229,7 @@ void main() {
     final router = c.read(routerProvider);
     router.go('/caregiver/schedule');
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Tạo lịch cho mẹ'));
+    await tester.tap(find.text('Tạo lịch cho Bác'));
     await tester.pumpAndSettle();
     // Blank form cannot advance and provides a concrete example.
     await tester.tap(find.text('Xem lại'));

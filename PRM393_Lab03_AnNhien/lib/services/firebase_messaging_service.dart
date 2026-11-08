@@ -13,7 +13,8 @@ import 'messaging_service.dart';
 class FirebaseMessagingService
     with WidgetsBindingObserver
     implements MessagingService {
-  FirebaseMessagingService(this.sdk, this.db, this.auth);
+  FirebaseMessagingService(this.sdk, this.db, this.auth, {this.showForeground});
+  final Future<void> Function(AppNotification item, String uid)? showForeground;
   final FirebaseMessaging sdk;
   final FirebaseFirestore db;
   final FirebaseAuth auth;
@@ -46,7 +47,12 @@ class FirebaseMessagingService
     _subscriptions.add(FirebaseMessaging.onMessage.listen((message) {
       if (!_disposed &&
           message.data['recipient_uid'] == auth.currentUser?.uid) {
-        _received.add(_map(message));
+        final item = _map(message);
+        _received.add(item);
+        final uid = auth.currentUser?.uid;
+        if (uid != null && showForeground != null) {
+          unawaited(showForeground!(item, uid).catchError((Object _) {}));
+        }
       }
     }));
     _subscriptions.add(FirebaseMessaging.onMessageOpenedApp.listen((m) {

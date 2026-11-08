@@ -4,6 +4,7 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:timezone/data/latest.dart' as tzdata;
 import 'package:timezone/timezone.dart' as tz;
 import '../models/app_notification.dart';
+import '../models/notification_target.dart';
 import '../models/task_item.dart';
 import '../models/voice_task_draft.dart' show durationText;
 import '../utils/app_error.dart';
@@ -125,6 +126,8 @@ class LocalReminderService implements ReminderService {
           'Gia đình và hệ thống',
           description: 'Cập nhật lịch, kết nối và thông báo từ An Nhiên',
           importance: Importance.high,
+          playSound: true,
+          enableVibration: true,
         ));
         final launch = await sdk.getNotificationAppLaunchDetails();
         if (launch?.didNotificationLaunchApp ?? false) {
@@ -142,7 +145,23 @@ class LocalReminderService implements ReminderService {
   void _open(String? payload) {
     try {
       final data = jsonDecode(payload ?? '') as Map;
-      if (data['uid'] != currentUid() || data['taskId'] is! String) return;
+      if (data['uid'] != currentUid()) return;
+      if (data['type'] == 'push' && data['notificationId'] is String) {
+        final item = AppNotification(
+            id: data['notificationId'] as String,
+            parentUid: data['parentUid'] as String?,
+            title: 'An Nhiên',
+            body: '',
+            receivedAt: DateTime.now(),
+            route: firebaseNotificationTarget(data['route'] as String?));
+        if (_opened.hasListener) {
+          _opened.add(item);
+        } else {
+          _pending = item;
+        }
+        return;
+      }
+      if (data['taskId'] is! String) return;
       final id = data['taskId'] as String;
       final item = AppNotification(
           id: 'local-$id',
@@ -159,6 +178,36 @@ class LocalReminderService implements ReminderService {
       }
     } catch (_) {/* Ignore foreign or stale notification payloads. */}
   }
+
+  /// FCM already presents background pushes. Present only foreground messages
+  /// here, using the same plugin/channel as reminders to keep tap handling intact.
+  Future<void> showForegroundPush(AppNotification item, String uid) =>
+      _run(() async {
+        if (uid != currentUid()) return;
+        final id = item.id.codeUnits.fold<int>(
+            0x10000000, (value, unit) => ((value * 31) + unit) & 0x3fffffff);
+        await sdk.show(
+            id: id,
+            title: item.title,
+            body: item.body,
+            notificationDetails: const NotificationDetails(
+                android: AndroidNotificationDetails(
+                    'an_nhien_updates', 'Gia đình và hệ thống',
+                    channelDescription:
+                        'Cập nhật lịch, kết nối và thông báo từ An Nhiên',
+                    importance: Importance.high,
+                    priority: Priority.high,
+                    playSound: true,
+                    enableVibration: true,
+                    icon: 'ic_notification')),
+            payload: jsonEncode({
+              'type': 'push',
+              'uid': uid,
+              'notificationId': item.id,
+              'parentUid': item.parentUid,
+              'route': item.route
+            }));
+      });
 
   Future<void> _serial(Future<void> Function() action) {
     final next = _queue.then((_) => action());

@@ -69,7 +69,7 @@ class _CaregiverScheduleScreenState
     final s = ref.watch(caregiverScheduleViewModelProvider),
         vm = ref.read(caregiverScheduleViewModelProvider.notifier);
     return CaregiverPage(
-        title: 'Lịch của mẹ',
+        title: 'Lịch của Bác',
         root: true,
         titleAction: IconButton(
             tooltip: 'Hộp thông báo',
@@ -77,7 +77,7 @@ class _CaregiverScheduleScreenState
             icon: const Icon(Icons.notifications_none_rounded)),
         onBack: () => context.go('/account'),
         footer: AppButton(
-            label: 'Tạo lịch cho mẹ',
+            label: 'Tạo lịch cho Bác',
             icon: Icons.add_rounded,
             wrapLabel: true,
             onPressed: ref.watch(pairedMomUidProvider) == null
@@ -180,7 +180,7 @@ class _CaregiverScheduleScreenState
                 title: 'Chưa có việc trong khoảng này',
                 message: ref.watch(pairedMomUidProvider) == null
                     ? 'Ghép nối trước để cùng xem lịch.'
-                    : 'Chọn Tạo lịch cho mẹ để thêm một việc.'),
+                    : 'Chọn Tạo lịch cho Bác để thêm một việc.'),
             UiData(:final data) => Builder(builder: (context) {
                 final selected = data
                     .where((o) => dateKey(o.date) == dateKey(s.date))
@@ -190,6 +190,31 @@ class _CaregiverScheduleScreenState
                         icon: Icons.event_available_rounded,
                         title: 'Ngày này chưa có việc')
                     : Column(children: [
+                        Card(
+                            child: Padding(
+                                padding: const EdgeInsets.all(16),
+                                child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.stretch,
+                                    children: [
+                                      Text(
+                                          'Đã hoàn thành ${selected.where((o) => o.task.status == TaskStatus.done).length}/${selected.length} việc',
+                                          style: Theme.of(context)
+                                              .textTheme
+                                              .titleMedium),
+                                      const SizedBox(height: 8),
+                                      LinearProgressIndicator(
+                                          value: selected
+                                                  .where((o) =>
+                                                      o.task.status ==
+                                                      TaskStatus.done)
+                                                  .length /
+                                              selected.length),
+                                      const SizedBox(height: 8),
+                                      const Text(
+                                          'Tự cập nhật khi Bác đánh dấu xong trên app.'),
+                                    ]))),
+                        const SizedBox(height: AppSpacing.base),
                         for (final o in selected) ...[
                           _row(context, o),
                           const SizedBox(height: AppSpacing.base)
