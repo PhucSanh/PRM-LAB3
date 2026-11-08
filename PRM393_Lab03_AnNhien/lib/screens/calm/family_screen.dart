@@ -47,6 +47,13 @@ class FamilyScreen extends ConsumerWidget {
             art: true),
         const SizedBox(height: AppSpacing.lg),
         if (caregiver) ...[
+          if (profile.asData?.value?.pairedMomUid != null) ...[
+            AppButton(
+                label: 'Xem lịch của Bác',
+                icon: Icons.calendar_month_rounded,
+                onPressed: () => context.go('/caregiver/schedule')),
+            const SizedBox(height: AppSpacing.base),
+          ],
           Text(
               profile.asData?.value?.pairedMomUid == null
                   ? 'Chưa kết nối với người thân'
