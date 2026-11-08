@@ -9,6 +9,7 @@ import '../../viewmodels/task_form_view_model.dart';
 import '../../widgets/assistant_bubble.dart';
 import '../../widgets/calm_parts.dart';
 import '../../widgets/habit_photo_cards.dart';
+import '../../widgets/activity_discovery_deck.dart';
 import '../../widgets/velora_parts.dart';
 import '../../widgets/app_button.dart';
 import '../../widgets/habit_widgets.dart';
@@ -28,9 +29,7 @@ class ActivitiesScreen extends ConsumerWidget {
       padding: const EdgeInsets.fromLTRB(AppSpacing.screen, AppSpacing.screen,
           AppSpacing.screen, AssistantBubble.clearance),
       children: [
-        const CalmPageHeader(
-            title: 'Hoạt động',
-            subtitle: 'Dành thời gian cho những điều mình yêu thích.'),
+        const CalmPageHeader(title: 'Hoạt động'),
         const SizedBox(height: AppSpacing.lg),
         ref.watch(habitsListProvider).when(
               loading: () => const LoadingView(message: 'Đang tải thói quen…'),
@@ -46,13 +45,10 @@ class ActivitiesScreen extends ConsumerWidget {
                   : Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                          HabitPhotoFeature(
-                              habitKey: habits.first.key,
-                              eyebrow: 'Gợi ý mỗi ngày',
-                              title: habits.first.name,
-                              subtitle: habits.first.description,
-                              onTap: () =>
-                                  _openHabit(context, habits.first.key)),
+                          ActivityDiscoveryDeck(
+                            onOpen: (activity) => context
+                                .push('/activities/guides/${activity.id}'),
+                          ),
                           const SizedBox(height: AppSpacing.xl),
                           Text('Các nhóm thói quen',
                               style: Theme.of(context).textTheme.titleLarge),
@@ -63,7 +59,7 @@ class ActivitiesScreen extends ConsumerWidget {
                                 MediaQuery.textScalerOf(context).scale(20) <= 26
                                     ? 2
                                     : 1;
-                            final rest = habits.skip(1).toList();
+                            final rest = habits;
                             return Column(children: [
                               for (var i = 0; i < rest.length; i += columns)
                                 Padding(
@@ -97,18 +93,6 @@ class ActivitiesScreen extends ConsumerWidget {
                           }),
                         ]),
             ),
-        const SizedBox(height: AppSpacing.xl),
-        Text('Một việc nhỏ cho hôm nay',
-            style: Theme.of(context).textTheme.titleLarge),
-        const SizedBox(height: AppSpacing.sm),
-        const Text(
-            'Có hướng dẫn ngắn, thời lượng rõ và có thể thêm ngay vào lịch.'),
-        for (final activity in guidedActivities)
-          CalmListRow(
-              title: activity.title,
-              subtitle: '${activity.minutes} phút · Xem cách làm',
-              icon: HabitStyle.iconOf(activity.habitKey),
-              onTap: () => context.push('/activities/guides/${activity.id}')),
       ],
     )));
   }

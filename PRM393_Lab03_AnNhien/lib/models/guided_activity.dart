@@ -38,6 +38,56 @@ const guidedActivities = [
     'Chọn một việc vừa sức và một thời điểm thuận tiện.',
     'Thêm việc đó vào lịch nếu Bác muốn được nhắc.',
   ]),
+  GuidedActivity('music-10', 'downshift', 'Nghe một bản nhạc yêu thích', 10, [
+    'Chọn một bản nhạc quen, chỉnh âm lượng vừa nghe.',
+    'Ngồi thoải mái, dành ít phút tận hưởng giai điệu.',
+  ]),
+  GuidedActivity('read-15', 'purpose', 'Đọc vài trang sách', 15, [
+    'Chọn sách hoặc một bài viết bạn thấy hứng thú.',
+    'Ngồi ở nơi đủ sáng và nghỉ mắt khi cần.',
+  ]),
+  GuidedActivity(
+      'photo-10', 'family', 'Xem ảnh và kể chuyện cùng con cháu', 10, [
+    'Chọn vài tấm ảnh có kỷ niệm vui.',
+    'Kể một câu chuyện và hỏi con cháu về kỷ niệm của mình.',
+  ]),
+  GuidedActivity('friend-5', 'tribe', 'Hỏi thăm một người bạn cũ', 5, [
+    'Chọn một người bạn lâu rồi chưa trò chuyện.',
+    'Gọi hoặc nhắn một lời hỏi thăm, hẹn lúc thuận tiện nếu bạn bận.',
+  ]),
+  GuidedActivity('club-15', 'belong', 'Tìm một câu lạc bộ gần nhà', 15, [
+    'Nghĩ về một sở thích bạn muốn chia sẻ cùng mọi người.',
+    'Nhờ người quen tìm một nhóm phù hợp và hỏi lịch sinh hoạt.',
+  ]),
+  GuidedActivity('salad-15', 'plant', 'Chuẩn bị một đĩa rau nhiều màu', 15, [
+    'Chọn các loại rau quen thuộc, rửa sạch trước khi chuẩn bị.',
+    'Chế biến theo khẩu vị và chế độ ăn thường ngày của bạn.',
+  ]),
+  GuidedActivity('slow-meal-15', 'eighty', 'Dành thời gian ăn chậm', 15, [
+    'Chọn một bữa ăn và cất điện thoại sang bên.',
+    'Ăn thong thả, chú ý hương vị và cảm giác vừa đủ của mình.',
+  ]),
+  GuidedActivity('journal-5', 'purpose', 'Ghi lại một điều vui hôm nay', 5, [
+    'Lấy một cuốn sổ hoặc mở ghi chú trên điện thoại.',
+    'Viết một điều khiến bạn vui, dù chỉ là chuyện rất nhỏ.',
+  ]),
+  GuidedActivity('plant-10', 'plant', 'Chăm một chậu rau nhỏ', 10, [
+    'Chọn chậu rau đặt ở vị trí dễ với tới.',
+    'Nhặt lá khô, xem đất có cần tưới và nghỉ khi thấy mỏi.',
+  ]),
+  GuidedActivity('neighbor-10', 'belong', 'Trò chuyện với người hàng xóm', 10, [
+    'Chọn lúc thuận tiện để chào hỏi một người hàng xóm quen.',
+    'Chia sẻ một chuyện nhỏ hoặc hỏi thăm ngày hôm nay của họ.',
+  ]),
+  GuidedActivity(
+      'tea-family-10', 'tea', 'Pha đồ uống và ngồi cùng người thân', 10, [
+    'Chuẩn bị đồ uống quen thuộc theo sở thích của mỗi người.',
+    'Ngồi cùng nhau và lắng nghe một câu chuyện trong ngày.',
+  ]),
+  GuidedActivity('tidy-10', 'move', 'Sắp xếp một góc nhà nhỏ', 10, [
+    'Chọn một ngăn bàn hoặc góc nhỏ dễ dọn.',
+    'Sắp từng món vừa sức, tránh nâng vật nặng hay với cao.',
+  ]),
 ];
 GuidedActivity? guidedActivityById(String id) =>
     guidedActivities.where((a) => a.id == id).firstOrNull;
