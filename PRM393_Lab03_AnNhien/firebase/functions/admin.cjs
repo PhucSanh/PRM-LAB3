@@ -29,16 +29,17 @@ async function bounded(query,max=10000){const result=await query.limit(max+1).ge
 function createAdminService(db,{now=Date.now}={}){
   async function profilesAndPresence(){const [profiles,presence]=await Promise.all([bounded(db.collection('users')),bounded(db.collection('adminPresence'))]);return {profiles,presence:new Map(presence.map(d=>[d.id,d.data()]))};}
   async function dashboard(auth,data={}){
-    requireAdmin(auth);const time=now(),today=startDay(time),b=periodBuckets(data.period||'week',time);
+    requireAdmin(auth);const time=now(),today=startDay(time),b=periodBuckets(data.period||'week',time);const warnings=[];let fallbackProfiles;
+    const optionalCount=async(query,label,group,field,cutoff)=>{try{return await count(query);}catch(error){if(error.code!==9)throw error;fallbackProfiles||=bounded(db.collection('users'));const users=await fallbackProfiles;const values=await Promise.all(users.map(u=>count(db.collection(`users/${u.id}/${group}`).where(field,'>=',cutoff))));warnings.push(label+': đang dùng truy vấn theo người dùng trong lúc xây index');return values.reduce((a,b)=>a+b,0);}};
     const [{profiles,presence},tasks,doneToday,skippedToday,postponedToday,links,campaigns,daily,registeredDevices,notificationsToday,notificationsReadToday]=await Promise.all([
       profilesAndPresence(),count(db.collectionGroup('tasks')),count(db.collectionGroup('completions').where('date','==',dateKey(time)).where('status','==','done')),
       count(db.collectionGroup('completions').where('date','==',dateKey(time)).where('status','==','skipped')),
       count(db.collectionGroup('completions').where('date','==',dateKey(time)).where('status','==','postponed')),
       count(db.collectionGroup('caregivers')),db.collection('adminCampaigns').orderBy('createdAt','desc').limit(20).get(),
       db.collection('adminDaily').doc(dateKey(time)).get(),
-      count(db.collectionGroup('devices').where('updatedAt','>=',Timestamp.fromMillis(time-30*DAY))),
-      count(db.collectionGroup('notifications').where('receivedAt','>=',Timestamp.fromMillis(today))),
-      count(db.collectionGroup('notifications').where('readAt','>=',Timestamp.fromMillis(today)))
+      optionalCount(db.collectionGroup('devices').where('updatedAt','>=',Timestamp.fromMillis(time-30*DAY)),'Thiết bị','devices','updatedAt',Timestamp.fromMillis(time-30*DAY)),
+      optionalCount(db.collectionGroup('notifications').where('receivedAt','>=',Timestamp.fromMillis(today)),'Thông báo mới','notifications','receivedAt',Timestamp.fromMillis(today)),
+      optionalCount(db.collectionGroup('notifications').where('readAt','>=',Timestamp.fromMillis(today)),'Thông báo đã đọc','notifications','readAt',Timestamp.fromMillis(today))
     ]);
     const segmentCounts=Object.fromEntries(SEGMENTS.map(s=>[s,profiles.filter(d=>matchesSegment(d.data(),presence.get(d.id),s,time)).length]));
     const current=Array(b.n).fill(0),previous=Array(b.n).fill(0),labels=[];
@@ -49,7 +50,7 @@ function createAdminService(db,{now=Date.now}={}){
     const linkedParents=new Set(profiles.map(d=>d.data().pairedMomUid).filter(Boolean));
     const recent=[...profiles].sort((a,b)=>ms(b.data().createdAt)-ms(a.data().createdAt)).slice(0,100).map(d=>({id:d.id,name:d.data().displayName||'Chưa đặt tên',role:d.data().role||null,createdAt:ms(d.data().createdAt)||null,paired:Boolean(d.data().pairedMomUid)||linkedParents.has(d.id),lastSeen:ms(presence.get(d.id)?.lastSeen)||null}));
     const campaignRows=campaigns.docs.map(d=>({id:d.id,...d.data(),createdAt:ms(d.data().createdAt),scheduledAt:ms(d.data().scheduledAt)}));
-    return {source:'firestore',generatedAt:time,timezone:'Asia/Bangkok',period:data.period||'week',metrics:{totalUsers:profiles.length,parents:segmentCounts.parents,children:segmentCounts.children,unassigned:profiles.length-segmentCounts.parents-segmentCounts.children,newToday,dau,wau,mau,returningToday:daily.data()?.returningUsers||0,firstSeenToday:daily.data()?.firstSeenUsers||0,sessionsToday:daily.data()?.sessions||0,downloads:null,registeredDevices,notificationsToday,notificationsReadToday,tasks,doneToday,skippedToday,postponedToday,familyLinks:links,trackedUsers:p.length,activityCoverage:profiles.length?Math.round(p.length/profiles.length*1000)/10:0},growth:{current,previous,labels,total:current.reduce((a,b)=>a+b,0)},segments:segmentCounts,users:recent,campaigns:campaignRows};
+    return {source:'firestore',warnings,generatedAt:time,timezone:'Asia/Bangkok',period:data.period||'week',metrics:{totalUsers:profiles.length,parents:segmentCounts.parents,children:segmentCounts.children,unassigned:profiles.length-segmentCounts.parents-segmentCounts.children,newToday,dau,wau,mau,returningToday:daily.data()?.returningUsers||0,firstSeenToday:daily.data()?.firstSeenUsers||0,sessionsToday:daily.data()?.sessions||0,downloads:null,registeredDevices,notificationsToday,notificationsReadToday,tasks,doneToday,skippedToday,postponedToday,familyLinks:links,trackedUsers:p.length,activityCoverage:profiles.length?Math.round(p.length/profiles.length*1000)/10:0},growth:{current,previous,labels,total:current.reduce((a,b)=>a+b,0)},segments:segmentCounts,users:recent,campaigns:campaignRows};
   }
   async function recordActivity(auth){
     if(!auth?.uid)throw new HttpsError('unauthenticated','Vui lòng đăng nhập.');

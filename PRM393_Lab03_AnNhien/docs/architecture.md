@@ -416,3 +416,9 @@ Hội thoại/lệnh: widget → `AssistantViewModel` → `assistantServiceProvi
 - `AppSurface`, `AppTextField`, `HabitAccentCard`, `CalmListRow`, `VeloraScheduleCard` dùng `ReadAloudRegion`; TTS lấy text/EditableText trong subtree khi chạm, không đọc toàn trang. Widget không truy cập SDK/service trực tiếp, vẫn gọi SpeechViewModel.
 - `GlobalAssistance` phủ Stack lên router; không thu nhỏ nội dung bằng footer nữa. Nút tròn kéo trong giới hạn viewport, giữ vị trí khi chuyển route, bảng hội thoại giữ xử lý Back/bàn phím. Không có nghe nền. `showTimeWheel` giữ API dùng chung nhưng nội dung là CupertinoDatePicker.time 24 giờ, phút bất kỳ, Lưu/Hủy.
 - Người dùng đã xác nhận rõ “Cho phép triển khai rules” cho thay đổi khóa lịch sau khi bộ duyệt tự động yêu cầu quyền triển khai production riêng. Không thay billing/secret hoặc triển khai Functions LLM.
+
+### Backend standalone dùng Firebase production — 08/11/2026
+
+Đường chạy hiện tại không cần Functions Emulator/Blaze: Node.js `firebase/functions/real-server.cjs` phục vụ admin và callable-compatible API, xác minh Firebase ID token cho APK; admin có phiên server riêng. Domain pairing/suggestion và analytics dùng cùng Firestore production. `real-worker.cjs` xử lý campaign, completion, pairing, schedule outbox và FCM với cursor/receipt bền vững. Không chạy worker này đồng thời trigger Cloud Functions gửi cùng inbox.
+
+APK cấu hình `--dart-define=BACKEND_URL=...`; `lib/services/backend_endpoint.dart` chọn HTTPS callable theo URL, giữ service/provider layer và Auth/Firestore production. Caregiver schedule transaction ghi thêm `scheduleEvents` có actorUid và server timestamp khi dùng BACKEND_URL, được rules kiểm tra caregiver grant. Release yêu cầu HTTPS; debug hỗ trợ LAN HTTP. Hướng dẫn vận hành, giới hạn và kiểm chứng: `admin-web/README.md`.

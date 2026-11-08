@@ -5,6 +5,7 @@ import 'package:firebase_analytics/firebase_analytics.dart';
 import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:firebase_remote_config/firebase_remote_config.dart';
 import 'analytics_service.dart';
+import 'backend_endpoint.dart';
 import 'crash_service.dart';
 import 'remote_config_service.dart';
 
@@ -38,7 +39,7 @@ class FirebaseAnalyticsService
     final uid = _uid;
     _heartbeatPending = true;
     try {
-      await _functions.httpsCallable('recordAppActivity').call<void>();
+      await backendCallable(_functions, 'recordAppActivity').call<void>();
       if (_uid == uid) _lastHeartbeat = now;
     } catch (_) {/* Analytics failure must not block app use. */} finally {
       _heartbeatPending = false;

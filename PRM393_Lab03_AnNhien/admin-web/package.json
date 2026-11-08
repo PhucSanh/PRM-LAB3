@@ -1,0 +1,9 @@
+{
+  "name": "an-nhien-admin-web",
+  "private": true,
+  "scripts": {
+    "dev": "node ../scripts/prepare-admin-real.cjs && node ../firebase/functions/real-server.cjs",
+    "start": "node ../firebase/functions/real-server.cjs"
+  },
+  "engines": {"node": ">=22"}
+}

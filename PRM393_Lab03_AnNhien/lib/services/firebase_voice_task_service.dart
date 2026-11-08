@@ -1,4 +1,5 @@
 import 'package:cloud_functions/cloud_functions.dart';
+import 'backend_endpoint.dart';
 import '../models/task_item.dart';
 import '../models/voice_task_draft.dart';
 import '../utils/app_error.dart';
@@ -6,8 +7,8 @@ import 'voice_task_service.dart';
 
 class FirebaseVoiceTaskService implements VoiceTaskService {
   FirebaseVoiceTaskService(FirebaseFunctions functions)
-      : _call = ((data) async => (await functions
-                .httpsCallable('interpretVoiceTask',
+      : _call = ((data) async => (await backendCallable(
+                    functions, 'interpretVoiceTask',
                     options: HttpsCallableOptions(
                         timeout: const Duration(seconds: 35)))
                 .call<Map<String, dynamic>>(data))

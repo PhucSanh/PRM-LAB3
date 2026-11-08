@@ -5,7 +5,7 @@ window.adminBackend=bridge;
 const panel=document.querySelector('#auth-panel'),message=document.querySelector('#auth-message');
 const status=text=>{message.textContent=text;};
 function lock(text){panel.hidden=false;document.querySelector('.shell').hidden=true;status(text);}
-try{
+if(window.ADMIN_REST_API){await import('./real-client.js');}else try{
  const [{initializeApp},{getAuth,onAuthStateChanged,GoogleAuthProvider,signInWithPopup,signInWithCustomToken,signOut,connectAuthEmulator},{getFunctions,httpsCallable,connectFunctionsEmulator}]=await Promise.all([import(`${base}/firebase-app.js`),import(`${base}/firebase-auth.js`),import(`${base}/firebase-functions.js`)]);
  const app=initializeApp(window.ADMIN_FIREBASE_CONFIG),auth=getAuth(app),functions=getFunctions(app,window.ADMIN_FUNCTIONS_REGION);
  if(window.ADMIN_USE_EMULATORS){document.querySelector('.demo-badge').textContent='● Firebase Emulator';document.querySelector('.auth-panel>small').textContent='Môi trường local · Dữ liệu emulator, không phải production';connectAuthEmulator(auth,'http://127.0.0.1:9099');connectFunctionsEmulator(functions,'127.0.0.1',5001);}

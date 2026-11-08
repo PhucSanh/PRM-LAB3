@@ -1,5 +1,6 @@
 import 'package:cloud_functions/cloud_functions.dart';
 import 'package:clock/clock.dart';
+import 'backend_endpoint.dart';
 import '../utils/app_error.dart';
 
 enum AssistantAction {
@@ -36,8 +37,7 @@ class FirebaseAssistantService implements AssistantService {
   @override
   Future<AssistantReply> reply(List<Map<String, String>> messages) async {
     try {
-      final result = await functions
-          .httpsCallable('talkToAssistant',
+      final result = await backendCallable(functions, 'talkToAssistant',
               options:
                   HttpsCallableOptions(timeout: const Duration(seconds: 35)))
           .call<Map<String, dynamic>>({'messages': messages});

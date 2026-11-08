@@ -123,3 +123,7 @@ duration_sec, is_edit; không ghi tên việc/lời nhắn. `SuggestionDemoViewM
 accept_suggestion/dismiss_suggestion + task_count. Telemetry lỗi không đảo ngược
 kết quả nghiệp vụ. Các event login/logout/select_role và F10 giữ nguyên.
 Chưa có ảnh Console/DebugView cho các event mới, không đánh dấu evidence hoàn tất.
+
+### Heartbeat cho dashboard admin — 08/11/2026
+
+FirebaseAnalyticsService gọi `recordAppActivity` qua backend dùng BACKEND_URL khi đăng nhập và app về foreground. Request không có tên/email/nội dung việc; ID token xác định UID phía server. Server ghi adminPresence và adminDaily với transaction chống đếm lặp, giới hạn một phiên/người/30 phút; qua ngày UTC+7 vẫn ghi nhận DAU. DAU theo ngày UTC+7; WAU/MAU theo 7/30 ngày gần nhất. First heartbeat không đồng nghĩa lượt tải/cài đặt. Dữ liệu chỉ tích lũy từ APK/backend mới; không dựng lại lịch sử chưa thu thập.

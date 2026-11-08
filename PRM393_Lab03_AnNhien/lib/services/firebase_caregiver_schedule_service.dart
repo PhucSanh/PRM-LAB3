@@ -5,10 +5,22 @@ import '../models/task_item.dart';
 import '../utils/app_error.dart';
 import 'caregiver_schedule_service.dart';
 import 'firebase_repositories.dart';
+import 'backend_endpoint.dart';
 
 class FirebaseCaregiverScheduleService implements CaregiverScheduleService {
   FirebaseCaregiverScheduleService(this.data);
   final FirebaseUserData data;
+  void _recordChange(Transaction tx, String momUid, String taskId,
+      String action, String eventId) {
+    if (backendUrl.isEmpty || data.auth.currentUser?.uid == momUid) return;
+    tx.set(data.db.doc('users/$momUid/scheduleEvents/$eventId'), {
+      'actorUid': data.auth.currentUser!.uid,
+      'taskId': taskId,
+      'action': action,
+      'createdAt': FieldValue.serverTimestamp(),
+    });
+  }
+
   CollectionReference<Map<String, dynamic>> _tasks(String momUid) {
     if (data.auth.currentUser == null) {
       throw const AppException('Cần đăng nhập trước khi xem lịch.');
@@ -141,6 +153,7 @@ class FirebaseCaregiverScheduleService implements CaregiverScheduleService {
               transaction: tx);
           commit();
           tx.set(doc, task.toMap());
+          _recordChange(tx, momUid, task.id, 'created', 'create-${task.id}');
         });
       });
   @override
@@ -184,6 +197,7 @@ class FirebaseCaregiverScheduleService implements CaregiverScheduleService {
             tx.set(tasks.doc(e.key), e.value!.toMap());
           }
           if (moved != null) tx.delete(moveRef);
+          _recordChange(tx, momUid, original.id, 'changed', newId);
           return ScheduleUndo(momUid, plan.before, plan.after,
               reschedulesBefore: {if (moved != null) moveKey: moved},
               reschedulesAfter: {if (moved != null) moveKey: null});
@@ -195,6 +209,7 @@ class FirebaseCaregiverScheduleService implements CaregiverScheduleService {
           throw const AppException('Thay đổi này đã được hoàn tác.');
         }
         final tasks = _tasks(change.momUid);
+        final eventId = tasks.doc().id;
         await data.db.runTransaction((tx) async {
           final snapshots = <String, TaskItem>{};
           for (final e in change.after.entries) {
@@ -246,6 +261,8 @@ class FirebaseCaregiverScheduleService implements CaregiverScheduleService {
               });
             }
           }
+          _recordChange(
+              tx, change.momUid, change.after.keys.first, 'undone', eventId);
         });
         change.used = true;
       });
