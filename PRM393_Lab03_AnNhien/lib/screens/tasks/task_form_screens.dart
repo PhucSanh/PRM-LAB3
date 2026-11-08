@@ -19,6 +19,7 @@ import '../../widgets/app_text_field.dart';
 import '../../widgets/choice_group.dart';
 import '../../widgets/confirm_dialog.dart';
 import '../../widgets/form_parts.dart';
+import '../../widgets/time_field.dart';
 
 const _activities = <_Activity>[
   _Activity('move', 'Đi bộ nhẹ nhàng', Icons.directions_walk_rounded, 10),
@@ -836,97 +837,11 @@ class TaskSavedScreen extends ConsumerWidget {
 
 Future<(int, int, bool)?> showTaskTimeDialog(
     BuildContext context, TaskFormState initial) async {
-  // Hiển thị theo 12 giờ: 0:xx là 12:xx sáng, 12:xx là 12:xx chiều.
-  var hour = initial.hour % 12;
-  if (hour == 0) hour = 12;
-  var minute = initial.minute;
-  var am = initial.isAm;
-  return showDialog<(int, int, bool)>(
-      context: context,
-      builder: (context) => StatefulBuilder(builder: (context, setState) {
-            final value = hour == 12 ? (am ? 0 : 12) : (am ? hour : hour + 12);
-            final now = DateTime.now();
-            final selectedDate = initial.date;
-            final isToday = selectedDate != null &&
-                selectedDate.year == now.year &&
-                selectedDate.month == now.month &&
-                selectedDate.day == now.day;
-            final isPast = isToday &&
-                DateTime(now.year, now.month, now.day, value, minute)
-                    .isBefore(now);
-            return AlertDialog(
-                title: const Row(mainAxisSize: MainAxisSize.min, children: [
-                  Icon(Icons.schedule_rounded),
-                  SizedBox(width: AppSpacing.sm),
-                  Text('Giờ làm')
-                ]),
-                content: SingleChildScrollView(
-                  child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text('Chạm vào số Bác muốn'),
-                        const SizedBox(height: AppSpacing.md),
-                        const Text('Giờ'),
-                        Wrap(
-                            spacing: AppSpacing.sm,
-                            runSpacing: AppSpacing.sm,
-                            children: List.generate(12, (i) {
-                              final n = i + 1;
-                              return ChoiceChip(
-                                  label: Text('$n'),
-                                  selected: hour == n,
-                                  onSelected: (_) => setState(() => hour = n));
-                            })),
-                        const SizedBox(height: AppSpacing.md),
-                        const Text('Phút'),
-                        Wrap(
-                            spacing: AppSpacing.sm,
-                            children: [0, 15, 30, 45]
-                                .map((n) => ChoiceChip(
-                                    label: Text(n.toString().padLeft(2, '0')),
-                                    selected: minute == n,
-                                    onSelected: (_) =>
-                                        setState(() => minute = n)))
-                                .toList()),
-                        const SizedBox(height: AppSpacing.md),
-                        Row(children: [
-                          Expanded(
-                              child: ChoiceChip(
-                                  label: const Text('Sáng'),
-                                  selected: am,
-                                  onSelected: (_) =>
-                                      setState(() => am = true))),
-                          const SizedBox(width: AppSpacing.sm),
-                          Expanded(
-                              child: ChoiceChip(
-                                  label: const Text('Chiều'),
-                                  selected: !am,
-                                  onSelected: (_) =>
-                                      setState(() => am = false)))
-                        ]),
-                        const SizedBox(height: AppSpacing.md),
-                        Text(
-                            isPast
-                                ? 'Bác chọn giờ sau thời điểm hiện tại nhé.'
-                                : 'Bác chọn: $hour:${minute.toString().padLeft(2, '0')} ${am ? 'sáng' : 'chiều'}',
-                            style: isPast
-                                ? TextStyle(
-                                    color: Theme.of(context).colorScheme.error)
-                                : null)
-                      ]),
-                ),
-                actions: [
-                  TextButton(
-                      onPressed: () => Navigator.pop(context),
-                      child: const Text('Hủy')),
-                  FilledButton(
-                      onPressed: isPast
-                          ? null
-                          : () => Navigator.pop(context, (value, minute, am)),
-                      child: const Text('Lưu giờ'))
-                ]);
-          }));
+  final selected = await showTimeWheel(context,
+      initial: TimeOfDay(hour: initial.hour, minute: initial.minute),
+      date: initial.date);
+  if (selected == null) return null;
+  return (selected.hour, selected.minute, selected.hour < 12);
 }
 
 Future<ChangeScope?> showScopeDialog(BuildContext context, String title) =>

@@ -23,7 +23,7 @@ class AppShell extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colors = Theme.of(context).colorScheme;
-    final uri = GoRouterState.of(context).uri;
+    final uri = GoRouter.of(context).routeInformationProvider.value.uri;
     final destinations = caregiver
         ? [
             (AppIcons.tabWeek, 'Lịch'),
@@ -100,7 +100,10 @@ class AppShell extends StatelessWidget {
     }
     if (!caregiver && MediaQuery.textScalerOf(context).scale(20) > 32) {
       return Scaffold(
-        body: content,
+        body: Padding(
+            padding: EdgeInsets.only(
+                bottom: bubble == null ? 0 : AssistantBubble.clearance),
+            child: content),
         floatingActionButton: bubble,
         bottomNavigationBar: SafeArea(
           top: false,
@@ -154,7 +157,10 @@ class AppShell extends StatelessWidget {
       );
     }
     return Scaffold(
-        body: content,
+        body: Padding(
+            padding: EdgeInsets.only(
+                bottom: bubble == null ? 0 : AssistantBubble.clearance),
+            child: content),
         floatingActionButton: bubble,
         bottomNavigationBar: Material(
             color: Theme.of(context).scaffoldBackgroundColor,

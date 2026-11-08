@@ -113,9 +113,10 @@ class AssistantViewModel extends Notifier<AssistantState> {
       ].contains(reply.action)) {
         if (caregiver) {
           final mom = ref.read(pairedMomUidProvider);
-          if (mom == null)
+          if (mom == null) {
             throw const AppException(
                 'Cần ghép nối với máy của cha/mẹ để xem lịch.');
+          }
           final date = DateTime(day.year, day.month, day.day);
           tasks = (await ref
                   .read(caregiverScheduleServiceProvider)

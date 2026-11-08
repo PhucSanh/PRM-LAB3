@@ -12,6 +12,7 @@ import '../viewmodels/device_access_view_model.dart';
 import '../viewmodels/family_actions_view_model.dart';
 import 'app_button.dart';
 import 'assistant_mascot.dart';
+import 'assistant_bubble.dart';
 import 'form_parts.dart';
 import 'voice_task_review.dart';
 import 'undo_snackbar.dart';
@@ -45,7 +46,12 @@ class _GlobalAssistanceState extends ConsumerState<GlobalAssistance> {
   }
 
   void _routeChanged() {
-    if (mounted) ref.read(speechViewModelProvider.notifier).stop();
+    if (mounted) {
+      ref.read(speechViewModelProvider.notifier).stop();
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) setState(() {});
+      });
+    }
   }
 
   Future<bool> _handleBack() async {
@@ -120,6 +126,11 @@ class _GlobalAssistanceState extends ConsumerState<GlobalAssistance> {
   Widget build(BuildContext context) {
     ref.watch(speechViewModelProvider);
     final colors = Theme.of(context).colorScheme;
+    final path = _router.routeInformationProvider.value.uri.path;
+    // Tab roots already expose a voice assistant. Avoid two overlapping targets.
+    final showPet = path != '/calendar' &&
+        path != '/calendar/day' &&
+        !AssistantBubble.shellPaths.contains(path);
     ref.listen(assistantViewModelProvider, (before, next) {
       if (!_open || next.action == null || before?.action == next.action) {
         return;
@@ -150,7 +161,7 @@ class _GlobalAssistanceState extends ConsumerState<GlobalAssistance> {
                   Offset(point.dx.clamp(0.0, maxX), point.dy.clamp(0.0, maxY));
               return Stack(fit: StackFit.expand, children: [
                 KeyedSubtree(key: _screenKey, child: widget.child),
-                if (!_open)
+                if (!_open && showPet)
                   Positioned(
                       left: position.dx,
                       top: position.dy,

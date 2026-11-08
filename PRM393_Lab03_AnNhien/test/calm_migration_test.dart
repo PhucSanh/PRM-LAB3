@@ -12,7 +12,6 @@ import 'package:an_nhien/viewmodels/calm_feature_providers.dart';
 import 'package:an_nhien/viewmodels/caregiver_schedule_view_model.dart';
 import 'package:an_nhien/widgets/botanical_scene.dart';
 import 'package:an_nhien/widgets/confirm_dialog.dart';
-import 'package:an_nhien/widgets/velora_home_parts.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -382,7 +381,10 @@ void main() {
     await tapText(tester, 'Thêm người thân');
     await tester.enterText(find.byType(TextField).at(0), 'Cô An');
     // Mối quan hệ: chọn trong danh sách thả xuống.
-    await tapText(tester, 'Chọn mối quan hệ');
+    await tester.tap(find.byType(DropdownButton<String>));
+    await tester.pumpAndSettle();
+    await tester.scrollUntilVisible(find.text('Bạn bè'), 240,
+        scrollable: find.byType(Scrollable).last);
     await tester.tap(find.text('Bạn bè').last);
     await tester.pumpAndSettle();
     await tester.enterText(find.byType(TextField).at(1), '12');
@@ -454,7 +456,7 @@ void main() {
     testReferenceWidgets('Calm screen golden $name', (tester) async {
       await pumpApp(tester, route, role: role);
       if (name == 'calendar') {
-        expect(find.byType(VeloraGreeting), findsOneWidget);
+        expect(find.text('Lịch của Bác'), findsWidgets);
       } else if (!['settings', 'suggestion', 'habits'].contains(name)) {
         expect(find.byType(BotanicalScene), findsWidgets);
       }

@@ -94,7 +94,8 @@ void main() {
         .descendant(
             of: find.byType(ListView).first, matching: find.byType(Scrollable))
         .first;
-    await tester.scrollUntilVisible(find.text('Đổi ngày hoặc lịch lặp'), 250,
+    await tester.scrollUntilVisible(
+        find.widgetWithText(AppButton, 'Đổi ngày hoặc lịch lặp'), 250,
         scrollable: scroll);
     await tester.tap(find.text('Đổi ngày hoặc lịch lặp'));
     await tester.pumpAndSettle();
@@ -162,6 +163,8 @@ void main() {
         find.byWidgetPredicate((w) => w is AppButton && w.label == 'Ghép nối'));
     expect(action().onPressed, isNull);
     final field = find.byType(TextField);
+    await tester.scrollUntilVisible(field, 200,
+        scrollable: find.byType(Scrollable).last);
     await tester.enterText(field, '12a 3456');
     await tester.pumpAndSettle();
     expect(tester.widget<TextField>(field).controller!.text, '123456');

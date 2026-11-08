@@ -77,6 +77,15 @@ class _PairingScreenState extends ConsumerState<PairingScreen> {
                 ),
               ),
         children: [
+          if (!widget.showCode)
+            AppButton(
+                label: 'Để sau, khám phá ứng dụng',
+                icon: Icons.explore_outlined,
+                kind: AppButtonKind.secondary,
+                wrapLabel: true,
+                onPressed: state.busy
+                    ? null
+                    : () => context.go('/activities?section=explore')),
           const BotanicalScene(height: 160, round: true),
           Text(
               widget.showCode
