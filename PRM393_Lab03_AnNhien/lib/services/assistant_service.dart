@@ -106,8 +106,9 @@ class LocalAssistantService implements AssistantService {
                     ? 1
                     : 0));
     AssistantReply answer(String reply, AssistantAction action,
-            {DateTime? date}) =>
-        AssistantReply(reply, action, day: date, onDevice: true);
+            {DateTime? date, String target = ''}) =>
+        AssistantReply(reply, action,
+            day: date, target: target, onDevice: true);
     bool has(String pattern) => RegExp(pattern).hasMatch(text);
     if (has(r'\b(them|tao|luu)\b') &&
         has(r'\b(nguoi than|lien he|danh ba)\b')) {
@@ -116,8 +117,14 @@ class LocalAssistantService implements AssistantService {
           AssistantAction.createFamily);
     }
     if (has(r'\bgoi\b')) {
+      final target = text
+          .substring(RegExp(r'\bgoi\b').firstMatch(text)!.end)
+          .replaceFirst(RegExp(r'^\s*(?:dien\s+)?(?:cho\s+)?'), '')
+          .replaceFirst(RegExp(r'\s+(?:nhe|nha|giup bac|giup toi)[.!?]*$'), '')
+          .trim();
       return answer(
-          'Bác chọn người thân muốn gọi nhé.', AssistantAction.callFamily);
+          'Bác chọn người thân muốn gọi nhé.', AssistantAction.callFamily,
+          target: target);
     }
 
     final explicit = RegExp(

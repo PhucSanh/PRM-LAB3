@@ -378,7 +378,7 @@ class _ConversationPanelState extends ConsumerState<_ConversationPanel> {
               const Text(
                   'Bác chọn người muốn gọi. Điện thoại sẽ mở số để Bác bấm gọi.'),
               if (state.contacts.isEmpty)
-                const Text('Chưa có người thân trong danh bạ An Nhiên.'),
+                const Text('Không có người thân phù hợp để gọi.'),
               for (final person in _prioritize(state.contacts,
                   (p) => '${p.name} ${p.relation}', state.target)) ...[
                 const SizedBox(height: AppSpacing.base),

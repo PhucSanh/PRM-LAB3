@@ -14,9 +14,19 @@ class RelationshipDropdown extends StatelessWidget {
   final bool enabled;
   static const options = [
     'Con',
+    'Con trai',
+    'Con gái',
     'Cháu',
+    'Cháu trai',
+    'Cháu gái',
     'Anh/chị/em',
+    'Anh trai',
+    'Chị gái',
+    'Em trai',
+    'Em gái',
     'Vợ/chồng',
+    'Vợ',
+    'Chồng',
     'Bạn bè',
     'Khác'
   ];

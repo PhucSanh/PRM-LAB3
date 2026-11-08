@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:an_nhien/app.dart';
 import 'package:an_nhien/models/task_item.dart';
+import 'package:an_nhien/models/relative.dart';
 import 'package:an_nhien/router/app_router.dart';
 import 'package:an_nhien/services/assistant_service.dart';
 import 'package:an_nhien/services/providers.dart';
@@ -25,6 +26,29 @@ class TestAssistant implements AssistantService {
 }
 
 void main() {
+  test('call action only offers the requested relation, including local replies',
+      () async {
+    final assistant = TestAssistant()
+      ..result = const AssistantReply('Chọn người', AssistantAction.callFamily);
+    final c = demoContainer(assistant: assistant, device: TestDevice());
+    addTearDown(c.dispose);
+    final subscription = c.listen(sessionProvider, (_, __) {});
+    addTearDown(subscription.close);
+    await c.read(sessionProvider.future);
+    final family = c.read(familyRepositoryProvider);
+    await family.save(const Relative(
+        id: 'son', name: 'Minh', relation: 'Con trai', phone: '0912345678'));
+    await family.save(const Relative(
+        id: 'wife', name: 'Lan', relation: 'Vợ', phone: '0987654321'));
+    final vm = c.read(assistantViewModelProvider.notifier);
+    await vm.send('Gọi cho con trai');
+    expect(c.read(assistantViewModelProvider).contacts.map((p) => p.id), ['son']);
+    await vm.send('Gọi cháu gái');
+    expect(c.read(assistantViewModelProvider).contacts, isEmpty);
+    expect(c.read(assistantViewModelProvider).messages.last.text,
+        contains('Chưa tìm thấy'));
+  });
+
   test(
       'local commands work without a backend and reject ambiguous calendar dates',
       () async {

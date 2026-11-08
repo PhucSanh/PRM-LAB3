@@ -1,6 +1,7 @@
 import 'package:clock/clock.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../services/assistant_service.dart';
+import '../services/assistant_contact_filter.dart';
 import '../models/task_item.dart';
 import '../models/relative.dart';
 import '../services/providers.dart';
@@ -113,7 +114,14 @@ class AssistantViewModel extends Notifier<AssistantState> {
         }
       }
       if (reply.action == AssistantAction.callFamily) {
-        contacts = await ref.read(familyRepositoryProvider).all();
+        final all = await ref.read(familyRepositoryProvider).all();
+        contacts =
+            filterAssistantContacts(all, utterance: text, target: reply.target);
+        if (contacts.isEmpty) {
+          answer = all.isEmpty
+              ? 'Chưa có người thân trong danh bạ An Nhiên.'
+              : 'Chưa tìm thấy người thân phù hợp. Bác kiểm tra tên và mối quan hệ trong danh bạ nhé.';
+        }
       }
       if (!ref.mounted || generation != _generation) return;
       state = AssistantState(
