@@ -1,5 +1,19 @@
 # An Nhiên — admin/API local + Firebase production
 
+## Production trên Azure — 08/11/2026
+
+- Admin/API/worker: https://an-nhien-admin.bluerock-e6f4ebd4.japaneast.azurecontainerapps.io.
+- Link cũ https://prm393-145c9-admin.web.app được chuyển hướng sang Azure.
+- Subscription Azure for Students, app `an-nhien-admin` trong resource group `an-nhien-rg`, dùng environment Japan hiện có và repository image riêng `an-nhien/admin`.
+- Một replica 0.25 CPU / 0.5 GiB luôn bật cho worker; dùng hạn mức/credit Azure. Backend local đã dừng để tránh chạy hai worker.
+- Firestore/Auth/FCM giữ ở project production prm393-145c9. Service account Azure riêng có Datastore User, Firebase Auth Viewer và Firebase Cloud Messaging API Admin. Credential chỉ lưu trong Azure Container App secret, không trong image/repo/APK.
+- Các ID và image đã deploy ở `deploy/azure-admin.json`; file này không chứa private key.
+- Image build bằng `Dockerfile.admin`; `.dockerignore` chỉ cho phép source cần thiết, không bao gồm `.env.real`, `.secret.local` hoặc tài khoản Firebase CLI.
+- APK dùng URL production: `flutter build apk --release --dart-define=BACKEND_URL=https://an-nhien-admin.bluerock-e6f4ebd4.japaneast.azurecontainerapps.io`.
+- Health HTTPS, đăng nhập/dashboard Firestore và FCM dry-run bằng service account Azure đều đã kiểm tra thành công. APK release 75.3 MB đã build với URL HTTPS production. Chưa chứng minh delivery push trên hai điện thoại thật. APK release hiện dùng signing debug của dự án lab; chưa cấu hình khóa phát hành Play Store.
+
+Các hướng dẫn local bên dưới vẫn dành cho phát triển. Không bật worker local đồng thời worker Azure.
+
 ## Chạy thật, không Emulator
 
 Admin web, API và notification worker chạy chung Node.js; Firebase Auth, Firestore và FCM dùng production project `prm393-145c9`. Không cần Blaze cho server standalone này. Không tạo user/dữ liệu demo.
@@ -65,7 +79,7 @@ Index đã deploy production. Trong lúc index collection-group được Google 
 - Admin đọc được Firestore production; đã deploy rules/indexes cho worker thật.
 - FCM dry-run thành công trên token thật, không phát thông báo thử vào thiết bị user.
 - APK debug LAN đã build. Chưa kiểm chứng toàn bộ flow trên hai điện thoại thật.
-- Website Firebase Hosting cũ dùng Cloud Functions: https://prm393-145c9-admin.web.app. **Luồng hiện tại dùng web ở port 3000**, chưa nối Hosting cũ với server LAN. Chưa cần Blaze hoặc deploy Functions.
+- Website https://prm393-145c9-admin.web.app hiện chuyển hướng tới Azure production. Port 3000 chỉ dành cho chạy local khi phát triển. Không cần Blaze hoặc deploy Functions.
 
 Kiểm thử không Emulator:
 

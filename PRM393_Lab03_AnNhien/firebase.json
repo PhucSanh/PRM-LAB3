@@ -66,6 +66,13 @@
         ]
       }
     ],
-    "site": "prm393-145c9-admin"
+    "site": "prm393-145c9-admin",
+    "redirects": [
+      {
+        "source": "**",
+        "destination": "https://an-nhien-admin.bluerock-e6f4ebd4.japaneast.azurecontainerapps.io",
+        "type": 302
+      }
+    ]
   }
 }

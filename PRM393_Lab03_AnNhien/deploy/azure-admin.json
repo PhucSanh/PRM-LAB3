@@ -1,0 +1,15 @@
+{
+  "subscription": "6b48ddca-53c7-4bb3-89d2-f49764599722",
+  "resourceGroup": "an-nhien-rg",
+  "appName": "an-nhien-admin",
+  "appId": "/subscriptions/6b48ddca-53c7-4bb3-89d2-f49764599722/resourceGroups/an-nhien-rg/providers/Microsoft.App/containerApps/an-nhien-admin",
+  "origin": "https://an-nhien-admin.bluerock-e6f4ebd4.japaneast.azurecontainerapps.io",
+  "image": "pace638443565b84.azurecr.io/an-nhien/admin:20261108054941973",
+  "environmentId": "/subscriptions/6b48ddca-53c7-4bb3-89d2-f49764599722/resourceGroups/pace-demo-rg/providers/Microsoft.App/managedEnvironments/pace-environment-jp",
+  "firebaseProject": "prm393-145c9",
+  "serviceAccount": "an-nhien-azure-backend@prm393-145c9.iam.gserviceaccount.com",
+  "serviceAccountKeyName": "projects/prm393-145c9/serviceAccounts/an-nhien-azure-backend@prm393-145c9.iam.gserviceaccount.com/keys/7a620c9bbf273d3796c8cb250ad105a018caac4d",
+  "createdAt": "2026-11-08T05:27:28.090Z",
+  "previousImage": "pace638443565b84.azurecr.io/an-nhien/admin:20261108054429038",
+  "updatedAt": "2026-11-08T05:49:47.910Z"
+}
