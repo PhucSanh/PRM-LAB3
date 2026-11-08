@@ -31,3 +31,8 @@ test('stale registrations excluded, definite invalid token removed, transient fa
 test('recipient mismatch is rejected before reading registrations',async()=>{
   await sendInboxPush({}, {}, {uid:'user',id:'n',data:{recipientUid:'other'}});
 });
+test('trusted admin campaign content reaches FCM notification',async()=>{
+ const f=fixture(1);let notification;
+ await sendInboxPush(f.db,{sendEachForMulticast:async message=>{notification=message.notification;return {responses:[{success:true}]};}},{uid:'user',id:'campaign',data:{event:'admin_campaign',campaignId:'trusted',title:'Vận động',body:'Đi bộ nhẹ nhé'}},f.now);
+ assert.deepEqual(notification,{title:'Vận động',body:'Đi bộ nhẹ nhé'});
+});
