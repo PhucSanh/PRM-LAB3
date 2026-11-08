@@ -143,13 +143,12 @@ final routerProvider = Provider<GoRouter>((ref) {
           if (path == '/welcome' || path.startsWith('/setup')) return null;
           return '/welcome';
         }
-        if (user.role == UserRole.caregiver && user.pairedMomUid == null) {
-          return path == '/caregiver/pair' ? null : '/caregiver/pair';
-        }
         if (['/sign-in', '/session', '/role', '/welcome'].contains(path) ||
             path.startsWith('/setup')) {
           return user.role == UserRole.caregiver
-              ? '/caregiver/schedule'
+              ? (user.pairedMomUid == null
+                  ? '/activities?section=explore'
+                  : '/caregiver/schedule')
               : '/calendar';
         }
       }

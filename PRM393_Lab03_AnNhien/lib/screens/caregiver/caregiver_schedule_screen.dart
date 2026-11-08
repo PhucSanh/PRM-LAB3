@@ -87,6 +87,19 @@ class _CaregiverScheduleScreenState
                     context.push('/caregiver/task/new');
                   }),
         children: [
+          if (ref.watch(pairedMomUidProvider) == null) ...[
+            const Text(
+                'Bạn có thể khám phá ứng dụng trước. Ghép nối khi muốn xem hoặc gửi lịch cho cha/mẹ.'),
+            AppButton(
+                label: 'Khám phá ứng dụng',
+                icon: Icons.explore_outlined,
+                onPressed: () => context.go('/activities?section=explore')),
+            AppButton(
+                label: 'Ghép nối khi sẵn sàng',
+                icon: Icons.phonelink_rounded,
+                kind: AppButtonKind.secondary,
+                onPressed: () => context.push('/caregiver/pair')),
+          ],
           Container(
               padding: const EdgeInsets.all(4),
               decoration: BoxDecoration(
