@@ -410,6 +410,31 @@ Chi tiết và giới hạn nghiệm thu: `flow-completion-implementation.md`.
 
 Yêu cầu người dùng: tích hợp LLM Groq cho Bác nói để thêm lịch, key bổ sung sau. `/today/voice` đổi từ chỉ nhận tên sang tách tên/ngày/giờ/lặp, hỏi lại khi thiếu, đọc và duyệt draft, chuyển F4 để lưu. ViewModel → VoiceTaskService → authenticated callable; không gọi HTTP/SDK từ widget. Dùng shared AppTextField/AppButton/VoiceTaskReview và tokens VELORA hiện tại. Backend có secret/validation/quota, không có tool ghi lịch cho LLM. 860 Flutter tests đã qua; chưa có key/endpoint deploy nên model thật và native Android chưa nghiệm thu. Xem `groq-voice-setup.md`. Đây là cập nhật theo yêu cầu trực tiếp; không chỉnh file Figma trong lượt này.
 
+### DT-GLOBAL-ASSISTANCE — 06/11/2026
+
+Theo yêu cầu trực tiếp: mọi màn có nút loa đọc nội dung đang nhìn thấy và nút trợ lý ở góc dưới phải. `GlobalAssistance` nằm trên router, dành chỗ riêng cho nút để không che hành động phía dưới; bảng trợ lý có nút nói cố định, nhập chữ, đóng và Back. Nút loa đọc chữ hiện tại, không đọc ô nhập ẩn/mật khẩu; có Dừng và báo lỗi TTS. Bác nhấn để nghe, không có wake word/nghe nền.
+
+Người dùng chọn **không bật Blaze**. Production hiện chọn `LocalAssistantService`: hiểu lệnh đọc màn hình, lịch hôm nay/ngày mai/ngày kia/ngày cụ thể, thêm việc, mở sửa/xoá việc và mở số người thân để Bác gọi. Đây là bộ nhận lệnh trên máy, **không phải hội thoại LLM tự do**. Không tự lưu/xoá/gọi; thêm lịch dùng draft và xác nhận/Hoàn tác hiện có, sửa/xoá mở form có scope/xác nhận/Hoàn tác, gọi dùng danh bạ thật và trình quay số. Không đoán ngày không hỗ trợ.
+
+Đã chuẩn bị `FirebaseAssistantService` và callable `talkToAssistant` (Auth, schema, whitelist action, quota dùng chung F5); chưa triển khai vì Firebase yêu cầu Blaze. Không đổi billing và không đưa API key vào APK. Không chỉnh Figma ở lượt này. Kiểm thử tập trung: 30 Flutter tests; 28 backend tests qua Firebase Emulator; ảnh chuẩn màn giọng nói cập nhật theo thanh hỗ trợ mới.
+
+### DT-FAMILY-RELATIONSHIP — 06/11/2026
+
+Theo yêu cầu: form thêm/sửa người thân thay ô gõ “Mối quan hệ” bằng `RelationshipDropdown` dùng chung. Lựa chọn Con/Cháu/Anh-chị-em/Vợ-chồng/Bạn bè/Khác; bắt buộc chọn trước khi lưu. Quan hệ tùy chỉnh của dữ liệu cũ vẫn giữ và hiện thành lựa chọn khi sửa, không tự đổi dữ liệu. Dropdown mở menu, không mở bàn phím; khóa khi đang lưu. Trợ lý trên máy hiểu “thêm/tạo/lưu người thân” và đề xuất mở `/family/add`; chưa tự trích thông tin liên hệ từ câu nói, vẫn cần Bác điền và bấm Lưu. 9 kiểm thử dropdown/trợ lý qua; phân tích Dart sạch. Bản APK cần cập nhật để thấy giao diện mới.
+
+### DT-SCHEDULE-PET-WHEEL — 06/11/2026 (thay thế bố cục hỗ trợ cố định)
+
+Theo yêu cầu mới: bỏ hàng hỗ trợ ở đáy màn hình. Trợ lý là nút mặt tròn nổi, kéo được trong vùng màn hình và tự giới hạn khi bàn phím mở; chạm mở hội thoại, Back/Đóng thu lại. Không tạo khoảng trống dưới nội dung. Đây là biểu tượng trợ lý trong app, không phải ChatGPT Work Pet hay wake word. Chế độ lệnh trên máy vẫn được chọn theo quyết định không bật Blaze.
+
+Loa đặt theo khung/ô nhập: `ReadAloudRegion` đọc chữ và giá trị mới nhất trong chính khung đó, bỏ ô mật khẩu; không đọc khung bên cạnh. Áp dụng cho AppSurface, ô nhập, thẻ hoạt động/lịch, hàng nội dung; các control đọc cũ đổi thành icon gọn. Bộ chọn giờ chung dùng bánh xe Cupertino 24 giờ, chọn đủ 00–59 phút, giữ giờ/phút cũ, chỉ thay khi Lưu giờ; Hủy không đổi.
+
+Giới hạn lịch: không trùng giờ/phút bắt đầu trong cùng ngày; tên hoạt động chuẩn hóa chữ hoa/thường và khoảng trắng, tối đa 2 lần/ngày (không tính gộp theo nhóm thói quen). Kiểm tra occurrence thực tế của lịch lặp, ngày loại trừ và lần dời; các bản app mới dùng chung khóa transaction khi tạo/sửa/dời/hoàn tác. Không xoá hoặc tự sắp lại lịch cũ. Cần cập nhật APK để nhận các giới hạn/giao diện mới.
+
+Kiểm chứng: 24 ca tính năng cuối qua; 25 ca UI/TaskForm/dời lịch qua; 9 ca màn chính/giọng nói qua; rules 16/16 qua Firebase Emulator; phân tích lib sạch. Ba ảnh chuẩn giọng nói được cập nhật và xem lại. Chưa coi unit/widget test là đã nghiệm thu STT/TTS hoặc thao tác trên điện thoại thật. Không chỉnh Figma trong lượt này.
+
+### DT-ASSISTANT-MASCOT — 06/11/2026
+
+Biểu tượng mặt mặc định được thay bằng mascot mầm lá hai lá, mặt hạt tròn, mắt cười và má dịu. Vector vẽ trực tiếp trong Flutter bằng palette theme An Nhiên, không tải ảnh ngoài; nút nền xanh dịu, viền nhẹ, bỏ bóng đen. Giữ kích thước chạm và thao tác kéo/mở trợ lý. Sáu ca màn giọng nói qua, ba ảnh chuẩn cập nhật; có ảnh preview xuất từ chính widget.
 ### DT-ASSISTANT-BUBBLE — 07/11/2026
 
 Yêu cầu người dùng: lối vào AI "Nói để thêm việc" thành bong bóng nổi góc dưới bên phải (`AssistantBubble`, 72 dp, nhãn đọc màn hình "Nói để thêm việc"), hiện ở các tab gốc của Bác (`/calendar`, `/today`, `/activities`, `/family`), ẩn ở chế độ Con cháu và khi `voice_input_enabled` tắt. Trên `/calendar` bong bóng nằm trên thanh "Thêm hoạt động", không che nút. Danh sách các tab có khoảng trống cuối `AssistantBubble.clearance`. Nút "Đọc to" chỉ còn một chỗ: màn Xem chi tiết việc (`/calendar/task/:id`); bỏ ở màn hướng dẫn hoạt động, xem gợi ý lịch (G03–G09), Nói để thêm việc; màn lời nhắc chỉ tự đọc theo cài đặt, không hiện nút. Test: bong bóng + Đọc to + quét responsive 21 màn × 360/412 dp × chữ ×1/×2 trong `calm_migration_test.dart`. Chưa sửa Figma.

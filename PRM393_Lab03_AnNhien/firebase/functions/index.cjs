@@ -54,3 +54,13 @@ exports.interpretVoiceTask = onCall({...options,secrets:[groqKey],timeoutSeconds
     throw new HttpsError('internal','Chưa hiểu được lời nói lúc này. Bác thử lại hoặc nhập tay nhé.');
   }
 });
+
+const {createAssistantService} = require('./assistant.cjs');
+const talkToAssistant = createAssistantService(db,{getKey:()=>groqKey.value(),getModel:()=>groqModel.value()});
+exports.talkToAssistant = onCall({...options,secrets:[groqKey],timeoutSeconds:30,concurrency:8},async request=>{
+  try { return await talkToAssistant(request.auth?.uid,request.data); }
+  catch(e) {
+    if(e instanceof DomainError) throw new HttpsError(e.code,e.message);
+    throw new HttpsError('internal','Chưa kết nối được với trợ lý. Bác thử lại nhé.');
+  }
+});

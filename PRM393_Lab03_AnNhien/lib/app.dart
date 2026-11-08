@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'router/app_router.dart';
+import 'widgets/global_assistance.dart';
 import 'theme/app_theme.dart';
 import 'theme/display_settings.dart';
 import 'viewmodels/display_settings_sync.dart';
@@ -82,7 +83,7 @@ class _AnNhienAppState extends ConsumerState<AnNhienApp> {
             .clamp(1.0, maxTextScale);
         return MediaQuery(
           data: media.copyWith(textScaler: TextScaler.linear(scale)),
-          child: child!,
+          child: Overlay.wrap(child: GlobalAssistance(child: child!)),
         );
       },
     );

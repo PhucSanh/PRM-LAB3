@@ -1,3 +1,4 @@
+import 'assistant_service.dart';
 import 'contact_launcher_service.dart';
 import 'voice_task_service.dart';
 import 'gemini_voice_task_service.dart';
@@ -171,3 +172,7 @@ final voiceTaskServiceProvider = Provider<VoiceTaskService>((ref) =>
 
 final contactLauncherServiceProvider =
     Provider<ContactLauncherService>((ref) => AndroidContactLauncherService());
+
+// Người dùng chọn không bật Blaze: trợ lý lệnh trên máy, không gọi LLM.
+final assistantServiceProvider =
+    Provider<AssistantService>((ref) => LocalAssistantService());

@@ -458,8 +458,9 @@ class VoiceInputViewModel extends Notifier<VoiceDraft> {
             ? before.copyWith(conflict: e.userMessage)
             : before.copyWith(
                 conflict: before.conflict,
-                error:
-                    'Chưa thêm được vào lịch. Bác thử lại hoặc nhập tay nhé.');
+                error: e is AppException
+                    ? e.userMessage
+                    : 'Chưa thêm được vào lịch. Bác thử lại hoặc nhập tay nhé.');
       }
       return null;
     }
@@ -571,7 +572,19 @@ class SpeechViewModel extends Notifier<SpeechState> {
     if (!ref.mounted || generation != _generation) return;
     state = SpeechState(speaking: true, text: text);
     try {
-      await service.speak(text);
+      // Android TTS limits each utterance to about 4000 characters.
+      // Keep long schedules readable and allow Stop between chunks.
+      var remaining = text;
+      while (remaining.isNotEmpty) {
+        var end = remaining.length > 3500 ? 3500 : remaining.length;
+        if (end < remaining.length) {
+          final space = remaining.lastIndexOf(' ', end);
+          if (space > 0) end = space;
+        }
+        await service.speak(remaining.substring(0, end));
+        if (!ref.mounted || generation != _generation) return;
+        remaining = remaining.substring(end).trimLeft();
+      }
       if (ref.mounted && generation == _generation) state = const SpeechState();
     } catch (e) {
       if (ref.mounted && generation == _generation) {

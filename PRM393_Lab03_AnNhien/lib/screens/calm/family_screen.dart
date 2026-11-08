@@ -1,4 +1,3 @@
-import '../../widgets/app_dropdown_field.dart';
 import '../../widgets/family_contact_card.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -18,6 +17,7 @@ import '../../widgets/calm_parts.dart';
 import '../../widgets/app_back_bar.dart';
 import '../../widgets/app_button.dart';
 import '../../widgets/app_text_field.dart';
+import '../../widgets/relationship_dropdown.dart';
 import '../../widgets/state_views.dart';
 import '../../widgets/suggestion_card.dart';
 import '../../widgets/undo_snackbar.dart';
@@ -152,16 +152,6 @@ class FamilyEditorScreen extends ConsumerStatefulWidget {
 }
 
 class _FamilyEditorScreenState extends ConsumerState<FamilyEditorScreen> {
-  /// Các mối quan hệ Bác chọn trong danh sách thả xuống.
-  static const relations = [
-    'Chồng',
-    'Vợ',
-    'Con',
-    'Cháu',
-    'Anh chị em',
-    'Bạn bè',
-    'Người thân khác',
-  ];
   final _name = TextEditingController(), _phone = TextEditingController();
   String? _relation;
   bool _loaded = false, _dirty = false;
@@ -248,20 +238,13 @@ class _FamilyEditorScreenState extends ConsumerState<FamilyEditorScreen> {
                               controller: _name,
                               onChanged: (_) => setState(() => _dirty = true)),
                           const SizedBox(height: AppSpacing.base),
-                          AppDropdownField<String>(
-                              label: 'Mối quan hệ',
-                              hint: 'Chọn mối quan hệ',
+                          RelationshipDropdown(
                               value: _relation,
-                              // Giữ giá trị cũ gõ tay (không có trong danh sách).
-                              options: [
-                                ...relations,
-                                if (_relation != null &&
-                                    !relations.contains(_relation))
-                                  _relation!,
-                              ],
-                              onChanged: (v) => setState(() {
-                                    _relation = v;
+                              enabled: !busy,
+                              onChanged: (value) => setState(() {
+                                    _relation = value;
                                     _dirty = true;
+                                    _error = null;
                                   })),
                           const SizedBox(height: AppSpacing.base),
                           AppTextField(
@@ -290,6 +273,10 @@ class _FamilyEditorScreenState extends ConsumerState<FamilyEditorScreen> {
                               busy: busy,
                               onPressed: () async {
                                 try {
+                                  if (_relation == null) {
+                                    throw const AppException(
+                                        'Bác chọn mối quan hệ với người thân nhé.');
+                                  }
                                   final editor =
                                       ref.read(familyEditorProvider.notifier);
                                   final change = await editor.save(
@@ -299,7 +286,7 @@ class _FamilyEditorScreenState extends ConsumerState<FamilyEditorScreen> {
                                           favorite: person?.favorite ?? false,
                                           name: _name.text.trim(),
                                           phone: _phone.text.trim(),
-                                          relation: _relation ?? ''),
+                                          relation: _relation!),
                                       previous: person);
                                   if (context.mounted) {
                                     final messenger =

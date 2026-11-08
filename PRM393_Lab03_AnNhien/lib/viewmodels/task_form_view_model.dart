@@ -1,4 +1,5 @@
 import '../services/task_repository.dart';
+import '../utils/app_error.dart';
 import '../services/caregiver_schedule_service.dart' as schedule;
 import 'calm_feature_providers.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -359,7 +360,9 @@ class TaskFormViewModel extends Notifier<TaskFormState> {
         saveState: offline ? TaskSaveState.offline : TaskSaveState.error,
         errorMessage: offline
             ? 'Chưa lưu được. Bác kiểm tra kết nối rồi thử lại nhé.'
-            : 'Chưa thể lưu trên điện thoại.',
+            : error is AppException
+                ? error.userMessage
+                : 'Chưa thể lưu trên điện thoại.',
       );
       return false;
     }

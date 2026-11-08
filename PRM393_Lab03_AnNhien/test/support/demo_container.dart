@@ -1,3 +1,4 @@
+import 'package:an_nhien/services/assistant_service.dart';
 import 'package:an_nhien/services/contact_launcher_service.dart';
 import 'package:an_nhien/services/voice_task_service.dart';
 import 'package:an_nhien/services/device_access_service.dart';
@@ -40,8 +41,11 @@ ProviderContainer demoContainer(
         ReminderService? reminders,
         incoming.SuggestionService? incomingSuggestions,
         SettingsService? settings,
-        VoiceTaskService? voiceTasks}) =>
+        VoiceTaskService? voiceTasks,
+        AssistantService? assistant}) =>
     ProviderContainer(overrides: [
+      if (assistant != null)
+        assistantServiceProvider.overrideWithValue(assistant),
       voiceTaskServiceProvider
           .overrideWithValue(voiceTasks ?? FakeVoiceTaskService()),
       contactLauncherServiceProvider

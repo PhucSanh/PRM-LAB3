@@ -137,6 +137,9 @@ class FirebaseCaregiverScheduleService implements CaregiverScheduleService {
         await data.db.runTransaction((tx) async {
           final exists = await tx.get(doc);
           if (exists.exists) return;
+          final commit = await data.checkSchedule(momUid, {task.id: task},
+              transaction: tx);
+          commit();
           tx.set(doc, task.toMap());
         });
       });
@@ -170,6 +173,13 @@ class FirebaseCaregiverScheduleService implements CaregiverScheduleService {
           final plan = planScheduleChange(
               current, day, replacement, scope, newId,
               moved: moved);
+          if (replacement != null) {
+            final commit = await data.checkSchedule(momUid, plan.after,
+                removeMoves: {if (moved != null) moveKey},
+                from: day,
+                transaction: tx);
+            commit();
+          }
           for (final e in plan.after.entries) {
             tx.set(tasks.doc(e.key), e.value!.toMap());
           }
@@ -207,6 +217,13 @@ class FirebaseCaregiverScheduleService implements CaregiverScheduleService {
                   'Lần việc đã được dời tiếp. Không thể hoàn tác.');
             }
           }
+          final commit = await data.checkSchedule(change.momUid, change.before,
+              removeMoves: change.reschedulesBefore.keys.toSet(),
+              replaceMoves: change.reschedulesBefore.values
+                  .whereType<TaskReschedule>()
+                  .toList(),
+              transaction: tx);
+          commit();
           for (final e in change.before.entries) {
             if (e.value == null) {
               tx.delete(tasks.doc(e.key));
