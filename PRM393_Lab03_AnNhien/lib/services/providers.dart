@@ -77,8 +77,15 @@ final crashServiceProvider = Provider<CrashService>(
 final remoteConfigServiceProvider = Provider<RemoteConfigService>(
     (ref) => FirebaseRemoteConfigService(FirebaseRemoteConfig.instance));
 final messagingServiceProvider = Provider<MessagingService>((ref) {
-  final service = FirebaseMessagingService(FirebaseMessaging.instance,
-      ref.watch(firestoreSdkProvider), ref.watch(authSdkProvider));
+  final service = FirebaseMessagingService(
+      FirebaseMessaging.instance,
+      ref.watch(firestoreSdkProvider),
+      ref.watch(authSdkProvider), showForeground: (item, uid) async {
+    final reminders = ref.read(reminderServiceProvider);
+    if (reminders is LocalReminderService) {
+      await reminders.showForegroundPush(item, uid);
+    }
+  });
   ref.onDispose(() {
     service.dispose();
   });
