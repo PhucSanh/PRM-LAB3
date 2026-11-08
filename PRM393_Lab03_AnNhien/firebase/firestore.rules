@@ -80,6 +80,18 @@ service cloud.firestore {
           && request.resource.data.revision == resource.data.revision + 1;
         allow delete: if false;
       }
+      // Durable caregiver outbox for the real standalone backend.
+      match /scheduleEvents/{id} {
+        allow create: if caregiver(uid)
+          && request.resource.data.keys().hasOnly(['actorUid','taskId','action','createdAt'])
+          && request.resource.data.keys().hasAll(['actorUid','taskId','action','createdAt'])
+          && request.resource.data.actorUid == request.auth.uid
+          && request.resource.data.taskId is string
+          && request.resource.data.taskId.size() > 0 && request.resource.data.taskId.size() <= 128
+          && request.resource.data.action in ['created','changed','undone']
+          && request.resource.data.createdAt == request.time;
+        allow read, update, delete: if false;
+      }
       match /tasks/{id} {
         allow read: if owner(uid) || caregiver(uid);
         allow delete: if owner(uid) || caregiver(uid);

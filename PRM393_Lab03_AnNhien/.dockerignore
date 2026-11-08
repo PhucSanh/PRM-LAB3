@@ -1,0 +1,11 @@
+**
+!Dockerfile.admin
+!firebase/
+!firebase/functions/
+!firebase/functions/*.cjs
+!firebase/functions/package.json
+!firebase/functions/package-lock.json
+!admin-web/
+!admin-web/*.html
+!admin-web/*.css
+!admin-web/*.js

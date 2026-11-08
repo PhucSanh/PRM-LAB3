@@ -1,4 +1,5 @@
 import 'package:cloud_functions/cloud_functions.dart';
+import 'backend_endpoint.dart';
 import '../utils/app_error.dart';
 import 'pairing_service.dart';
 import 'firebase_repositories.dart';
@@ -10,8 +11,8 @@ class FirebaseCallableClient {
   Future<Map<String, dynamic>> call(
       String name, Map<String, dynamic> data) async {
     try {
-      final result =
-          await functions.httpsCallable(name).call<Map<String, dynamic>>(data);
+      final result = await backendCallable(functions, name)
+          .call<Map<String, dynamic>>(data);
       return result.data;
     } on FirebaseFunctionsException catch (e) {
       throw AppException(
