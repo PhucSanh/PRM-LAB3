@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../theme/app_icons.dart';
 import '../theme/app_spacing.dart';
 import 'habit_widgets.dart';
+import 'assistant_mascot.dart';
 
 /// Minh hoạ màn "Nói để thêm việc": Bác nói một câu → cháu ghi thành một việc
 /// trong lịch. Vừa là hình, vừa là ví dụ nên nói gì. Chỉ dùng màu của theme.
@@ -69,8 +70,7 @@ class VoiceExampleArt extends StatelessWidget {
             const SizedBox(height: AppSpacing.md),
             // Cháu ghi vào lịch.
             Row(children: [
-              Icon(Icons.auto_awesome_rounded,
-                  color: colors.primary, size: AppSizes.icon),
+              const AssistantMascot(size: AppSizes.icon),
               const SizedBox(width: AppSpacing.sm),
               Flexible(
                 child: Text('Cháu ghi vào lịch',

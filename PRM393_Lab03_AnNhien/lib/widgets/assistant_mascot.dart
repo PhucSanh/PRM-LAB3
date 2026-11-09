@@ -4,14 +4,16 @@ import '../theme/app_spacing.dart';
 
 /// A small, calm sprout companion, drawn with the app's semantic palette.
 class AssistantMascot extends StatelessWidget {
-  const AssistantMascot({super.key});
+  const AssistantMascot({super.key, this.size = AppSizes.stateIcon});
+
+  final double size;
 
   @override
   Widget build(BuildContext context) {
     final colors = Theme.of(context).colorScheme;
     return ExcludeSemantics(
         child: SizedBox.square(
-      dimension: AppSizes.stateIcon,
+      dimension: size,
       child: CustomPaint(
           painter: _SproutPainter(
               ink: colors.primary,

@@ -25,8 +25,7 @@ class NotificationSpy implements FlutterLocalNotificationsPlugin {
 }
 
 class ReadyReminders extends LocalReminderService {
-  ReadyReminders(String? Function() uid, NotificationSpy plugin)
-      : super(uid, plugin: plugin);
+  ReadyReminders(super.uid, NotificationSpy plugin) : super(plugin: plugin);
   @override
   Future<void> init() async {}
 }
