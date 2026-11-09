@@ -11,21 +11,25 @@ const validDate = s => typeof s === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(s) &&
 function validateTask(t) {
   const allowed = ['completionSourceId','revision','schemaVersion','title','habitKey','hour','minute','repeat','status','remind','startDate',
     'endDate','weekdays','monthDays','lastDayOfMonth','excludedDates','durationMinutes','timezone'];
-  if (!t || Object.keys(t).some(k=>!allowed.includes(k)) || t.schemaVersion!==2 ||
-      t.completionSourceId!=null && (typeof t.completionSourceId!=='string'||t.completionSourceId.length>128) || !Number.isInteger(t.revision) || t.revision<0 || typeof t.title!=='string' || !t.title.trim() || t.title.length>80 ||
-      !['move','purpose','downshift','eighty','plant','tea','belong','family','tribe'].includes(t.habitKey) ||
-      !Number.isInteger(t.hour) || t.hour<0 || t.hour>23 || !Number.isInteger(t.minute) || t.minute<0 || t.minute>59 ||
-      !['once','daily','someDays','weekly','monthly'].includes(t.repeat) || t.status!=='pending' ||
-      typeof t.remind!=='boolean' || !validDate(t.startDate) ||
-      t.endDate!==null && (!validDate(t.endDate)||t.endDate<t.startDate) ||
-      !Array.isArray(t.weekdays) || t.weekdays.length>7 || t.weekdays.some(n=>!Number.isInteger(n)||n<1||n>7) ||
-      ['someDays','weekly'].includes(t.repeat)&&!t.weekdays.length ||
-      !Array.isArray(t.monthDays) || t.monthDays.length>31 || t.monthDays.some(n=>!Number.isInteger(n)||n<1||n>31) ||
-      typeof t.lastDayOfMonth!=='boolean' || t.repeat==='monthly'&&!t.monthDays.length&&!t.lastDayOfMonth ||
-      !Array.isArray(t.excludedDates) || t.excludedDates.length>366 || t.excludedDates.some(s=>!validDate(s)) ||
-      !Number.isInteger(t.durationMinutes) || t.durationMinutes<1 || t.durationMinutes>1440 || t.timezone!=='Asia/Ho_Chi_Minh') {
-    fail('invalid-argument','Thông tin lịch chưa hợp lệ. Kiểm tra tên, ngày và giờ.');
-  }
+  const invalid = (field, message) => fail('invalid-argument', `Lịch không hợp lệ ở ${field}: ${message}`);
+  if (!t || typeof t !== 'object' || Array.isArray(t)) invalid('dữ liệu lịch', 'không đúng định dạng.');
+  if (Object.keys(t).some(k=>!allowed.includes(k))) invalid('dữ liệu lịch', 'có trường không được hỗ trợ.');
+  if (t.schemaVersion!==2 || !Number.isInteger(t.revision) || t.revision<0 ||
+      t.completionSourceId!=null && (typeof t.completionSourceId!=='string'||t.completionSourceId.length>128)) invalid('dữ liệu lịch', 'phiên bản hoặc mã lịch không hợp lệ.');
+  if (typeof t.title!=='string' || !t.title.trim() || t.title.length>80) invalid('tên việc', 'cần từ 1 đến 80 ký tự.');
+  if (!['move','purpose','downshift','eighty','plant','tea','belong','family','tribe'].includes(t.habitKey)) invalid('nhóm thói quen', 'không được hỗ trợ.');
+  if (!Number.isInteger(t.hour) || t.hour<0 || t.hour>23 || !Number.isInteger(t.minute) || t.minute<0 || t.minute>59) invalid('giờ nhắc', 'giờ phải từ 00:00 đến 23:59.');
+  if (!['once','daily','someDays','weekly','monthly'].includes(t.repeat)) invalid('lịch lặp', 'không được hỗ trợ.');
+  if (t.status!=='pending' || typeof t.remind!=='boolean') invalid('dữ liệu lịch', 'trạng thái nhắc không hợp lệ.');
+  if (!validDate(t.startDate)) invalid('ngày bắt đầu', 'không phải ngày hợp lệ.');
+  if (t.endDate!==null && (!validDate(t.endDate)||t.endDate<t.startDate)) invalid('ngày kết thúc', 'phải từ ngày bắt đầu trở đi.');
+  if (!Array.isArray(t.weekdays) || t.weekdays.length>7 || t.weekdays.some(n=>!Number.isInteger(n)||n<1||n>7)) invalid('ngày lặp trong tuần', 'có ngày không hợp lệ.');
+  if (['someDays','weekly'].includes(t.repeat)&&!t.weekdays.length) invalid('ngày lặp trong tuần', 'chưa chọn ngày nào.');
+  if (!Array.isArray(t.monthDays) || t.monthDays.length>31 || t.monthDays.some(n=>!Number.isInteger(n)||n<1||n>31)) invalid('ngày lặp trong tháng', 'có ngày không hợp lệ.');
+  if (typeof t.lastDayOfMonth!=='boolean' || t.repeat==='monthly'&&!t.monthDays.length&&!t.lastDayOfMonth) invalid('ngày lặp trong tháng', 'chưa chọn ngày nào.');
+  if (!Array.isArray(t.excludedDates) || t.excludedDates.length>366 || t.excludedDates.some(s=>!validDate(s))) invalid('ngày loại trừ', 'có ngày không hợp lệ.');
+  if (!Number.isInteger(t.durationMinutes) || t.durationMinutes<1 || t.durationMinutes>1440) invalid('thời lượng', 'phải từ 1 phút đến 24 giờ.');
+  if (t.timezone!=='Asia/Ho_Chi_Minh') invalid('múi giờ', 'phải là Asia/Ho_Chi_Minh.');
   return {...t,title:t.title.trim()};
 }
 
