@@ -3,7 +3,7 @@ const http=require('node:http');const path=require('node:path');const fs=require
 const {createHmac,randomBytes,scryptSync,timingSafeEqual}=require('node:crypto');
 const {HttpsError}=require('firebase-functions/v2/https');
 const {createDomain,DomainError}=require('./domain.cjs');
-const {createAdminService}=require('./admin.cjs');
+const {createAdminService,requireAdmin}=require('./admin.cjs');
 const {createNotificationEvents}=require('./notification-events.cjs');
 const {createRealWorker}=require('./real-worker.cjs');
 const {initializeRealFirebase}=require('./real-runtime.cjs');
@@ -20,6 +20,7 @@ function createSessionAuth(password,{now=Date.now}={}){
 function createHandler({db,auth,admin,worker,password,webRoot,extraRoutes={},allowedOrigins=[]}){
  const sessions=createSessionAuth(password),domain=createDomain(db),events=createNotificationEvents(db);
  const routes={
+  adminWorkerStatus:a=>{requireAdmin(a);return worker.status();},
   adminDashboard:(a,d)=>admin.dashboard(a,d),adminCreateCampaign:(a,d)=>admin.createCampaign(a,d),adminCancelCampaign:(a,d)=>admin.cancelCampaign(a,d),recordAppActivity:(a)=>admin.recordActivity(a),
   createPairing:a=>domain.createPairing(a?.uid),
   redeemPairing:(a,d)=>domain.redeemPairing(a?.uid,d.code),
@@ -45,9 +46,9 @@ function createHandler({db,auth,admin,worker,password,webRoot,extraRoutes={},all
     if(!Object.hasOwn(routes,name))throw new HttpsError('not-found','API không tồn tại.');
     const bearer=/^Bearer (\S+)$/.exec(req.headers.authorization||'')?.[1];if(!bearer)throw new HttpsError('unauthenticated','Vui lòng đăng nhập.');
     let actor=sessions.verify(bearer);if(!actor){try{const decoded=await auth.verifyIdToken(bearer,true);actor={uid:decoded.uid,token:decoded};}catch{throw new HttpsError('unauthenticated','Phiên đăng nhập hết hạn.');}}
-    if(actor.uid==='local-admin'&&!name.startsWith('admin'))throw new HttpsError('permission-denied','Admin session cannot impersonate an app user.');
+    if((actor.uid==='local-admin'||actor.uid==='an-nhien-admin')&&!name.startsWith('admin'))throw new HttpsError('permission-denied','Admin session cannot impersonate an app user.');
     const result=await routes[name](actor,data);json(200,{result});
-   }catch(error){const known=error instanceof HttpsError||error instanceof DomainError,code=known?error.code:'internal';const httpCode={unauthenticated:401,'permission-denied':403,'not-found':404,'invalid-argument':400,'resource-exhausted':429,'failed-precondition':400,'already-exists':409}[code]||500;json(httpCode,{error:{status:code.toUpperCase().replaceAll('-','_'),message:known?error.message:'Chưa thực hiện được. Vui lòng thử lại.'}});if(!known)console.error('API failure',{code:error.code||'internal'});}
+   }catch(error){const quota=error.code===8;const known=quota||error instanceof HttpsError||error instanceof DomainError,code=quota?'unavailable':known?error.code:'internal';const httpCode={unavailable:503,unauthenticated:401,'permission-denied':403,'not-found':404,'invalid-argument':400,'resource-exhausted':429,'failed-precondition':400,'already-exists':409}[code]||500;json(httpCode,{error:{status:code.toUpperCase().replaceAll('-','_'),message:quota?'Firestore đã hết quota. Vui lòng thử lại sau khi hạn mức được khôi phục.':known?error.message:'Chưa thực hiện được. Vui lòng thử lại.'}});if(!known)console.error('API failure',{code:error.code||'internal'});}
    return;
   }
   if(!['GET','HEAD'].includes(req.method)){res.writeHead(405);res.end();return;}
@@ -60,8 +61,8 @@ function createHandler({db,auth,admin,worker,password,webRoot,extraRoutes={},all
 async function start(){
  const envFile=path.join(__dirname,'.env.real');if(fs.existsSync(envFile))process.loadEnvFile(envFile);
  const runtime=initializeRealFirebase(),admin=createAdminService(runtime.db);
- // Fail before opening the admin screen if real DB authorization is missing.
- await runtime.db.collection('users').limit(1).get();
+ // Fail for invalid DB authorization; quota exhaustion must not take down sign-in.
+ try{await runtime.db.collection('users').limit(1).get();}catch(error){if(error.code!==8)throw error;console.error('Firestore quota exhausted; serving admin while waiting for quota recovery.');}
  const worker=createRealWorker(runtime.db,runtime.messaging,admin);
  const {createAssistantService}=require('./assistant.cjs');const {createVoiceTaskService}=require('./voice-task.cjs');
  const ai={getKey:()=>process.env.GROQ_API_KEY||'',getModel:()=>process.env.GROQ_VOICE_MODEL||'openai/gpt-oss-20b'};
@@ -70,9 +71,9 @@ async function start(){
  const localOrigins=[`http://localhost:${port}`,`http://127.0.0.1:${port}`,...Object.values(require('node:os').networkInterfaces()).flat().filter(x=>x.family==='IPv4'&&!x.internal).map(x=>`http://${x.address}:${port}`)];
  const origins=[...localOrigins,...(process.env.ALLOWED_ORIGINS||'').split(',').map(s=>s.trim()).filter(Boolean)];
  const server=http.createServer(createHandler({...runtime,admin,worker,password:process.env.ADMIN_LOGIN_PASSWORD,webRoot:path.resolve(__dirname,'../../admin-web'),allowedOrigins:origins,extraRoutes:{talkToAssistant:(a,d)=>assistant(a.uid,d),interpretVoiceTask:(a,d)=>voice(a.uid,d)}}));
- await worker.tick();const timer=setInterval(()=>worker.tick(),10000);
+ void worker.start();
  server.listen(port,host,()=>console.log(`An Nhien REAL Firebase (${runtime.projectId}) — http://${host}:${port}`));
- const stop=()=>{clearInterval(timer);server.close(()=>process.exit(0));};process.once('SIGINT',stop);process.once('SIGTERM',stop);
+ const stop=()=>{worker.stop();server.close(()=>process.exit(0));};process.once('SIGINT',stop);process.once('SIGTERM',stop);
 }
 if(require.main===module)start().catch(error=>{console.error('Real backend startup failed',{code:error.code||'startup',message:error.message?.slice(0,300)});process.exitCode=1;});
 module.exports={createHandler,createSessionAuth};

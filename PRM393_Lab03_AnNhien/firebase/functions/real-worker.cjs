@@ -3,30 +3,15 @@ const {createHash,randomUUID}=require('node:crypto');
 const {Timestamp}=require('firebase-admin/firestore');
 const {createNotificationEvents}=require('./notification-events.cjs');
 const {sendInboxPush}=require('./push-delivery.cjs');
-function createRealWorker(db,messaging,admin,{now=Date.now,log=console}={}){
- const notifications=createNotificationEvents(db);let busy=false,lastSuccess=null,lastError=null;let initialized=false;let userCache=[],usersCachedAt=0;const perUserCursor=new Map();
- // Persistent cursor: restarts catch up from the last successful page. First
- // activation starts at now, so historical inboxes aren't broadcast unexpectedly.
- async function poll(name,field,handle){
-  const checkpoint=db.doc(`serverRuntime/${name}`);
-  await db.runTransaction(async tx=>{const doc=await tx.get(checkpoint);if(!doc.exists)tx.create(checkpoint,{since:Timestamp.fromMillis(now()),path:null});});
-  const state=(await checkpoint.get()).data();let q=db.collectionGroup(name).orderBy(field).orderBy('__name__').limit(100);
-  q=state.path?q.startAfter(state.since,db.doc(state.path)):q.where(field,'>=',state.since);
-  let docs;try{docs=await q.get();}catch(error){
-   if(error.code!==9)throw error;
-   // Single-collection indexes are available immediately. Temporary fallback
-   // while new collection-group indexes build; idempotent handlers allow the
-   // group cursor to catch up safely once its index becomes ready.
-   if(!usersCachedAt||now()-usersCachedAt>60000){const users=await db.collection('users').limit(10001).get();if(users.size>10000)throw new Error('Worker requires aggregate routing above 10000 users');userCache=users.docs;usersCachedAt=now();}
-   for(const user of userCache){
-    const key=name+'-'+createHash('sha256').update(user.id).digest('hex'),ref=db.doc(`serverRuntime/${key}`);
-    let cursor=perUserCursor.get(key);if(!cursor){const saved=await ref.get();cursor=saved.exists?saved.data():{since:state.since,path:null};if(!saved.exists)await ref.set(cursor);perUserCursor.set(key,cursor);}
-    let query=db.collection(`users/${user.id}/${name}`).orderBy(field).orderBy('__name__').limit(100);
-    query=cursor.path?query.startAfter(cursor.since,db.doc(cursor.path)):query.where(field,'>=',cursor.since);
-    const page=await query.get();for(const item of page.docs){await handle(item);cursor={since:item.get(field),path:item.ref.path};await ref.set(cursor);perUserCursor.set(key,cursor);}
-   }return;
-  }for(const doc of docs.docs){await handle(doc);await checkpoint.update({since:doc.get(field),path:doc.ref.path});}
- }
+const STREAMS={caregivers:'createdAt',completions:'updatedAt',scheduleEvents:'createdAt',notifications:'receivedAt'};
+function createRealWorker(db,messaging,admin,{now=Date.now,log=console,setTimer=setTimeout,clearTimer=clearTimeout}={}){
+ const events=createNotificationEvents(db),checkpoints=new Map(),subscriptions=new Map(),timers=new Map(),campaigns=new Map();
+ let stopped=true,generation=0,starting=null,initializing=false,lastSuccess=null,lastError=null;
+ const delay=error=>error.code===8||error.code===9?900000:30000;
+ function cancel(key){if(timers.has(key)){clearTimer(timers.get(key));timers.delete(key);}}
+ function later(key,ms,fn){cancel(key);if(stopped)return;timers.set(key,setTimer(()=>{timers.delete(key);if(!stopped)fn();},Math.min(2147483647,Math.max(0,ms))));}
+ function detach(key){const unsubscribe=subscriptions.get(key);subscriptions.delete(key);unsubscribe?.();}
+ function failure(error,source){lastError=error.code||'worker-error';log.error('Realtime worker retry pending',{source,code:lastError});}
  async function push(doc){
   const uid=doc.ref.parent.parent?.id;if(!uid||doc.ref.parent.parent.parent.id!=='users')return;
   const receipt=db.doc(`serverPushReceipts/${createHash('sha256').update(doc.ref.path).digest('hex')}`),lease=randomUUID();
@@ -35,18 +20,72 @@ function createRealWorker(db,messaging,admin,{now=Date.now,log=console}={}){
   try{await sendInboxPush(db,messaging,{uid,id:doc.id,data:doc.data()},now());await receipt.update({status:'sent',finishedAt:Timestamp.fromMillis(now())});}
   catch(error){await receipt.update({status:'retry',leaseUntil:Timestamp.fromMillis(0)});throw error;}
  }
- async function tick(){
-  if(busy)return;busy=true;
-  try{
-   if(!initialized){const cutoff=Timestamp.fromMillis(now());for(const name of ['caregivers','completions','scheduleEvents','notifications'])await db.runTransaction(async tx=>{const ref=db.doc(`serverRuntime/${name}`);if(!(await tx.get(ref)).exists)tx.create(ref,{since:cutoff,path:null});});initialized=true;}
-   await admin.processQueue();
-   await poll('caregivers','createdAt',async doc=>{const parent=doc.ref.parent.parent;if(parent?.parent.id!=='users')return;await notifications.pairingChanged({eventId:doc.ref.path+':'+doc.get('createdAt').toMillis(),ownerUid:parent.id,childUid:doc.id,before:null,after:doc.data()});});
-   await poll('completions','updatedAt',async doc=>{const parent=doc.ref.parent.parent;if(parent?.parent.id!=='users')return;await notifications.completed({ownerUid:parent.id,completionId:doc.id,before:null,after:doc.data()});});
-   await poll('scheduleEvents','createdAt',async doc=>{const parent=doc.ref.parent.parent;if(parent?.parent.id!=='users')return;const d=doc.data();await notifications.scheduleChanged({eventId:doc.ref.path,ownerUid:parent.id,actorUid:d.actorUid,taskId:d.taskId,before:d.action==='created'?null:{change:'before'},after:{change:'after'}});});
-   await poll('notifications','receivedAt',push);lastSuccess=now();lastError=null;
-  }catch(error){lastError=error.code||'worker-error';log.error('Real worker retry pending',{code:lastError});}
-  finally{busy=false;}
+ async function handle(name,doc){
+  const owner=doc.ref.parent.parent;if(owner?.parent.id!=='users')return;
+  if(name==='notifications')return push(doc);
+  if(name==='caregivers')return events.pairingChanged({eventId:doc.ref.path+':'+doc.get('createdAt').toMillis(),ownerUid:owner.id,childUid:doc.id,before:null,after:doc.data()});
+  if(name==='completions')return events.completed({ownerUid:owner.id,completionId:doc.id,before:null,after:doc.data()});
+  const data=doc.data();return events.scheduleChanged({eventId:doc.ref.path,ownerUid:owner.id,actorUid:data.actorUid,taskId:data.taskId,before:data.action==='created'?null:{change:'before'},after:{change:'after'}});
  }
- return {tick,status:()=>({lastSuccess,lastError,busy})};
+ function watchStream(name,run){
+  if(stopped||run!==generation)return;
+  const field=STREAMS[name],state=checkpoints.get(name);let active=true;
+  let query=db.collectionGroup(name).orderBy(field).orderBy('__name__').limit(100);
+  query=state.path?query.startAfter(state.since,db.doc(state.path)):query.where(field,'>=',state.since);
+  const retry=error=>{if(!active||stopped||run!==generation)return;active=false;detach(name);failure(error,name);later(name,delay(error),()=>watchStream(name,run));};
+  try{subscriptions.set(name,query.onSnapshot(snapshot=>{
+   if(!active||stopped||run!==generation||!snapshot.docs.length)return;
+   // Freeze this page before processing. Re-open at the durable cursor only
+   // after success, so limit(100) cannot hide later events or replay old pages.
+   active=false;detach(name);
+   void(async()=>{
+    try{for(const doc of snapshot.docs){if(stopped||run!==generation)return;await handle(name,doc);if(stopped||run!==generation)return;const cursor={since:doc.get(field),path:doc.ref.path};await db.doc(`serverRuntime/${name}`).update(cursor);checkpoints.set(name,cursor);}
+     lastSuccess=now();lastError=null;watchStream(name,run);
+    }catch(error){if(stopped||run!==generation)return;failure(error,name);later(name,delay(error),()=>watchStream(name,run));}
+   })();
+  },retry));}catch(error){retry(error);}
+ }
+ function scheduleCampaign(id,entry,run){
+  if(stopped||run!==generation||campaigns.get(id)!==entry)return;
+  const due=Math.max(entry.data.scheduledAt?.toMillis()||0,entry.data.leaseUntil?.toMillis()||0,entry.retryAt||0);
+  later('campaign:'+id,due-now(),()=>{
+   if(campaigns.get(id)!==entry)return;
+   if(due>now()){scheduleCampaign(id,entry,run);return;}
+   if(entry.running){entry.changed=true;return;}
+   entry.running=true;
+   void admin.dispatchCampaign(id).then(()=>{entry.retryAt=0;lastSuccess=now();lastError=null;}).catch(error=>{
+    if(stopped||run!==generation)return;failure(error,'campaign');entry.retryAt=now()+delay(error);
+   }).finally(()=>{
+    entry.running=false;if(stopped||run!==generation||campaigns.get(id)!==entry)return;
+    if(entry.retryAt||entry.changed){entry.changed=false;scheduleCampaign(id,entry,run);}
+   });
+  });
+ }
+ function watchCampaigns(run){
+  if(stopped||run!==generation)return;
+  let active=true;
+  const retry=error=>{if(!active||stopped||run!==generation)return;active=false;detach('campaigns');for(const id of campaigns.keys())cancel('campaign:'+id);campaigns.clear();failure(error,'campaigns');later('campaigns',delay(error),()=>watchCampaigns(run));};
+  try{subscriptions.set('campaigns',db.collection('adminCampaigns').where('status','in',['queued','sending']).onSnapshot(snapshot=>{
+   if(!active||stopped||run!==generation)return;
+   for(const change of snapshot.docChanges()){
+    const id=change.doc.id;if(change.type==='removed'){cancel('campaign:'+id);campaigns.delete(id);continue;}
+    const entry=campaigns.get(id)||{running:false,changed:false};entry.data=change.doc.data();campaigns.set(id,entry);scheduleCampaign(id,entry,run);
+   }
+  },retry));}catch(error){retry(error);}
+ }
+ async function initialize(run){
+  initializing=true;try{
+   // All cutoffs exist before campaigns can create their first notifications.
+   const cutoff=Timestamp.fromMillis(now());
+   for(const name of Object.keys(STREAMS)){
+    const ref=db.doc(`serverRuntime/${name}`),state=await db.runTransaction(async tx=>{const doc=await tx.get(ref);if(doc.exists)return doc.data();const value={since:cutoff,path:null};tx.create(ref,value);return value;},{maxAttempts:1});
+    if(stopped||run!==generation)return;checkpoints.set(name,state);
+   }
+   for(const name of Object.keys(STREAMS))watchStream(name,run);watchCampaigns(run);log.info?.('Realtime worker listeners attached',{listeners:subscriptions.size});
+  }catch(error){if(stopped||run!==generation)return;failure(error,'initialize');later('initialize',delay(error),()=>{void initialize(run);});}finally{if(run===generation)initializing=false;}
+ }
+ function start(){if(!stopped)return starting;stopped=false;const run=++generation;starting=initialize(run);return starting;}
+ function stop(){stopped=true;generation++;for(const key of [...subscriptions.keys()])detach(key);for(const key of [...timers.keys()])cancel(key);campaigns.clear();}
+ return {start,stop,status:()=>({mode:'realtime',initializing,lastSuccess,lastError,listeners:subscriptions.size,retryTimers:timers.size,stopped})};
 }
 module.exports={createRealWorker};

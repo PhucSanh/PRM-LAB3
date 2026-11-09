@@ -10,7 +10,7 @@ test('admin session rejects forgery, expires, and rate limits wrong passwords',(
  assert.throws(()=>session.login('admin','fixture-pass','other'),e=>e.code==='resource-exhausted');
 });
 async function fixture(t){
- const calls=[];const handler=createHandler({db:{projectId:'test-real'},auth:{verifyIdToken:async token=>{assert.equal(token,'firebase-user-token');return {uid:'app-user'};}},admin:{dashboard:async(a,d)=>{requireAdmin(a);return {source:'firestore',period:d.period};},createCampaign:async(a,d)=>{requireAdmin(a);calls.push(d);return {id:'real-campaign'};},recordActivity:async a=>{calls.push(a.uid);return {ok:true};}},worker:{},password:'fixture-pass',webRoot:path.resolve(__dirname,'../../../admin-web'),allowedOrigins:['http://allowed.test']});
+ const calls=[];const handler=createHandler({db:{projectId:'test-real'},auth:{verifyIdToken:async token=>{if(token==='firebase-admin-token')return {uid:'an-nhien-admin',admin:true};assert.equal(token,'firebase-user-token');return {uid:'app-user'};}},admin:{dashboard:async(a,d)=>{requireAdmin(a);if(d.simulateQuota)throw Object.assign(new Error('Quota exceeded'),{code:8});return {source:'firestore',period:d.period};},createCampaign:async(a,d)=>{requireAdmin(a);calls.push(d);return {id:'real-campaign'};},recordActivity:async a=>{calls.push(a.uid);return {ok:true};}},worker:{status:()=>({mode:'realtime',listeners:5})},password:'fixture-pass',webRoot:path.resolve(__dirname,'../../../admin-web'),allowedOrigins:['http://allowed.test']});
  const server=http.createServer(handler);await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));t.after(()=>new Promise(resolve=>server.close(resolve)));const base=`http://127.0.0.1:${server.address().port}`;
  const call=async(name,data={},token,origin)=>{const response=await fetch(base+'/api/'+name,{method:'POST',headers:{'Content-Type':'application/json',...(token?{Authorization:'Bearer '+token}:{}),...(origin?{Origin:origin}:{})},body:JSON.stringify({data})});return {status:response.status,body:await response.json()};};return {base,call,calls};
 }
@@ -33,4 +33,20 @@ test('HTTP server rejects foreign origins, invalid JSON, oversized payload and f
 });
 test('real runtime refuses emulator configuration',()=>{
  const {initializeRealFirebase}=require('../real-runtime.cjs');const old=process.env.FIRESTORE_EMULATOR_HOST;process.env.FIRESTORE_EMULATOR_HOST='localhost:8080';try{assert.throws(()=>initializeRealFirebase(),/refuses emulator/);}finally{if(old===undefined)delete process.env.FIRESTORE_EMULATOR_HOST;else process.env.FIRESTORE_EMULATOR_HOST=old;}
+});
+
+test('permanent Firebase admin claim authorizes dashboard and cannot impersonate app users',async t=>{
+ const f=await fixture(t);
+ assert.equal((await f.call('adminDashboard',{},'firebase-admin-token')).status,200);
+ assert.equal((await f.call('recordAppActivity',{},'firebase-admin-token')).status,403);
+});
+
+test('Firestore quota exhaustion returns a clear retryable service error',async t=>{
+ const f=await fixture(t),result=await f.call('adminDashboard',{simulateQuota:true},'firebase-admin-token');
+ assert.equal(result.status,503);assert.equal(result.body.error.status,'UNAVAILABLE');assert.match(result.body.error.message,/Firestore.*quota/);
+});
+
+test('worker diagnostics require admin and identify realtime mode',async t=>{
+ const f=await fixture(t);assert.equal((await f.call('adminWorkerStatus',{},'firebase-user-token')).status,403);
+ const result=await f.call('adminWorkerStatus',{},'firebase-admin-token');assert.equal(result.status,200);assert.equal(result.body.result.mode,'realtime');
 });
