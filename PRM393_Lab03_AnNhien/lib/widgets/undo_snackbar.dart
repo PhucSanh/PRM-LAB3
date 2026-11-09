@@ -5,7 +5,7 @@ import '../theme/app_spacing.dart';
 
 /// Snackbar "Hoàn tác" (Figma S03b `12:2`, S03-skip `10:193`, G09 `66:2`; handoff › Snackbar).
 /// Hai tầng: câu chính đậm (+ câu phụ) ở trên, hàng nút "Đóng" · "Hoàn tác" căn phải ở dưới.
-/// **Không tự tắt** (AppStyleGuide SG-37): chỉ đóng khi bấm "Hoàn tác" hoặc "Đóng".
+/// Tự tắt sau 6 giây; vẫn có thể đóng hoặc hoàn tác ngay.
 ///
 /// Gọi từ View sau khi ViewModel báo hành động thành công, vd.
 /// `showUndoSnackbar(context, title: 'Đã ghi: Đi bộ xong lúc 9:42 sáng.', onUndo: vm.undoDone)`.
@@ -21,7 +21,8 @@ ScaffoldFeatureController<SnackBar, SnackBarClosedReason> showUndoSnackbar(
   messenger.hideCurrentSnackBar();
   return messenger.showSnackBar(
     SnackBar(
-      persist: true,
+      persist: false,
+      duration: const Duration(seconds: 6),
       padding: const EdgeInsets.all(AppSpacing.base),
       content: _UndoSnackbarContent(
         title: title,

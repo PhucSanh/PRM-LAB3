@@ -1,16 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 
 import '../theme/app_icons.dart';
 import '../theme/app_spacing.dart';
 import '../viewmodels/device_access_view_model.dart';
+import '../viewmodels/assistant_view_model.dart';
 import 'app_button.dart';
 import 'assistant_mascot.dart';
 import 'form_parts.dart';
 
 /// Bong bóng trợ lý AI nổi ở góc dưới bên phải, đi theo các tab của Bác.
-/// Bấm vào mở màn "Nói để thêm việc". Ẩn khi Remote Config tắt giọng nói.
+/// Mở trợ lý chung: gọi người thân, xem/thêm/sửa/xoá lịch theo ý định.
 class AssistantBubble extends ConsumerWidget {
   const AssistantBubble({super.key});
 
@@ -35,16 +35,17 @@ class AssistantBubble extends ConsumerWidget {
     final colors = Theme.of(context).colorScheme;
     return Semantics(
       button: true,
-      label: 'Nói để thêm việc',
+      label: 'Trợ lý An Nhiên',
       excludeSemantics: true,
       child: Tooltip(
-        message: 'Nói để thêm việc',
+        message: 'Trợ lý An Nhiên',
         child: SizedBox.square(
           dimension: size,
           child: FloatingActionButton(
             key: const Key('assistant-bubble'),
             heroTag: null,
-            onPressed: () => context.push('/today/voice'),
+            onPressed: () =>
+                ref.read(assistantLauncherProvider.notifier).open(),
             backgroundColor: colors.primaryContainer,
             foregroundColor: colors.primary,
             elevation: 0,

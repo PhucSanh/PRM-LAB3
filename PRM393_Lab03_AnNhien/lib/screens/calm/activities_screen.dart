@@ -29,8 +29,15 @@ class ActivitiesScreen extends ConsumerWidget {
       padding: const EdgeInsets.fromLTRB(AppSpacing.screen, AppSpacing.screen,
           AppSpacing.screen, AssistantBubble.clearance),
       children: [
-        const CalmPageHeader(title: 'Hoạt động'),
+        const CalmPageHeader(
+            title: 'Khám phá',
+            subtitle: 'Chọn nhóm sở thích và tìm hoạt động Bác muốn thử.'),
         const SizedBox(height: AppSpacing.lg),
+        ActivityDiscoveryDeck(
+            showHeading: false,
+            onOpen: (activity) =>
+                context.push('/activities/guides/${activity.id}')),
+        const SizedBox(height: AppSpacing.xl),
         ref.watch(habitsListProvider).when(
               loading: () => const LoadingView(message: 'Đang tải thói quen…'),
               error: (_, __) => ErrorView(
@@ -45,11 +52,6 @@ class ActivitiesScreen extends ConsumerWidget {
                   : Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                          ActivityDiscoveryDeck(
-                            onOpen: (activity) => context
-                                .push('/activities/guides/${activity.id}'),
-                          ),
-                          const SizedBox(height: AppSpacing.xl),
                           Text('Các nhóm thói quen',
                               style: Theme.of(context).textTheme.titleLarge),
                           const SizedBox(height: AppSpacing.md),

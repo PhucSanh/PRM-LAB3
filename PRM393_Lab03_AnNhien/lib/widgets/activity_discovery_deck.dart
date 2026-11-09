@@ -19,8 +19,10 @@ final activityChoicesProvider =
 /// Likes stay available across tab navigation; only an explicit schedule action
 /// on the activity detail screen creates a task.
 class ActivityDiscoveryDeck extends ConsumerStatefulWidget {
-  const ActivityDiscoveryDeck({super.key, required this.onOpen});
+  const ActivityDiscoveryDeck(
+      {super.key, required this.onOpen, this.showHeading = true});
   final ValueChanged<GuidedActivity> onOpen;
+  final bool showHeading;
   @override
   ConsumerState<ActivityDiscoveryDeck> createState() =>
       _ActivityDiscoveryDeckState();
@@ -28,6 +30,7 @@ class ActivityDiscoveryDeck extends ConsumerStatefulWidget {
 
 class _ActivityDiscoveryDeckState extends ConsumerState<ActivityDiscoveryDeck> {
   double _drag = 0;
+  String? _interest;
 
   void _choose(GuidedActivity activity, bool liked) {
     ref.read(activityChoicesProvider.notifier).choose(activity.id, liked);
@@ -37,20 +40,49 @@ class _ActivityDiscoveryDeckState extends ConsumerState<ActivityDiscoveryDeck> {
   @override
   Widget build(BuildContext context) {
     final choices = ref.watch(activityChoicesProvider);
-    final remaining =
-        guidedActivities.where((a) => !choices.containsKey(a.id)).toList();
+    final pool = guidedActivities
+        .where((a) => _interest == null || a.interest == _interest)
+        .toList();
+    final remaining = pool.where((a) => !choices.containsKey(a.id)).toList();
+    final interests = guidedActivities.map((a) => a.interest).toSet().toList();
     final liked = guidedActivities.where((a) => choices[a.id] == true).toList();
     final theme = Theme.of(context), colors = theme.colorScheme;
     final activity = remaining.firstOrNull;
     return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-      Text('Hôm nay, bạn thích làm gì?', style: theme.textTheme.titleLarge),
-      const SizedBox(height: 8),
-      Text('Trái: bỏ qua · Phải: thích', style: theme.textTheme.bodyMedium),
+      if (widget.showHeading) ...[
+        Text('Tìm một niềm vui hôm nay', style: theme.textTheme.headlineSmall),
+        const SizedBox(height: 8),
+        Text('Chọn sở thích của Bác, rồi lưu những hoạt động muốn thử.',
+            style: theme.textTheme.bodyMedium),
+        const SizedBox(height: 16),
+      ],
+      SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: Row(children: [
+          for (final interest in <String?>[null, ...interests])
+            Padding(
+              padding: const EdgeInsets.only(right: 8),
+              child: ChoiceChip(
+                label: Text(interest ?? 'Tất cả'),
+                selected: _interest == interest,
+                onSelected: (_) => setState(() {
+                  _interest = interest;
+                  _drag = 0;
+                }),
+              ),
+            ),
+        ]),
+      ),
       const SizedBox(height: 16),
       if (activity != null) ...[
         Text(
-            '${choices.length + 1} / ${guidedActivities.length} hoạt động · Đã thích ${liked.length}',
+            'Gợi ý ${pool.length - remaining.length + 1}/${pool.length} · Đã yêu thích ${liked.length}',
             style: theme.textTheme.labelLarge),
+        const SizedBox(height: 8),
+        LinearProgressIndicator(
+            value: (pool.length - remaining.length) / pool.length,
+            minHeight: 4,
+            borderRadius: BorderRadius.circular(4)),
         const SizedBox(height: 16),
         Stack(children: [
           Positioned.fill(
@@ -86,18 +118,20 @@ class _ActivityDiscoveryDeckState extends ConsumerState<ActivityDiscoveryDeck> {
                   ..rotateZ(_drag.clamp(-140, 140) / 1600),
                 clipBehavior: Clip.antiAlias,
                 decoration: BoxDecoration(
-                  color: colors.secondaryContainer,
+                  color: colors.surface,
                   borderRadius: BorderRadius.circular(28),
                   border: Border.all(
                       color: _drag.abs() > 30
-                          ? (_drag > 0 ? colors.primary : colors.error)
+                          ? (_drag > 0
+                              ? colors.primary
+                              : colors.onSurfaceVariant)
                           : colors.outlineVariant),
                 ),
                 child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
                       SizedBox(
-                          height: 120,
+                          height: 160,
                           child: Stack(fit: StackFit.expand, children: [
                             Image.asset(habitPhotosOf(activity.habitKey).first,
                                 fit: BoxFit.cover,
@@ -111,8 +145,9 @@ class _ActivityDiscoveryDeckState extends ConsumerState<ActivityDiscoveryDeck> {
                             if (_drag.abs() > 30)
                               Center(
                                   child: Chip(
-                                      label: Text(
-                                          _drag > 0 ? 'THÍCH ♥' : 'BỎ QUA'))),
+                                      label: Text(_drag > 0
+                                          ? 'YÊU THÍCH ♥'
+                                          : 'ĐỂ LÚC KHÁC'))),
                           ])),
                       Padding(
                           padding: const EdgeInsets.all(20),
@@ -120,7 +155,7 @@ class _ActivityDiscoveryDeckState extends ConsumerState<ActivityDiscoveryDeck> {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
-                                    '${HabitStyle.nameOf(activity.habitKey)} · ${activity.minutes} phút',
+                                    '${activity.interest} · ${activity.minutes} phút',
                                     style: theme.textTheme.labelLarge),
                                 const SizedBox(height: 8),
                                 ReadAloudRegion(
@@ -129,8 +164,13 @@ class _ActivityDiscoveryDeckState extends ConsumerState<ActivityDiscoveryDeck> {
                                   text:
                                       '${activity.title}. ${activity.minutes} phút. ${activity.steps.join('. ')}',
                                   child: Text(activity.title,
-                                      style: theme.textTheme.titleLarge),
+                                      style: theme.textTheme.headlineSmall),
                                 ),
+                                const SizedBox(height: 12),
+                                Text(activity.steps.first,
+                                    style: theme.textTheme.bodyMedium?.copyWith(
+                                        color: colors.onSurfaceVariant)),
+                                const SizedBox(height: 8),
                                 TextButton(
                                     onPressed: () => widget.onOpen(activity),
                                     child: const Text('Xem cách làm →')),
@@ -141,25 +181,35 @@ class _ActivityDiscoveryDeckState extends ConsumerState<ActivityDiscoveryDeck> {
           ),
         ]),
         const SizedBox(height: 12),
-        Row(children: [
-          Expanded(
-              child: OutlinedButton.icon(
-                  onPressed: () => _choose(activity, false),
-                  icon: const Icon(Icons.close_rounded),
-                  label: const Text('Bỏ qua'))),
-          const SizedBox(width: 12),
-          Expanded(
-              child: FilledButton.icon(
-                  onPressed: () => _choose(activity, true),
-                  icon: const Icon(Icons.favorite_rounded),
-                  label: const Text('Thích'))),
-        ]),
+        Text('Vuốt trái để bỏ qua · Vuốt phải để yêu thích',
+            style: theme.textTheme.bodySmall, textAlign: TextAlign.center),
+        const SizedBox(height: 12),
+        LayoutBuilder(builder: (context, box) {
+          final stacked = MediaQuery.textScalerOf(context).scale(16) > 24;
+          final skip = OutlinedButton.icon(
+              onPressed: () => _choose(activity, false),
+              icon: const Icon(Icons.arrow_back_rounded),
+              label: const Text('Để lúc khác'));
+          final like = FilledButton.icon(
+              onPressed: () => _choose(activity, true),
+              icon: const Icon(Icons.favorite_border_rounded),
+              label: const Text('Yêu thích'));
+          return stacked
+              ? Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [like, const SizedBox(height: 12), skip])
+              : Row(children: [
+                  Expanded(child: skip),
+                  const SizedBox(width: 12),
+                  Expanded(child: like)
+                ]);
+        }),
       ] else ...[
         const Icon(Icons.check_circle_outline_rounded, size: 48),
         const SizedBox(height: 12),
-        Text('Đã xem hết gợi ý', style: theme.textTheme.titleLarge),
+        Text('Đã xem hết nhóm này', style: theme.textTheme.titleLarge),
         Text(
-            'Bạn đã thích ${liked.length} hoạt động. Chọn bên dưới để xem cách làm hoặc thêm vào lịch.'),
+            'Bác có ${liked.length} hoạt động yêu thích. Thử nhóm sở thích khác hoặc mở danh sách bên dưới.'),
         TextButton(
             onPressed: () => ref.read(activityChoicesProvider.notifier).reset(),
             child: const Text('Khám phá lại')),
@@ -176,7 +226,7 @@ class _ActivityDiscoveryDeckState extends ConsumerState<ActivityDiscoveryDeck> {
             label: const Text('Hoàn tác')),
       if (liked.isNotEmpty) ...[
         const SizedBox(height: 16),
-        Text('Hoạt động đã thích (${liked.length})',
+        Text('Yêu thích của Bác (${liked.length})',
             style: theme.textTheme.titleMedium),
         for (final item in liked)
           ListTile(

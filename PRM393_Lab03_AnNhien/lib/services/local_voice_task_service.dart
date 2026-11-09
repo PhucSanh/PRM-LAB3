@@ -351,6 +351,13 @@ String? _cleanTitle(String raw) {
     final before = s;
     s = s.trim().replaceAll(RegExp(r'^[,\s]+|[,\s]+$'), '');
     final f = foldVietnamese(s);
+    final request = RegExp(
+            r'^(?:tao|them)\s+(?:(?:mot|1)\s+)?(?:cong viec|viec|lich)(?:\s+(?:vao|la|de))?\b\s*')
+        .firstMatch(f);
+    if (request != null) {
+      s = s.substring(request.end);
+      continue;
+    }
     final lead = _leading.firstMatch(f);
     if (lead != null) s = s.substring(lead.end);
     final f2 = foldVietnamese(s);

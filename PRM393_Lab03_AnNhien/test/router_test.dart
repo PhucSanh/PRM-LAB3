@@ -8,7 +8,7 @@ import 'package:flutter_test/flutter_test.dart';
 
 /// Mọi route placeholder trong architecture.md mục 7.2: path mẫu → mã màn hiện trên `FeaturePlaceholder`.
 const _placeholders = {
-  '/today/voice': 'Nói để thêm việc',
+  '/today/voice': 'Lên lịch bằng giọng nói',
   '/settings/reminders': 'Lời nhắc',
 };
 
@@ -63,7 +63,7 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(tester.takeException(), isNull);
-      if (code == 'Lịch của Bác') {
+      if (code == 'Lịch của Bác' || path == '/habits') {
         await tester.scrollUntilVisible(find.textContaining(code), 250,
             scrollable: find.byType(Scrollable).first);
       }

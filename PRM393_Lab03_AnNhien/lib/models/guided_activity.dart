@@ -5,6 +5,25 @@ class GuidedActivity {
   final String id, habitKey, title;
   final int minutes;
   final List<String> steps;
+  String get interest => switch (id) {
+        'water-10' || 'plant-10' || 'flower-15' => 'Cây cối',
+        'music-10' ||
+        'sing-10' ||
+        'draw-15' ||
+        'craft-15' =>
+          'Âm nhạc & sáng tạo',
+        'read-15' || 'journal-5' || 'puzzle-10' || 'poem-10' => 'Đọc & học hỏi',
+        'call-5' ||
+        'tea-15' ||
+        'photo-10' ||
+        'friend-5' ||
+        'club-15' ||
+        'neighbor-10' ||
+        'tea-family-10' =>
+          'Gặp gỡ & trò chuyện',
+        'salad-15' || 'slow-meal-15' || 'recipe-15' => 'Bếp nhà',
+        _ => 'Vận động & thư giãn',
+      };
 }
 
 const guidedActivities = [
@@ -87,6 +106,35 @@ const guidedActivities = [
   GuidedActivity('tidy-10', 'move', 'Sắp xếp một góc nhà nhỏ', 10, [
     'Chọn một ngăn bàn hoặc góc nhỏ dễ dọn.',
     'Sắp từng món vừa sức, tránh nâng vật nặng hay với cao.',
+  ]),
+  GuidedActivity('flower-15', 'move', 'Cắm vài nhành hoa trong nhà', 15, [
+    'Chọn một chiếc bình nhỏ và vài nhành hoa Bác thích.',
+    'Sắp hoa theo ý mình rồi đặt ở góc dễ ngắm.',
+  ]),
+  GuidedActivity('sing-10', 'downshift', 'Hát theo một bài nhạc quen', 10, [
+    'Mở một bài nhạc Bác yêu thích với âm lượng vừa nghe.',
+    'Hát hoặc ngân nga theo giai điệu, không cần thuộc hết lời.',
+  ]),
+  GuidedActivity('draw-15', 'purpose', 'Vẽ một góc vườn bằng bút màu', 15, [
+    'Chuẩn bị giấy và vài cây bút màu trong tầm tay.',
+    'Vẽ chậu cây hoặc cảnh trước cửa theo cách Bác thích.',
+  ]),
+  GuidedActivity('craft-15', 'purpose', 'Làm một tấm thiệp nhỏ', 15, [
+    'Chọn giấy, bút và vài hình trang trí có sẵn.',
+    'Viết lời chúc và trang trí tấm thiệp gửi người Bác quý.',
+  ]),
+  GuidedActivity('puzzle-10', 'purpose', 'Thử một ô chữ vui', 10, [
+    'Chọn ô chữ hoặc trò tìm từ có chữ đủ lớn, dễ nhìn.',
+    'Làm theo nhịp của Bác, có thể rủ một người cùng chơi.',
+  ]),
+  GuidedActivity(
+      'poem-10', 'purpose', 'Đọc và chép một câu thơ yêu thích', 10, [
+    'Chọn một bài thơ hoặc câu nói Bác muốn giữ lại.',
+    'Đọc chậm, ghi lại vài dòng và chia sẻ nếu Bác thích.',
+  ]),
+  GuidedActivity('recipe-15', 'plant', 'Ghi lại một món ăn gia đình', 15, [
+    'Chọn món quen thuộc Bác hay nấu cho người thân.',
+    'Ghi các nguyên liệu và vài bước chính để chia sẻ cùng con cháu.',
   ]),
 ];
 GuidedActivity? guidedActivityById(String id) =>

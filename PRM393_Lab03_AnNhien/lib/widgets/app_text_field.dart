@@ -25,8 +25,12 @@ class AppTextField extends StatelessWidget {
     this.textInputAction,
     this.inputFormatters,
     this.onSubmitted,
+    this.minLines = 1,
+    this.maxLines = 1,
   });
 
+  final int minLines;
+  final int? maxLines;
   final String label;
 
   /// Câu gợi ý, vd. "Đi bộ buổi sáng" → hiện "Ví dụ: Đi bộ buổi sáng".
@@ -78,6 +82,8 @@ class AppTextField extends StatelessWidget {
                 focusNode: focusNode,
                 keyboardType: keyboardType,
                 maxLength: maxLength,
+                minLines: minLines,
+                maxLines: maxLines,
                 onChanged: onChanged,
                 autofillHints: autofillHints,
                 textInputAction: textInputAction ?? TextInputAction.done,
