@@ -23,17 +23,18 @@ void main() {
   }
 
   for (final scale in [1.3, 2.0]) {
-    testWidgets('2 tầng chữ, còn sau 10 giây, không tràn ở 360 dp ×$scale',
+    testWidgets('tự tắt sau 6 giây, không tràn ở 360 dp ×$scale',
         (tester) async {
       await open(tester, () {}, scale: scale);
       expect(find.text('Đã ghi: Đi bộ xong lúc 9:42 sáng.'), findsOneWidget);
       expect(find.text('Giỏi lắm Bác!'), findsOneWidget);
       expect(tester.takeException(), isNull);
 
-      await tester.pump(const Duration(seconds: 10));
-      await tester.pump(const Duration(minutes: 5));
-      await tester.pumpAndSettle();
+      await tester.pump(const Duration(seconds: 5));
       expect(find.text('Hoàn tác'), findsOneWidget);
+      await tester.pump(const Duration(milliseconds: 1100));
+      await tester.pumpAndSettle();
+      expect(find.byType(SnackBar), findsNothing);
     });
   }
 
