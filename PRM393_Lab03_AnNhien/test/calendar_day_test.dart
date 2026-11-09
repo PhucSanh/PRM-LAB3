@@ -4,6 +4,7 @@ import 'package:an_nhien/models/voice_task_draft.dart';
 import 'package:an_nhien/router/app_router.dart';
 import 'package:an_nhien/screens/calm/calendar_screen.dart';
 import 'package:an_nhien/widgets/task_detail_parts.dart';
+import 'package:an_nhien/widgets/activity_discovery_deck.dart';
 import 'package:an_nhien/services/voice_task_service.dart';
 import 'package:an_nhien/viewmodels/daily_actions_view_model.dart';
 import 'package:an_nhien/viewmodels/device_access_view_model.dart';
@@ -214,7 +215,9 @@ void main() {
     await tester.tap(find.text('Khám phá'));
     await tester.pumpAndSettle();
     expect(find.text('Thói quen'), findsNothing); // đã gộp vào Khám phá
-    expect(find.text('Gợi ý mỗi ngày'), findsOneWidget);
+    expect(c.read(routerProvider).state.uri.path, '/activities');
+    expect(find.byType(ActivityDiscoveryDeck), findsOneWidget);
+    expect(find.widgetWithText(ChoiceChip, 'Tất cả'), findsOneWidget);
     await tester.tap(find.text('Trang chủ'));
     await tester.pumpAndSettle();
     expect(c.read(routerProvider).state.uri.path, '/calendar');
