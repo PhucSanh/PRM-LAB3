@@ -1,6 +1,6 @@
 # An Nhiên — admin/API local + Firebase production
 
-## Production trên Azure — 08/11/2026
+## Production trên Azure — 09/11/2026
 
 - Admin/API/worker: https://an-nhien-admin.bluerock-e6f4ebd4.japaneast.azurecontainerapps.io.
 - Link cũ https://prm393-145c9-admin.web.app được chuyển hướng sang Azure.
@@ -28,7 +28,16 @@ cd admin-web
 npm run dev
 ```
 
-Mở http://127.0.0.1:3000, đăng nhập **admin / admin** theo yêu cầu. Lần đầu script tạo `.env.real` trong firebase/functions (gitignore, quyền 0600). Chỉnh config/mật khẩu tại đó rồi restart server. Phiên quản trị được ký ở backend, hết hạn sau 8 giờ hoặc restart; không được dùng để giả làm user app.
+Mở http://127.0.0.1:3000, đăng nhập bằng tài khoản **annhien**. Tài khoản chính thức là Firebase Auth UID `an-nhien-admin`, email nội bộ `annhien.admin@prm393-145c9.firebaseapp.com`, custom claim `admin: true` không có thời hạn kích hoạt. Firebase SDK lưu phiên và tự làm mới ID token, không dùng phiên admin tạm 8 giờ.
+
+Seed/reset mật khẩu bằng credential Firebase có quyền quản lý Auth (không đưa mật khẩu vào repo):
+
+```bash
+ADMIN_SEED_PASSWORD='<password>' USE_FIREBASE_CLI_CREDENTIAL=1 node scripts/seed-admin-real.cjs
+```
+
+Script tạo/cập nhật đúng UID, bật tài khoản, giữ claims khác và thu hồi phiên cũ khi reset mật khẩu; không tạo hồ sơ user app. Luồng đăng nhập này được dùng trên giao diện Azure. Firebase Email/Password provider phải bật.
+
 
 `USE_FIREBASE_CLI_CREDENTIAL=1` chỉ cho máy phát triển: dùng lại tài khoản đã `firebase login`, token ở bộ nhớ, không chép credential vào repo/APK. Trên Azure/server khác dùng ADC/service account qua `GOOGLE_APPLICATION_CREDENTIALS`, đặt `USE_FIREBASE_CLI_CREDENTIAL=0`. Xem `firebase/functions/real-server.env.example`.
 
@@ -57,7 +66,7 @@ Cài cùng APK lên hai điện thoại, đăng nhập hai tài khoản khác nh
 
 ## Luồng thống nhất
 
-- Admin tạo campaign → adminCampaigns trong Firestore → worker 10 giây → inbox user → FCM. Có segment và lịch gửi; chỉ hủy khi queued.
+- Admin tạo campaign → adminCampaigns trong Firestore → listener realtime → inbox user → FCM. Có segment và lịch gửi; chỉ hủy khi queued.
 - Ghép nối bằng createPairing/redeemPairing/revokePairing → domain transaction kiểm tra role/mã/expiry/rate limit → grants chung trong Firestore → thông báo hai bên.
 - Gợi ý lịch bằng sendSuggestion/resolveSuggestion/undoDismiss → kiểm tra caregiver → transaction cập nhật inbox/lịch.
 - Con cháu cập nhật/hoàn tác lịch → cùng transaction ghi scheduleEvents → worker thông báo Ba mẹ. Rules chỉ cho caregiver đã ghép nối tạo event với actorUid đúng, server timestamp; không cho client sửa/xóa event.
@@ -70,7 +79,7 @@ Tương tác gia đình ở đây là các chức năng hiện có của app, kh
 
 Cursor lưu trong serverRuntime; receipt/lease lưu trong serverPushReceipts. Lần bật đầu chỉ xử lý sự kiện từ lúc kích hoạt, không phát lại toàn bộ lịch sử. Restart bắt kịp từ cursor. ID inbox ổn định tránh tạo lặp; FCM có thể gửi lại nếu process chết sau gửi trước lưu receipt (at least once), tag ổn định giúp hạn chế trùng.
 
-Index đã deploy production. Trong lúc index collection-group được Google xây, worker/dashboard tự truy vấn collection theo từng user và lưu cursor riêng. Fallback tốn nhiều lượt đọc hơn; tự trở về query group khi index sẵn sàng. Không chạy đồng thời worker standalone và Cloud Functions gửi cùng inbox. Quy mô lớn cần aggregate và queue chuyên dụng; báo cáo giới hạn 10.000 hồ sơ.
+Index collection-group phải READY để worker mở listener; lỗi index/quota được retry sau 15 phút, không quét từng user để thay thế. Dashboard vẫn có fallback báo cáo riêng khi thiếu index. Không chạy đồng thời worker standalone và Cloud Functions gửi cùng inbox. Quy mô lớn cần aggregate và queue chuyên dụng; báo cáo giới hạn 10.000 hồ sơ.
 
 `enqueued` = inbox đã tạo, không khẳng định thiết bị nhận. GET /health báo server/project. Số liệu: role, growth 24 giờ/7/30/90 ngày, DAU/WAU/MAU, phiên, first heartbeat, người quay lại, lịch/completion, gia đình, FCM devices, inbox mới/đọc, CSV. Lượt tải store/retention D7 chưa có nguồn đúng, không điền số giả. Heartbeat cần cài APK mới để bắt đầu tích lũy.
 
@@ -89,3 +98,17 @@ node --test firebase/functions/test/real-server.test.cjs firebase/functions/test
 ```
 
 Các bộ test Emulator cũ vẫn còn để kiểm thử khác; không cần bật Emulator để chạy hệ thống này.
+
+## Firestore hết quota
+
+Backend vẫn phục vụ trang quản trị khi Firestore trả mã 8 (quota exhausted). Dashboard/API trả HTTP 503 với thông báo quota; giao diện vẫn cho admin vào workspace và thử tải lại. Worker lùi lần thử tiếp theo ít nhất 15 phút, giữ cursor để tiếp tục khi quota phục hồi. Không tự đổi gói billing hoặc tăng hạn mức.
+
+## Worker realtime — 09/11/2026
+
+- Backend giữ 5 listener: caregivers, completions, scheduleEvents, notifications và campaign queued/sending. Không còn setInterval hoặc truy vấn get() định kỳ của worker.
+- Bốn checkpoint đọc khi khởi động, giữ trong bộ nhớ; ghi cursor sau xử lý thành công. Mỗi trang listener tối đa 100 sự kiện, xử lý tuần tự, mở lại từ cursor để nhận trang tiếp theo. Restart tiếp tục từ cursor đã lưu.
+- Campaign mới được xử lý theo sự kiện; campaign tương lai đặt timer theo scheduledAt/leaseUntil. Update cursor đánh thức batch kế tiếp, hủy campaign xóa timer. Restart đọc lại campaign đang chờ từ listener.
+- Retry lỗi index/quota sau 15 phút, lỗi khác sau 30 giây. Shutdown đóng listener/timer; receipt push giữ cơ chế chống gửi lặp đã xử lý. FCM vẫn có thể gửi lại khi process chết sau gửi trước lưu receipt.
+- Listener vẫn tính lượt đọc cho dữ liệu ban đầu, sự kiện thay đổi và reconnect; không cam kết 0 lượt đọc. Mô phỏng 24 giờ không sự kiện/reconnect có đúng 4 lượt đọc checkpoint và không có query get() định kỳ.
+- Admin kiểm tra trạng thái bằng POST /api/adminWorkerStatus với Firebase ID token có claim admin: true; trả mode realtime, số listener, số timer, lỗi gần nhất.
+- Không phải chờ chu kỳ 60 giây. Độ trễ thực tế phụ thuộc Firestore, backend, quota/retry và FCM/thiết bị. Không thay đổi APK hoặc nhắc lịch local.
