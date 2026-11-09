@@ -11,7 +11,6 @@ import '../../widgets/app_text_field.dart';
 import '../../widgets/calm_parts.dart';
 import '../../widgets/form_parts.dart';
 import '../../widgets/undo_snackbar.dart';
-import '../../widgets/voice_example_art.dart';
 import '../../widgets/voice_task_review.dart';
 import '../../theme/app_spacing.dart';
 
@@ -76,7 +75,7 @@ class _VoiceInputScreenState extends ConsumerState<VoiceInputScreen> {
         WidgetsBinding.instance.addPostFrameCallback((_) {
           final anchor = _resultAnchor.currentContext;
           if (mounted && anchor != null) {
-            Scrollable.ensureVisible(anchor, alignment: 0.05);
+            Scrollable.ensureVisible(anchor, alignment: 0);
           }
         });
       }
@@ -89,49 +88,88 @@ class _VoiceInputScreenState extends ConsumerState<VoiceInputScreen> {
         keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
         child:
             Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-          const CalmPageHeader(
-              title: 'Nói để thêm việc',
-              subtitle:
-                  'Bác nói tên việc, ngày, giờ và làm trong bao lâu. Bác cũng có thể nói “Tôi làm xong rồi” để cháu đánh dấu và báo việc tiếp theo.',
+          CalmPageHeader(
+              title: result?.ready == true
+                  ? 'Kiểm tra trước khi lưu'
+                  : 'Lên lịch bằng giọng nói',
+              subtitle: result?.ready == true
+                  ? 'Cháu đã sắp xếp lời Bác thành lịch bên dưới. Đúng ý Bác chưa?'
+                  : 'Bác nói điều muốn làm. Cháu giúp làm rõ rồi Bác quyết định lưu.',
               actions: false),
           const SizedBox(height: AppSpacing.lg),
-          const VoiceExampleArt(),
-          const SizedBox(height: AppSpacing.lg),
-          AppButton(
-              label: state.text.isEmpty ? 'Bắt đầu nói' : 'Nói lại từ đầu',
-              icon: Icons.mic_rounded,
-              kind: AppButtonKind.secondary,
-              busy: state.busy && !state.interpreting,
-              onPressed: enabled && !state.busy ? () => vm.listen() : null),
-          const SizedBox(height: AppSpacing.lg),
-          AppTextField(
-              label: 'Câu nói của Bác',
-              controller: controller,
-              maxLength: 500,
-              enabled: !state.busy,
-              onChanged: vm.edit,
-              hint: 'Mai 8 giờ sáng tưới cây trong 15 phút, mỗi ngày'),
-          const SizedBox(height: AppSpacing.base),
-          if (!enabled)
-            const FieldMessage.hint(
-                'Nhập giọng nói đang tạm tắt. Bác có thể gõ tên việc và nhập lịch bằng tay.'),
-          const Text(
-              'Khi Bác bấm “Hiểu lời Bác nói”, phần chữ, giờ thức dậy và các giờ đã có việc trong 7 ngày tới (không kèm tên việc) được gửi tới Google Gemini để hiểu ý Bác. Bản ghi âm không được gửi đi.'),
-          const SizedBox(height: AppSpacing.lg),
-          if (result == null)
+          if (result?.ready != true) ...[
+            AppTextField(
+                label: 'Câu nói của Bác',
+                controller: controller,
+                maxLength: 500,
+                minLines: 3,
+                maxLines: null,
+                keyboardType: TextInputType.multiline,
+                textInputAction: TextInputAction.newline,
+                enabled: !state.busy,
+                onChanged: vm.edit,
+                hint: 'Mai 8 giờ sáng tưới cây trong 15 phút'),
+            const SizedBox(height: AppSpacing.md),
             AppButton(
-                label: state.interpreting
-                    ? 'Đang hiểu lời Bác…'
-                    : 'Hiểu lời Bác nói',
-                icon: Icons.auto_awesome_rounded,
-                busy: state.interpreting,
-                onPressed:
-                    enabled && !state.busy && state.text.trim().isNotEmpty
-                        ? _analyze
-                        : null),
+                label: state.text.isEmpty ? 'Bắt đầu nói' : 'Nói lại từ đầu',
+                icon: Icons.mic_rounded,
+                kind: AppButtonKind.secondary,
+                busy: state.busy && !state.interpreting,
+                onPressed: enabled && !state.busy ? () => vm.listen() : null),
+            const SizedBox(height: AppSpacing.md),
+            if (!enabled)
+              const FieldMessage.hint(
+                  'Giọng nói đang tạm tắt. Bác có thể nhập lịch bằng tay.'),
+            if (result == null)
+              AppButton(
+                  label: state.interpreting
+                      ? 'Đang sắp xếp lịch…'
+                      : 'Tạo lịch từ câu nói',
+                  icon: Icons.auto_awesome_rounded,
+                  busy: state.interpreting,
+                  onPressed:
+                      enabled && !state.busy && state.text.trim().isNotEmpty
+                          ? _analyze
+                          : null),
+            const SizedBox(height: AppSpacing.sm),
+            ExpansionTile(
+                tilePadding: EdgeInsets.zero,
+                title: Text('Thông tin được dùng để tạo lịch',
+                    style: Theme.of(context).textTheme.bodySmall),
+                children: const [
+                  Padding(
+                      padding: EdgeInsets.only(bottom: AppSpacing.md),
+                      child: Text(
+                          'Khi Bác chọn “Tạo lịch từ câu nói”, phần chữ và giờ bận trong 7 ngày tới được gửi tới Google Gemini để đề xuất lịch. Không gửi bản ghi âm hay tên các việc khác. Bác luôn kiểm tra trước khi lưu.'))
+                ]),
+          ],
           SizedBox(key: _resultAnchor, height: AppSpacing.base),
           if (state.reply != null) ...[
-            AssistantReply(text: state.reply!),
+            if (state.addedDay != null)
+              Container(
+                  padding: const EdgeInsets.all(AppSpacing.base),
+                  decoration: BoxDecoration(
+                      color: Theme.of(context).colorScheme.primaryContainer,
+                      borderRadius: BorderRadius.circular(20)),
+                  child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Icon(Icons.check_circle_rounded),
+                        const SizedBox(width: AppSpacing.md),
+                        Expanded(
+                            child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                              Text('Đã thêm vào lịch',
+                                  style:
+                                      Theme.of(context).textTheme.titleMedium),
+                              const SizedBox(height: AppSpacing.sm),
+                              const Text(
+                                  'Bác có thể xem lịch hoặc nói thêm một việc khác.'),
+                            ])),
+                      ]))
+            else
+              AssistantReply(text: state.reply!),
             if (state.addedDay case final day?) ...[
               const SizedBox(height: AppSpacing.md),
               AppButton(
@@ -150,6 +188,9 @@ class _VoiceInputScreenState extends ConsumerState<VoiceInputScreen> {
                 label: 'Bác trả lời thêm',
                 controller: followUp,
                 maxLength: 500,
+                minLines: 2,
+                maxLines: null,
+                keyboardType: TextInputType.multiline,
                 enabled: !state.busy,
                 onChanged: vm.editFollowUp,
                 hint: '8 giờ sáng ngày mai'),
@@ -164,7 +205,7 @@ class _VoiceInputScreenState extends ConsumerState<VoiceInputScreen> {
             const SizedBox(height: AppSpacing.md),
             AppButton(
                 label: state.interpreting
-                    ? 'Đang hiểu lời Bác…'
+                    ? 'Đang sắp xếp lịch…'
                     : 'Gửi câu trả lời',
                 icon: Icons.arrow_forward_rounded,
                 busy: state.interpreting,
@@ -190,7 +231,9 @@ class _VoiceInputScreenState extends ConsumerState<VoiceInputScreen> {
             ],
             const SizedBox(height: AppSpacing.md),
             AppButton(
-                label: state.adding ? 'Đang thêm vào lịch…' : 'Thêm vào lịch',
+                label: state.adding
+                    ? 'Đang thêm vào lịch…'
+                    : 'Đúng rồi, thêm vào lịch',
                 icon: Icons.check_rounded,
                 busy: state.adding,
                 onPressed: state.busy || state.conflict != null
@@ -200,12 +243,20 @@ class _VoiceInputScreenState extends ConsumerState<VoiceInputScreen> {
                         final writer = ref.read(voiceTaskWriterProvider);
                         final task = await vm.addToSchedule();
                         if (task == null || !context.mounted) return;
+                        ref
+                            .read(speechViewModelProvider.notifier)
+                            .read('Đã thêm ${task.title} vào lịch của Bác.');
                         showUndoSnackbar(context,
                             title: 'Đã thêm: ${task.title}',
-                            subtitle:
-                                'Ngày ${draft.dateLabel}, lúc ${draft.timeLabel}. Bác nói tiếp việc khác được.',
+                            subtitle: '${draft.dateLabel} · ${draft.timeLabel}',
                             onUndo: () => writer.undo(task));
                       }),
+            const SizedBox(height: AppSpacing.md),
+            AppButton(
+                label: 'Chưa đúng, nói lại',
+                icon: Icons.mic_rounded,
+                kind: AppButtonKind.secondary,
+                onPressed: state.busy ? null : () => vm.listen()),
             const SizedBox(height: AppSpacing.md),
             AppButton(
                 label: 'Xem và sửa trước khi lưu',
@@ -218,6 +269,17 @@ class _VoiceInputScreenState extends ConsumerState<VoiceInputScreen> {
                           context.go('/today/add/time');
                         }
                       }),
+          ],
+          if (result?.ready == true) ...[
+            const SizedBox(height: AppSpacing.lg),
+            Text('Câu nói của Bác',
+                style: Theme.of(context).textTheme.titleMedium),
+            const SizedBox(height: AppSpacing.sm),
+            SelectableText(
+                state.utterances.isEmpty
+                    ? state.text
+                    : state.utterances.join('\n'),
+                style: Theme.of(context).textTheme.bodyLarge),
           ],
           if (state.error != null) ...[
             const SizedBox(height: AppSpacing.md),
@@ -236,7 +298,7 @@ class _VoiceInputScreenState extends ConsumerState<VoiceInputScreen> {
                     }),
           const SizedBox(height: AppSpacing.base),
           const Text(
-              'Việc chỉ được lưu khi Bác bấm “Thêm vào lịch”, hoặc bấm Lưu ở bước nhập tay. Lưu xong vẫn có nút Hoàn tác.'),
+              'Chỉ lưu lịch sau khi Bác xác nhận. Bác có thể nói lại hoặc sửa thông tin trước khi lưu.'),
         ]),
       )),
     );
