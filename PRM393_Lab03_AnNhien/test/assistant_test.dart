@@ -29,6 +29,24 @@ class TestAssistant implements AssistantService {
 }
 
 void main() {
+  test(
+      'calling now differs from scheduling, editing or deleting a call reminder',
+      () async {
+    final service = LocalAssistantService();
+    Future<AssistantAction> action(String text) async => (await service.reply([
+          {'role': 'user', 'content': text}
+        ]))
+            .action;
+    expect(await action('Gọi cho con gái'), AssistantAction.callFamily);
+    expect(await action('Nhắc tôi gọi con lúc 8 giờ tối mai'),
+        AssistantAction.createTask);
+    expect(await action('Tạo lịch gọi cho con'), AssistantAction.createTask);
+    expect(
+        await action('Sửa lịch gọi cho con hôm nay'), AssistantAction.editTask);
+    expect(await action('Xoá lịch gọi cho con hôm nay'),
+        AssistantAction.deleteTask);
+  });
+
   test('caregiver assistant reads paired parent schedule instead of own tasks',
       () async {
     final assistant = TestAssistant()

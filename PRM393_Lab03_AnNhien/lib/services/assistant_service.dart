@@ -116,7 +116,9 @@ class LocalAssistantService implements AssistantService {
           'Cháu mở phần thêm người thân để Bác nhập tên, chọn mối quan hệ và số điện thoại nhé.',
           AssistantAction.createFamily);
     }
-    if (has(r'\bgoi\b')) {
+    if (has(r'\bgoi\b') &&
+        !has(
+            r'\b(them|tao|nhac|dat lich|len lich|xoa|huy|sua|doi gio|doi lich|doi ten|chinh lich)\b')) {
       final target = text
           .substring(RegExp(r'\bgoi\b').firstMatch(text)!.end)
           .replaceFirst(RegExp(r'^\s*(?:dien\s+)?(?:cho\s+)?'), '')
@@ -156,7 +158,7 @@ class LocalAssistantService implements AssistantService {
       return answer('Bác chọn việc muốn sửa nhé.', AssistantAction.editTask,
           date: day);
     }
-    if (has(r'\b(them|nhac|dat lich|len lich)\b')) {
+    if (has(r'\b(them|tao|nhac|dat lich|len lich)\b')) {
       return answer('Cháu sẽ giúp Bác kiểm tra bản nháp lịch.',
           AssistantAction.createTask);
     }

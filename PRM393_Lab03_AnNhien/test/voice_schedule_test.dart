@@ -50,6 +50,15 @@ Future<ProviderContainer> setup(VoiceTaskService service,
 }
 
 void main() {
+  test('schedule request prefixes do not become the activity title', () {
+    final result = say([
+      'Tạo một công việc vào nói chuyện với người thân ngày mai lúc 8 giờ tối trong 15 phút'
+    ]);
+    expect(result.draft.title, 'Nói chuyện với người thân');
+    final craft =
+        say(['Tạo một tấm thiệp ngày mai lúc 8 giờ sáng trong 15 phút']);
+    expect(craft.draft.title, 'Tạo một tấm thiệp');
+  });
   test(
       'local voice asks for one task when separate clauses have separate times',
       () {
