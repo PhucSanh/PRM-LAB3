@@ -125,10 +125,18 @@ class _GlobalAssistanceState extends ConsumerState<GlobalAssistance> {
   @override
   Widget build(BuildContext context) {
     ref.watch(speechViewModelProvider);
+    ref.listen(assistantLauncherProvider, (_, __) {
+      setState(() {
+        _open = true;
+        _addingTask = false;
+      });
+      _backDispatcher?.takePriority();
+    });
     final colors = Theme.of(context).colorScheme;
     final path = _router.routeInformationProvider.value.uri.path;
     // Tab roots already expose a voice assistant. Avoid two overlapping targets.
-    final showPet = path != '/calendar' &&
+    final showPet = path != '/today/voice' &&
+        path != '/calendar' &&
         path != '/calendar/day' &&
         !AssistantBubble.shellPaths.contains(path);
     ref.listen(assistantViewModelProvider, (before, next) {
@@ -324,7 +332,7 @@ class _ConversationPanelState extends ConsumerState<_ConversationPanel> {
               children: [
             if (state.onDevice || state.messages.isEmpty) ...[
               const Text(
-                  'Cháu hỗ trợ các lệnh trong ứng dụng, chưa trò chuyện tự do.'),
+                  'Cháu có thể gọi người thân, xem lịch, thêm, sửa hoặc xoá việc. Bác kiểm tra hành động bên dưới trước khi chọn nhé.'),
               const SizedBox(height: AppSpacing.base),
             ],
             if (state.messages.isEmpty) ...[
@@ -364,7 +372,7 @@ class _ConversationPanelState extends ConsumerState<_ConversationPanel> {
                   onPressed: () => widget.onNavigate('/family/add')),
             if (state.action == AssistantAction.createTask)
               AppButton(
-                  label: 'Kiểm tra lịch Bác vừa nói',
+                  label: 'Xem bản nháp việc cần thêm',
                   icon: Icons.event_note_rounded,
                   onPressed: () => widget.onCreate(
                       state.messages.lastWhere((m) => m.fromUser).text)),
@@ -395,7 +403,7 @@ class _ConversationPanelState extends ConsumerState<_ConversationPanel> {
                 const SizedBox(height: AppSpacing.base),
                 AppButton(
                     label:
-                        '${task.title} — ${task.hour}:${task.minute.toString().padLeft(2, '0')}',
+                        '${state.action == AssistantAction.editTask ? 'Sửa' : 'Xem lại để xoá'}: ${task.title} — ${task.hour}:${task.minute.toString().padLeft(2, '0')}',
                     icon: state.action == AssistantAction.editTask
                         ? Icons.edit_calendar_rounded
                         : Icons.delete_outline_rounded,
@@ -416,7 +424,7 @@ class _ConversationPanelState extends ConsumerState<_ConversationPanel> {
                   (p) => '${p.name} ${p.relation}', state.target)) ...[
                 const SizedBox(height: AppSpacing.base),
                 AppButton(
-                    label: 'Gọi ${person.name} (${person.relation})',
+                    label: 'Đúng, gọi ${person.name} (${person.relation})',
                     icon: Icons.call_rounded,
                     onPressed: _calling
                         ? null
@@ -442,6 +450,15 @@ class _ConversationPanelState extends ConsumerState<_ConversationPanel> {
                           }),
               ],
             ],
+            if (state.action != null &&
+                state.action != AssistantAction.chat) ...[
+              const SizedBox(height: AppSpacing.md),
+              AppButton(
+                  label: 'Chưa đúng, nói lại',
+                  icon: Icons.mic_rounded,
+                  kind: AppButtonKind.secondary,
+                  onPressed: state.busy ? null : vm.listen),
+            ],
             const SizedBox(height: AppSpacing.base),
             Wrap(spacing: AppSpacing.sm, runSpacing: AppSpacing.sm, children: [
               ActionChip(
@@ -460,6 +477,9 @@ class _ConversationPanelState extends ConsumerState<_ConversationPanel> {
                       controller: _text,
                       enabled: !state.busy,
                       maxLength: 500,
+                      minLines: 3,
+                      maxLines: null,
+                      keyboardType: TextInputType.multiline,
                       decoration: InputDecoration(
                           labelText: 'Bác muốn nói gì?',
                           suffixIcon: IconButton(
@@ -535,46 +555,59 @@ class _AssistantTaskPanelState extends ConsumerState<_AssistantTaskPanel> {
               controller: _text,
               enabled: !state.busy,
               maxLength: 500,
+              minLines: 3,
+              maxLines: null,
+              keyboardType: TextInputType.multiline,
               decoration: InputDecoration(
                   labelText: question == null
                       ? 'Câu nói của Bác'
                       : 'Bác trả lời thêm'),
               onChanged: question == null ? vm.edit : vm.editFollowUp),
-          AppButton(
-              label: 'Nói với cháu',
-              icon: Icons.mic_rounded,
-              busy: state.busy,
-              onPressed: state.busy
-                  ? null
-                  : () async {
-                      await vm.listen(followUp: question != null);
-                      if (!mounted) return;
-                      final current = ref.read(voiceInputViewModelProvider);
-                      if (current.error == null &&
-                          (question == null ? current.text : current.followUp)
-                              .trim()
-                              .isNotEmpty) {
-                        await vm.analyze();
-                      }
-                    }),
+          if (result?.ready != true)
+            AppButton(
+                label: 'Nói với cháu',
+                icon: Icons.mic_rounded,
+                busy: state.busy,
+                onPressed: state.busy
+                    ? null
+                    : () async {
+                        await vm.listen(followUp: question != null);
+                        if (!mounted) return;
+                        final current = ref.read(voiceInputViewModelProvider);
+                        if (current.error == null &&
+                            (question == null ? current.text : current.followUp)
+                                .trim()
+                                .isNotEmpty) {
+                          await vm.analyze();
+                        }
+                      }),
           const SizedBox(height: AppSpacing.base),
-          AppButton(
-              label: 'Hiểu lời Bác nói',
-              icon: Icons.auto_awesome_rounded,
-              onPressed: state.busy ? null : vm.analyze),
+          if (result?.ready != true)
+            AppButton(
+                label: state.interpreting
+                    ? 'Đang sắp xếp lịch…'
+                    : 'Tạo lịch từ câu nói',
+                icon: Icons.auto_awesome_rounded,
+                onPressed: state.busy ? null : vm.analyze),
           if (state.error != null) FieldMessage.error(state.error!),
           if (result?.ready == true) ...[
             const SizedBox(height: AppSpacing.base),
             VoiceTaskReview(draft: result!.draft),
+            const SizedBox(height: AppSpacing.md),
+            AppButton(
+                label: 'Chưa đúng, nói lại',
+                icon: Icons.mic_rounded,
+                kind: AppButtonKind.secondary,
+                onPressed: state.busy ? null : () => vm.listen()),
             if (result.onDevice)
               const FieldMessage.hint(
                   'Cháu đang hiểu lời Bác trên điện thoại. Bác kiểm tra kỹ ngày, giờ nhé.'),
             if (state.conflict != null) FieldMessage.hint(state.conflict!),
             const SizedBox(height: AppSpacing.base),
             AppButton(
-                label: 'Xác nhận thêm vào lịch',
+                label: 'Đúng rồi, thêm vào lịch',
                 icon: Icons.check_rounded,
-                onPressed: state.busy
+                onPressed: state.busy || state.conflict != null
                     ? null
                     : () async {
                         final writer = ref.read(voiceTaskWriterProvider);

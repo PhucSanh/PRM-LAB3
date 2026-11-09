@@ -182,3 +182,13 @@ class AssistantViewModel extends Notifier<AssistantState> {
 final assistantViewModelProvider =
     NotifierProvider<AssistantViewModel, AssistantState>(
         AssistantViewModel.new);
+
+/// All floating assistant buttons open the same intent-aware conversation.
+class AssistantLauncher extends Notifier<int> {
+  @override
+  int build() => 0;
+  void open() => state++;
+}
+
+final assistantLauncherProvider =
+    NotifierProvider<AssistantLauncher, int>(AssistantLauncher.new);

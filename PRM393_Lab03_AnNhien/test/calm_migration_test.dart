@@ -63,6 +63,12 @@ Future<ProviderContainer> pumpApp(
   await tester.pumpWidget(UncontrolledProviderScope(
       container: container, child: const AnNhienApp()));
   await tester.pumpAndSettle();
+  if (Uri.parse(route).path == '/activities') {
+    await tester.runAsync(() => precacheImage(
+        const AssetImage('assets/images/habits/downshift_0.jpg'),
+        tester.element(find.byType(Scaffold).last)));
+    await tester.pumpAndSettle();
+  }
   return container;
 }
 
@@ -269,6 +275,8 @@ void main() {
     expect(dateKey(container.read(calendarDateProvider)), '2026-11-06');
     router.go('/activities?section=habits');
     await tester.pumpAndSettle();
+    await tester.scrollUntilVisible(find.text('Vận động tự nhiên'), 300,
+        scrollable: find.byType(Scrollable).first);
     await tapText(tester, 'Vận động tự nhiên');
     expect(find.text('Bắt đầu từ một việc nhỏ'), findsOneWidget);
     router.pop();
@@ -544,13 +552,15 @@ void main() {
         }
       }
     }
-    testReferenceWidgets('bấm bong bóng mở màn Nói để thêm việc',
+    testReferenceWidgets(
+        'bấm bong bóng mở trợ lý chung, không mặc định thêm lịch',
         (tester) async {
       await pumpApp(tester, '/calendar', width: 360);
       await tester.tap(find.byKey(const Key('assistant-bubble')));
       await tester.pumpAndSettle();
-      expect(find.text('Nói để thêm việc'), findsWidgets);
-      expect(find.byKey(const Key('assistant-bubble')), findsNothing);
+      expect(find.text('Nói với cháu'), findsWidgets);
+      expect(find.text('Lên lịch bằng giọng nói'), findsNothing);
+      expect(find.text('Đúng rồi, thêm vào lịch'), findsNothing);
       await closeApp(tester);
     });
     testReferenceWidgets('chế độ Con cháu không có bong bóng', (tester) async {
