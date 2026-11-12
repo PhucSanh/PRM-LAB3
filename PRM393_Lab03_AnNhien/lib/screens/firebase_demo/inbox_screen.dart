@@ -102,7 +102,9 @@ class _InboxScreenState extends ConsumerState<InboxScreen> {
                       .showSnackBar(SnackBar(content: Text(message)));
                 }
               }),
-          const SizedBox(height: AssistantBubble.clearance),
+          const SizedBox(
+            height: AssistantBubble.clearance + AppSizes.navBar,
+          ),
         ],
       )),
     );

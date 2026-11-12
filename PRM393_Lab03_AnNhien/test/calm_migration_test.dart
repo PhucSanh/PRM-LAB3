@@ -451,6 +451,25 @@ void main() {
       });
     }
   }
+  for (final (route, role) in [
+    ('/today', UserRole.elder),
+    ('/caregiver/schedule', UserRole.caregiver),
+  ]) {
+    testReferenceWidgets('$route navigation rail scrolls in landscape',
+        (tester) async {
+      await pumpApp(tester, route,
+          width: 800, height: 360, scale: 2, role: role);
+      final rail = find.byType(NavigationRail);
+      expect(rail, findsOneWidget);
+      expect(
+        find.descendant(of: rail, matching: find.byType(Scrollable)),
+        findsWidgets,
+      );
+      expect(tester.takeException(), isNull);
+      await closeApp(tester);
+    });
+  }
+
   for (final (route, name, role) in [
     ('/intro', 'welcome', UserRole.elder),
     ('/sign-in', 'signin', UserRole.elder),

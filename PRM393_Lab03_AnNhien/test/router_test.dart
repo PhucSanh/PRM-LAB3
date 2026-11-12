@@ -64,8 +64,18 @@ void main() {
 
       expect(tester.takeException(), isNull);
       if (code == 'Lịch của Bác' || path == '/habits') {
+        final screenScroll = find
+            .byWidgetPredicate(
+              (widget) => widget is Scrollable,
+            )
+            .evaluate()
+            .firstWhere(
+              (element) =>
+                  element.findAncestorWidgetOfExactType<NavigationRail>() ==
+                  null,
+            );
         await tester.scrollUntilVisible(find.textContaining(code), 250,
-            scrollable: find.byType(Scrollable).first);
+            scrollable: find.byWidget(screenScroll.widget));
       }
       expect(find.textContaining(code), findsWidgets);
 
