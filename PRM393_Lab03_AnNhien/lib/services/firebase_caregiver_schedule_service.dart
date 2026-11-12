@@ -144,16 +144,19 @@ class FirebaseCaregiverScheduleService implements CaregiverScheduleService {
       });
   @override
   Future<void> create(String momUid, TaskItem task) => data.run(() async {
-        task.validate();
-        final doc = _tasks(momUid).doc(task.id);
+        final creatorUid = data.auth.currentUser?.uid;
+        if (creatorUid == null) throw const AppException('Cần đăng nhập trước.');
+        final created = task.copyWith(creatorUid: creatorUid);
+        created.validate();
+        final doc = _tasks(momUid).doc(created.id);
         await data.db.runTransaction((tx) async {
           final exists = await tx.get(doc);
           if (exists.exists) return;
-          final commit = await data.checkSchedule(momUid, {task.id: task},
+          final commit = await data.checkSchedule(momUid, {created.id: created},
               transaction: tx);
           commit();
-          tx.set(doc, task.toMap());
-          _recordChange(tx, momUid, task.id, 'created', 'create-${task.id}');
+          tx.set(doc, created.toMap());
+          _recordChange(tx, momUid, created.id, 'created', 'create-${created.id}');
         });
       });
   @override

@@ -38,13 +38,13 @@ test('trusted admin campaign content reaches FCM notification',async()=>{
  await sendInboxPush(f.db,{sendEachForMulticast:async message=>{notification=message.notification;return {responses:[{success:true}]};}},{uid:'user',id:'campaign',data:{event:'admin_campaign',campaignId:'trusted',title:'Vận động',body:'Đi bộ nhẹ nhé'}},f.now);
  assert.deepEqual(notification,{title:'Vận động',body:'Đi bộ nhẹ nhé'});
 });
-test('completion push signals progress without exposing task details on lock screen',async()=>{
+test('completion push includes elder, activity and deep-link for its creator',async()=>{
  const f=fixture(1);let message;
  await sendInboxPush(f.db,{sendEachForMulticast:async m=>{message=m;return {responses:[{success:true}]};}},
- {uid:'user',id:'completed',data:{event:'task_completed',kind:'family',title:'Private task',body:'Private health detail',parentUid:'parent',route:'/caregiver/schedule?date=2026-11-08'}},f.now);
- assert.equal(message.notification.title,'Bác đã hoàn thành một việc');
- assert.equal(message.data.route,'/caregiver/schedule?date=2026-11-08');
- assert.equal(JSON.stringify(message).includes('Private'),false);
+ {uid:'user',id:'completed',data:{event:'task_completed',kind:'family',title:'Bà Lan đã hoàn thành: Đi bộ',body:'Hoàn thành lúc 08:30.',parentUid:'parent',route:'/caregiver/task/walk?date=2026-11-08'}},f.now);
+ assert.equal(message.notification.title,'Bà Lan đã hoàn thành: Đi bộ');
+ assert.equal(message.notification.body,'Hoàn thành lúc 08:30.');
+ assert.equal(message.data.route,'/caregiver/task/walk?date=2026-11-08');
 });
 test('suggestion responses send visible FCM alerts to the original sender',async()=>{
   const f=fixture(1);

@@ -9,13 +9,14 @@ const validId = value => typeof value === 'string' && /^[a-zA-Z0-9_-]{1,128}$/.t
 const validDate = s => typeof s === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(s) &&
   Number.isFinite(Date.parse(s)) && new Date(s).toISOString().slice(0,10) === s;
 function validateTask(t) {
-  const allowed = ['completionSourceId','revision','schemaVersion','title','habitKey','hour','minute','repeat','status','remind','startDate',
+  const allowed = ['completionSourceId','creatorUid','revision','schemaVersion','title','habitKey','hour','minute','repeat','status','remind','startDate',
     'endDate','weekdays','monthDays','lastDayOfMonth','excludedDates','durationMinutes','timezone'];
   const invalid = (field, message) => fail('invalid-argument', `Lịch không hợp lệ ở ${field}: ${message}`);
   if (!t || typeof t !== 'object' || Array.isArray(t)) invalid('dữ liệu lịch', 'không đúng định dạng.');
   if (Object.keys(t).some(k=>!allowed.includes(k))) invalid('dữ liệu lịch', 'có trường không được hỗ trợ.');
   if (t.schemaVersion!==2 || !Number.isInteger(t.revision) || t.revision<0 ||
-      t.completionSourceId!=null && (typeof t.completionSourceId!=='string'||t.completionSourceId.length>128)) invalid('dữ liệu lịch', 'phiên bản hoặc mã lịch không hợp lệ.');
+      t.completionSourceId!=null && (typeof t.completionSourceId!=='string'||t.completionSourceId.length>128) ||
+      t.creatorUid!=null && !validId(t.creatorUid)) invalid('dữ liệu lịch', 'phiên bản hoặc mã lịch không hợp lệ.');
   if (typeof t.title!=='string' || !t.title.trim() || t.title.length>80) invalid('tên việc', 'cần từ 1 đến 80 ký tự.');
   if (!['move','purpose','downshift','eighty','plant','tea','belong','family','tribe'].includes(t.habitKey)) invalid('nhóm thói quen', 'không được hỗ trợ.');
   if (!Number.isInteger(t.hour) || t.hour<0 || t.hour>23 || !Number.isInteger(t.minute) || t.minute<0 || t.minute>59) invalid('giờ nhắc', 'giờ phải từ 00:00 đến 23:59.');
@@ -103,7 +104,7 @@ function createDomain(db, {now = () => Date.now(), generateCode = () => String(r
   async function sendSuggestion(uid, {momUid,id,tasks,message=''}) {
     requireUid(uid);
     if(!validId(momUid)||!validId(id)||!Array.isArray(tasks)||tasks.length<1||tasks.length>10||typeof message!=='string'||message.length>500) fail('invalid-argument','Kiểm tra lại lịch gợi ý.');
-    tasks=tasks.map(validateTask);
+    tasks=tasks.map(task=>({...validateTask(task),creatorUid:uid}));
     await db.runTransaction(async tx=>{
       const grant=await tx.get(db.doc(`users/${momUid}/caregivers/${uid}`));
       if(!grant.exists) fail('permission-denied','Cần ghép nối lại với máy của mẹ.');
@@ -132,7 +133,7 @@ function createDomain(db, {now = () => Date.now(), generateCode = () => String(r
       if(!Array.isArray(s.tasks)||selected.some(n=>n<0||n>=s.tasks.length)||Object.keys(times).some(k=>!selected.includes(Number(k)))) fail('invalid-argument','Lựa chọn chưa hợp lệ.');
       const previous=s.acceptedIds||[];
       if(selected.some(n=>previous.includes(`suggestion-${id}-${n}`))) fail('failed-precondition','Việc này đã được nhận.');
-      const tasks=selected.map(n=>validateTask({...s.tasks[n],...(times[n]||{})}));
+      const tasks=selected.map(n=>({...validateTask({...s.tasks[n],...(times[n]||{})}),creatorUid:s.senderUid}));
       const ids=selected.map(n=>`suggestion-${id}-${n}`);
       const senderUid=s.senderUid;
       const [grant,sender]=validId(senderUid) ? await Promise.all([

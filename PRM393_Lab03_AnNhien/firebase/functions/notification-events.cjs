@@ -32,23 +32,32 @@ function createNotificationEvents(db) {
   async function completed({ownerUid, completionId, before, after}) {
     if (!validId(ownerUid) || typeof completionId !== 'string' || completionId !== `${after?.taskId}_${after?.date}` || after?.status !== 'done' || before?.status === 'done' ||
         !validId(after.taskId) || !/^\d{4}-\d{2}-\d{2}$/.test(after.date || '')) return;
-    const links = await db.collection(`users/${ownerUid}/caregivers`).get();
-    for (const link of links.docs) {
-      await db.runTransaction(async tx => {
-        // Recheck permissions, current completion and both sides of the pairing.
-        const [grant, child, completion] = await Promise.all([
-          tx.get(link.ref), tx.get(db.doc(`users/${link.id}`)),
-          tx.get(db.doc(`users/${ownerUid}/completions/${completionId}`)),
-        ]);
-        if (!grant.exists || child.data()?.pairedMomUid !== ownerUid || completion.data()?.status !== 'done') return;
-        const write = await writeOnce(tx, link.id, eventKey('completed', `${ownerUid}/${completionId}`), {
-          kind: 'family', event: 'task_completed', parentUid: ownerUid, title: 'Người thân đã hoàn thành một việc',
-          body: `Một việc trong lịch ngày ${after.date.split('-').reverse().join('/')} đã được đánh dấu xong.`,
-          route: `/caregiver/schedule?date=${after.date}`,
-        });
-        write();
+    await db.runTransaction(async tx => {
+      // Route to the single caregiver that created the activity. Old activities
+      // without creatorUid deliberately remain inbox-only/no-push recipients.
+      const taskRef=db.doc(`users/${ownerUid}/tasks/${after.taskId}`);
+      const [task, elder, completion] = await Promise.all([
+        tx.get(taskRef), tx.get(db.doc(`users/${ownerUid}`)),
+        tx.get(db.doc(`users/${ownerUid}/completions/${completionId}`)),
+      ]);
+      const creatorUid=task.data()?.creatorUid;
+      if (!task.exists || !validId(creatorUid) || completion.data()?.status !== 'done') return;
+      const [grant, caregiver] = await Promise.all([
+        tx.get(db.doc(`users/${ownerUid}/caregivers/${creatorUid}`)),
+        tx.get(db.doc(`users/${creatorUid}`)),
+      ]);
+      if (!grant.exists || caregiver.data()?.pairedMomUid !== ownerUid) return;
+      const elderName=typeof elder.data()?.displayName==='string'&&elder.data().displayName.trim()?elder.data().displayName.trim():'Người lớn tuổi';
+      const title=typeof task.data()?.title==='string'&&task.data().title.trim()?task.data().title.trim():'hoạt động';
+      const when=after.date.split('-').reverse().join('/')+' '+new Date().toLocaleTimeString('vi-VN',{hour:'2-digit',minute:'2-digit',hour12:false});
+      const write = await writeOnce(tx, creatorUid, eventKey('completed', `${ownerUid}/${completionId}`), {
+        kind:'family', event:'task_completed', parentUid:ownerUid,
+        title:`${elderName} đã hoàn thành: ${title}`,
+        body:`Hoàn thành lúc ${when}.`,
+        route:`/caregiver/task/${encodeURIComponent(after.taskId)}?date=${after.date}`,
       });
-    }
+      write();
+    });
   }
   async function pairingChanged({eventId, ownerUid, childUid, before, after}) {
     if (![ownerUid, childUid].every(validId) || !eventId || Boolean(before) === Boolean(after)) return;

@@ -11,7 +11,7 @@ service cloud.firestore {
     function validTask(d) {
       return d.keys().hasAll(['title','habitKey','hour','minute','repeat','status','remind'])
         && d.keys().hasOnly(['title','habitKey','hour','minute','repeat','status','remind',
-          'schemaVersion','revision','completionSourceId','startDate','endDate','weekdays','monthDays','lastDayOfMonth','excludedDates','durationMinutes','timezone'])
+          'schemaVersion','revision','completionSourceId','creatorUid','startDate','endDate','weekdays','monthDays','lastDayOfMonth','excludedDates','durationMinutes','timezone'])
         && d.title is string && d.title.size() > 0 && d.title.size() <= 80
         && d.habitKey in ['move','purpose','downshift','eighty','plant','tea','belong','family','tribe']
         && d.hour is int && d.hour >= 0 && d.hour <= 23
@@ -24,6 +24,7 @@ service cloud.firestore {
     function validRecurrence(d) {
       return d.revision is int && d.revision >= 0
         && (d.get('completionSourceId',null) == null || d.completionSourceId is string && d.completionSourceId.size() <= 128)
+        && (d.get('creatorUid',null) == null || d.creatorUid is string && d.creatorUid.size() <= 128)
         && date(d.startDate) && (d.endDate == null || date(d.endDate))
         && d.timezone == 'Asia/Ho_Chi_Minh'
         && d.durationMinutes is int && d.durationMinutes >= 1 && d.durationMinutes <= 1440
@@ -95,9 +96,12 @@ service cloud.firestore {
       match /tasks/{id} {
         allow read: if owner(uid) || caregiver(uid);
         allow delete: if owner(uid) || caregiver(uid);
-        allow create: if (owner(uid) || caregiver(uid)) && validTask(request.resource.data);
+        allow create: if validTask(request.resource.data) && (
+          owner(uid) && request.resource.data.get('creatorUid', null) == null ||
+          caregiver(uid) && request.resource.data.creatorUid == request.auth.uid);
         allow update: if (owner(uid) || caregiver(uid)) && validTask(request.resource.data)
-          && request.resource.data.get('revision',0) == resource.data.get('revision',0) + 1;
+          && request.resource.data.get('revision',0) == resource.data.get('revision',0) + 1
+          && request.resource.data.get('creatorUid',null) == resource.data.get('creatorUid',null);
       }
       match /family/{id} {
         allow read, delete: if owner(uid);

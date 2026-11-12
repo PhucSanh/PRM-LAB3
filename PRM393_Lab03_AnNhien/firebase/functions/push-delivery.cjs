@@ -6,7 +6,6 @@ const familyPush = new Map([
   ['suggestion_accepted', {title:'Ba mẹ đã đồng ý với gợi ý',body:'Việc bạn gửi đã được thêm vào lịch.'}],
   ['suggestion_partial', {title:'Ba mẹ đã nhận một phần gợi ý',body:'Một số việc bạn gửi đã được thêm vào lịch.'}],
   ['suggestion_dismissed', {title:'Ba mẹ đã bỏ qua gợi ý',body:'Ba mẹ đã từ chối các việc chưa nhận.'}],
-  ['task_completed', {title:'Bác đã hoàn thành một việc',body:'Mở lịch để xem cập nhật từ người thân.'}],
 ]);
 
 async function sendInboxPush(db, messaging, {uid,id,data}, now=Date.now()) {
@@ -21,7 +20,7 @@ async function sendInboxPush(db, messaging, {uid,id,data}, now=Date.now()) {
     const chunk=fresh.slice(offset,offset+500);
     const result=await messaging.sendEachForMulticast({
       tokens:chunk.map(doc=>doc.data().token),
-      notification: data.event==='admin_campaign' && data.campaignId
+      notification: (data.event==='admin_campaign' && data.campaignId) || data.event==='task_completed'
         ? {title:data.title,body:data.body}
         : familyPush.get(data.event) ??
           {title:'An Nhiên',body:'Bạn có thông báo mới. Mở An Nhiên để xem nhé.'},

@@ -2,7 +2,9 @@
 // Update only the existing container image. Keep credentials, identity and scaling.
 const {execFileSync}=require('node:child_process');const http=require('node:http');const fs=require('node:fs');const path=require('node:path');
 const root=path.resolve(__dirname,'..');const metadataPath=path.join(root,'deploy/azure-admin.json');const metadata=JSON.parse(fs.readFileSync(metadataPath));const az=process.env.AZ_BIN||'az';
-function cli(args){return JSON.parse(execFileSync(az,[...args,'--output','json'],{encoding:'utf8',stdio:['ignore','pipe','pipe']}));}
+// Azure CLI is a .cmd shim on Windows. `execFileSync` cannot launch that
+// shim directly, so use the platform shell only for this fixed local command.
+function cli(args){return JSON.parse(execFileSync(az,[...args,'--output','json'],{encoding:'utf8',stdio:['ignore','pipe','pipe'],shell:process.platform==='win32'}));}
 async function pushImage(server,token,image){
  const endpoint=execFileSync('docker',['context','inspect','--format','{{.Endpoints.docker.Host}}'],{encoding:'utf8'}).trim();if(!endpoint.startsWith('unix://'))throw new Error('Expected a local Unix Docker daemon.');
  const dockerAuth=Buffer.from(JSON.stringify({username:'00000000-0000-0000-0000-000000000000',password:token,serveraddress:server})).toString('base64');
