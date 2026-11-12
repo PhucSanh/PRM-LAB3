@@ -9,7 +9,7 @@ import '../../theme/app_spacing.dart';
 import '../../widgets/app_back_bar.dart';
 import '../../widgets/calm_parts.dart';
 import '../../widgets/app_button.dart';
-import '../../widgets/app_surface.dart';
+import '../../widgets/assistant_bubble.dart';
 import '../../widgets/state_views.dart';
 
 class InboxScreen extends ConsumerStatefulWidget {
@@ -102,7 +102,7 @@ class _InboxScreenState extends ConsumerState<InboxScreen> {
                       .showSnackBar(SnackBar(content: Text(message)));
                 }
               }),
-          const SizedBox(height: AppSpacing.lg),
+          const SizedBox(height: AssistantBubble.clearance),
         ],
       )),
     );
@@ -130,56 +130,60 @@ class _InboxScreenState extends ConsumerState<InboxScreen> {
       for (final item in items)
         Padding(
           padding: const EdgeInsets.only(bottom: AppSpacing.base),
-          child: AppSurface(
-            selected: !item.isRead,
-            child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Wrap(
-                      spacing: AppSpacing.sm,
-                      crossAxisAlignment: WrapCrossAlignment.center,
-                      children: [
-                        Icon(
-                            item.kind == NotificationKind.family
-                                ? Icons.family_restroom_rounded
-                                : Icons.notifications_rounded,
-                            color: scheme.primary,
-                            size: AppSizes.icon),
-                        Text(
-                            item.kind == NotificationKind.family
-                                ? 'Gia đình'
-                                : item.kind == NotificationKind.reminder
-                                    ? 'Lời nhắc'
-                                    : 'Hệ thống',
-                            style: theme.textTheme.labelMedium),
-                        if (!item.isRead)
-                          Text('• Chưa đọc',
-                              style: theme.textTheme.labelMedium
-                                  ?.copyWith(color: scheme.primary)),
-                      ]),
-                  const SizedBox(height: AppSpacing.md),
-                  Text(item.title, style: theme.textTheme.titleLarge),
-                  const SizedBox(height: AppSpacing.sm),
-                  Text(item.body),
-                  const SizedBox(height: AppSpacing.sm),
-                  Text(
-                      '${item.receivedAt.day}/${item.receivedAt.month}/${item.receivedAt.year} · ${item.receivedAt.hour.toString().padLeft(2, '0')}:${item.receivedAt.minute.toString().padLeft(2, '0')}',
-                      style: theme.textTheme.bodyMedium
-                          ?.copyWith(color: scheme.onSurfaceVariant)),
-                  if (notificationTarget(item.route) != '/inbox' ||
-                      !item.isRead) ...[
-                    const SizedBox(height: AppSpacing.base),
-                    AppButton(
-                        label: notificationTarget(item.route) == '/inbox'
-                            ? 'Đánh dấu đã đọc'
-                            : 'Xem thông báo',
-                        icon: Icons.mark_email_read_rounded,
-                        kind: AppButtonKind.tonal,
-                        wrapLabel: true,
-                        busy: _opening == item.id,
-                        onPressed: _opening != null ? null : () => _open(item)),
-                  ],
-                ]),
+          child: Card(
+            color: item.isRead ? null : scheme.primaryContainer,
+            child: Padding(
+              padding: const EdgeInsets.all(AppSpacing.screen),
+              child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Wrap(
+                        spacing: AppSpacing.sm,
+                        crossAxisAlignment: WrapCrossAlignment.center,
+                        children: [
+                          Icon(
+                              item.kind == NotificationKind.family
+                                  ? Icons.family_restroom_rounded
+                                  : Icons.notifications_rounded,
+                              color: scheme.primary,
+                              size: AppSizes.icon),
+                          Text(
+                              item.kind == NotificationKind.family
+                                  ? 'Gia đình'
+                                  : item.kind == NotificationKind.reminder
+                                      ? 'Lời nhắc'
+                                      : 'Hệ thống',
+                              style: theme.textTheme.labelMedium),
+                          if (!item.isRead)
+                            Text('• Chưa đọc',
+                                style: theme.textTheme.labelMedium
+                                    ?.copyWith(color: scheme.primary)),
+                        ]),
+                    const SizedBox(height: AppSpacing.md),
+                    Text(item.title, style: theme.textTheme.titleLarge),
+                    const SizedBox(height: AppSpacing.sm),
+                    Text(item.body),
+                    const SizedBox(height: AppSpacing.sm),
+                    Text(
+                        '${item.receivedAt.day}/${item.receivedAt.month}/${item.receivedAt.year} · ${item.receivedAt.hour.toString().padLeft(2, '0')}:${item.receivedAt.minute.toString().padLeft(2, '0')}',
+                        style: theme.textTheme.bodyMedium
+                            ?.copyWith(color: scheme.onSurfaceVariant)),
+                    if (notificationTarget(item.route) != '/inbox' ||
+                        !item.isRead) ...[
+                      const SizedBox(height: AppSpacing.base),
+                      AppButton(
+                          label: notificationTarget(item.route) == '/inbox'
+                              ? 'Đánh dấu đã đọc'
+                              : 'Xem thông báo',
+                          icon: Icons.mark_email_read_rounded,
+                          kind: AppButtonKind.tonal,
+                          wrapLabel: true,
+                          busy: _opening == item.id,
+                          onPressed:
+                              _opening != null ? null : () => _open(item)),
+                    ],
+                  ]),
+            ),
           ),
         ),
     ]);
