@@ -121,13 +121,14 @@ test('schedule push requires current grant and a different authenticated actor; 
 test('completion notifies only linked child, once per occurrence; undo, skip, revoke do not notify',async()=>{
   const {domain,mom,child}=await setup();const events=createNotificationEvents(db);
   await domain.redeemPairing(child,(await domain.createPairing(mom)).code);
+  await db.doc(`users/${mom}/tasks/walk`).set({...task,creatorUid:child});
   const completionId='walk_2026-11-04';
   const after={taskId:'walk',date:'2026-11-04',status:'done'};
   await db.doc(`users/${mom}/completions/${completionId}`).set(after);
   await events.completed({ownerUid:mom,completionId,after});
   await events.completed({ownerUid:mom,completionId,after});
   let list=await db.collection(`users/${child}/notifications`).get();assert.equal(list.size,1);
-  assert.equal(list.docs[0].data().route,'/caregiver/schedule?date=2026-11-04');
+  assert.equal(list.docs[0].data().route,'/caregiver/task/walk?date=2026-11-04');
   await events.completed({ownerUid:mom,completionId,after:{...after,status:'skipped'}});
   await events.completed({ownerUid:mom,completionId,after:{...after,status:'pending'}});
   await domain.revokePairing(mom,mom,child);
