@@ -82,8 +82,9 @@ void main() {
 
   testWidgets('S03 flashcard wraps progress dots on a narrow screen',
       (tester) async {
-    addTearDown(() => tester.binding.setSurfaceSize(null));
-    await tester.binding.setSurfaceSize(const Size(320, 800));
+    tester.view.physicalSize = const Size(320, 800);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
     final tasks = List.generate(
       20,
       (index) => TaskItem(
@@ -98,10 +99,10 @@ void main() {
     addTearDown(container.dispose);
     await tester.pumpWidget(UncontrolledProviderScope(
         container: container, child: const AnNhienApp()));
-    await tester.pump();
-    await tester.pump(const Duration(milliseconds: 300));
+    await tester.pumpAndSettle();
 
     final nextTask = find.byKey(const Key('s03-next-task'));
+    expect(nextTask, findsOneWidget);
     await tester.ensureVisible(nextTask);
     await tester.tap(nextTask);
     await tester.pumpAndSettle();
@@ -120,14 +121,15 @@ void main() {
     addTearDown(container.dispose);
     await tester.pumpWidget(UncontrolledProviderScope(
         container: container, child: const AnNhienApp()));
-    await tester.pump();
-    await tester.pump(const Duration(milliseconds: 300));
+    await tester.pumpAndSettle();
 
     await tester.tap(find.byKey(const Key('s03-next-task')));
-    await tester.pump();
-    await tester.tap(find.byKey(const Key('s03-flashcard')));
-    await tester.pump();
-    await tester.pump(const Duration(milliseconds: 300));
+    await tester.pumpAndSettle();
+    final flashcard = find.byKey(const Key('s03-flashcard'));
+    await tester.ensureVisible(flashcard);
+    await tester.pumpAndSettle();
+    await tester.tap(flashcard);
+    await tester.pumpAndSettle();
     final completeButton = find.bySemanticsLabel('Đã xong');
     await tester.scrollUntilVisible(completeButton, 300,
         scrollable: find.byType(Scrollable).first);
