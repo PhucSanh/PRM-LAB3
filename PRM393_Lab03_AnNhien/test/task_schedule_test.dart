@@ -89,6 +89,9 @@ void main() {
     expect(decoded.repeat, RepeatRule.weekly);
     expect(decoded.weekdays, [1, 3, 5]);
     expect(decoded.status, TaskStatus.pending);
+    final assigned = task().copyWith(creatorUid: 'caregiver_1');
+    expect(TaskItem.fromMap('walk', assigned.toMap()).creatorUid,
+        'caregiver_1');
     expect(
         task()
             .copyWith(repeat: RepeatRule.once, startDate: '2026-11-02')

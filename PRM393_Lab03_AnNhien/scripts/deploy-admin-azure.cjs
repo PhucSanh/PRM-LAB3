@@ -11,7 +11,9 @@ const environmentId=process.env.AZURE_ENVIRONMENT_ID||`/subscriptions/${subscrip
 const registryName=process.env.AZURE_REGISTRY_NAME||'pace638443565b84';
 const project='prm393-145c9',accountId='an-nhien-azure-backend';
 const envFile=path.join(root,'firebase/functions/.env.real');if(fs.existsSync(envFile))process.loadEnvFile(envFile);
-function cli(args){return JSON.parse(execFileSync(az,[...args,'--output','json'],{encoding:'utf8',maxBuffer:8*1024*1024,stdio:['ignore','pipe','pipe']}));}
+// Azure CLI is a .cmd shim on Windows. `execFileSync` cannot launch that
+// shim directly, so use the platform shell only for this fixed local command.
+function cli(args){return JSON.parse(execFileSync(az,[...args,'--output','json'],{encoding:'utf8',maxBuffer:8*1024*1024,stdio:['ignore','pipe','pipe'],shell:process.platform==='win32'}));}
 const delay=ms=>new Promise(resolve=>setTimeout(resolve,ms));
 let azureToken,googleToken;
 async function request(url,method='GET',body,kind='azure'){
