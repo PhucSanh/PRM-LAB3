@@ -80,6 +80,39 @@ void main() {
     expect(find.text('Đi bộ quanh công viên'), findsOneWidget);
   });
 
+  testWidgets('S03 flashcard wraps progress dots on a narrow screen',
+      (tester) async {
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    await tester.binding.setSurfaceSize(const Size(320, 800));
+    final tasks = List.generate(
+      20,
+      (index) => TaskItem(
+        id: 'task-$index',
+        title: 'Việc số ${index + 1}',
+        habitKey: task.habitKey,
+        hour: 9,
+        minute: index,
+      ),
+    );
+    final container = demoContainer(tasks: tasks);
+    addTearDown(container.dispose);
+    await tester.pumpWidget(UncontrolledProviderScope(
+        container: container, child: const AnNhienApp()));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
+
+    final nextTask = find.byKey(const Key('s03-next-task'));
+    await tester.ensureVisible(nextTask);
+    await tester.tap(nextTask);
+    await tester.pumpAndSettle();
+
+    final firstDot = find.byKey(const Key('s03-flash-dot-0'));
+    final lastDot = find.byKey(const Key('s03-flash-dot-19'));
+    expect(tester.takeException(), isNull);
+    expect(tester.getTopLeft(lastDot).dy,
+        greaterThan(tester.getTopLeft(firstDot).dy));
+  });
+
   testWidgets('S04 hoàn thành việc xong quay về S03', (tester) async {
     addTearDown(() => tester.binding.setSurfaceSize(null));
     await tester.binding.setSurfaceSize(const Size(412, 900));
