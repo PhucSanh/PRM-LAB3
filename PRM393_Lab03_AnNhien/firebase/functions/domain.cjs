@@ -134,10 +134,26 @@ function createDomain(db, {now = () => Date.now(), generateCode = () => String(r
       if(selected.some(n=>previous.includes(`suggestion-${id}-${n}`))) fail('failed-precondition','Việc này đã được nhận.');
       const tasks=selected.map(n=>validateTask({...s.tasks[n],...(times[n]||{})}));
       const ids=selected.map(n=>`suggestion-${id}-${n}`);
+      const senderUid=s.senderUid;
+      const [grant,sender]=validId(senderUid) ? await Promise.all([
+        tx.get(db.doc(`users/${uid}/caregivers/${senderUid}`)),
+        tx.get(user(senderUid)),
+      ]) : [];
       ids.forEach((taskId,i)=>tx.create(db.doc(`users/${uid}/tasks/${taskId}`),tasks[i]));
       const acceptedIds=[...previous,...ids];
-      tx.update(ref,{status:!selected.length?'dismissed':acceptedIds.length===s.tasks.length?'accepted':'partial',acceptedIds,
-        resolvedAt:FieldValue.serverTimestamp()});
+      const status=!selected.length?'dismissed':acceptedIds.length===s.tasks.length?'accepted':'partial';
+      tx.update(ref,{status,acceptedIds,resolvedAt:FieldValue.serverTimestamp()});
+      if(grant?.exists && sender.data()?.pairedMomUid===uid) {
+        tx.create(db.collection(`users/${senderUid}/notifications`).doc(),{
+          kind:'family',event:`suggestion_${status}`,parentUid:uid,recipientUid:senderUid,
+          title:status==='dismissed'?'Người thân đã bỏ qua gợi ý':status==='partial'?
+            'Người thân đã nhận một phần gợi ý':'Người thân đã đồng ý với gợi ý',
+          body:status==='dismissed'?
+            (previous.length ? 'Các việc còn lại trong gợi ý đã được bỏ qua.' : 'Gợi ý này chưa được thêm vào lịch.') :
+            `${selected.length} việc từ gợi ý của bạn đã được thêm vào lịch.`,
+          route:'/inbox',receivedAt:FieldValue.serverTimestamp(),
+        });
+      }
     });
     return {ok:true};
   }
