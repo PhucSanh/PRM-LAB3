@@ -9,6 +9,7 @@ import '../../theme/app_spacing.dart';
 import '../../widgets/app_back_bar.dart';
 import '../../widgets/calm_parts.dart';
 import '../../widgets/app_button.dart';
+import '../../widgets/app_surface.dart';
 import '../../widgets/state_views.dart';
 
 class InboxScreen extends ConsumerStatefulWidget {
@@ -111,9 +112,17 @@ class _InboxScreenState extends ConsumerState<InboxScreen> {
     final items =
         data.where((item) => _filter == null || item.kind == _filter).toList();
     if (items.isEmpty) {
-      return const EmptyView(
-          icon: Icons.notifications_none_rounded,
-          title: 'Nhóm này chưa có thông báo');
+      return EmptyView(
+        icon: Icons.notifications_none_rounded,
+        title: 'Nhóm này chưa có thông báo',
+        action: AppButton(
+          label: 'Xem tất cả thông báo',
+          icon: Icons.notifications_rounded,
+          kind: AppButtonKind.secondary,
+          wrapLabel: true,
+          onPressed: () => setState(() => _filter = null),
+        ),
+      );
     }
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
@@ -121,9 +130,8 @@ class _InboxScreenState extends ConsumerState<InboxScreen> {
       for (final item in items)
         Padding(
           padding: const EdgeInsets.only(bottom: AppSpacing.base),
-          child: Card(
-              child: Padding(
-            padding: const EdgeInsets.all(AppSpacing.screen),
+          child: AppSurface(
+            selected: !item.isRead,
             child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
@@ -158,9 +166,9 @@ class _InboxScreenState extends ConsumerState<InboxScreen> {
                       '${item.receivedAt.day}/${item.receivedAt.month}/${item.receivedAt.year} · ${item.receivedAt.hour.toString().padLeft(2, '0')}:${item.receivedAt.minute.toString().padLeft(2, '0')}',
                       style: theme.textTheme.bodyMedium
                           ?.copyWith(color: scheme.onSurfaceVariant)),
-                  const SizedBox(height: AppSpacing.base),
                   if (notificationTarget(item.route) != '/inbox' ||
-                      !item.isRead)
+                      !item.isRead) ...[
+                    const SizedBox(height: AppSpacing.base),
                     AppButton(
                         label: notificationTarget(item.route) == '/inbox'
                             ? 'Đánh dấu đã đọc'
@@ -170,8 +178,9 @@ class _InboxScreenState extends ConsumerState<InboxScreen> {
                         wrapLabel: true,
                         busy: _opening == item.id,
                         onPressed: _opening != null ? null : () => _open(item)),
+                  ],
                 ]),
-          )),
+          ),
         ),
     ]);
   }
