@@ -46,3 +46,25 @@ test('completion push signals progress without exposing task details on lock scr
  assert.equal(message.data.route,'/caregiver/schedule?date=2026-11-08');
  assert.equal(JSON.stringify(message).includes('Private'),false);
 });
+test('suggestion responses send visible FCM alerts to the original sender',async()=>{
+  const f=fixture(1);
+  for (const [event,title] of [
+    ['suggestion_accepted','Ba mẹ đã đồng ý với gợi ý'],
+    ['suggestion_partial','Ba mẹ đã nhận một phần gợi ý'],
+    ['suggestion_dismissed','Ba mẹ đã bỏ qua gợi ý'],
+  ]) {
+    const messages=[];
+    await sendInboxPush(f.db,{sendEachForMulticast:async message=>{
+      messages.push(message);
+      return {responses:[{success:true}]};
+    }},{uid:'user',id:'response',data:{
+      event,recipientUid:'user',parentUid:'parent',kind:'family',
+      title:'Private task title',route:'/inbox',
+    }},f.now);
+    assert.equal(messages.length,1);
+    assert.deepEqual(messages[0].tokens,['token-0']);
+    assert.equal(messages[0].notification.title,title);
+    assert.ok(messages[0].notification.body);
+    assert.equal(JSON.stringify(messages[0]).includes('Private'),false);
+  }
+});
