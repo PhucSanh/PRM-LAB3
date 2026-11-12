@@ -30,7 +30,8 @@ class TaskItem {
       this.occurrenceDate,
       this.rescheduleSourceDate,
       this.isRescheduled = false,
-      this.completionSourceId});
+      this.completionSourceId,
+      this.creatorUid});
   final String id, title, habitKey;
   final int hour, minute, durationMinutes, revision;
   final RepeatRule repeat;
@@ -51,6 +52,10 @@ class TaskItem {
   /// Parent series for pre-existing completion records after a scope split.
   /// A completion recorded on this task's own ID always takes precedence.
   final String? completionSourceId;
+  /// UID of the caregiver who created this template.  It is used only for
+  /// routing the completion notification; activities created by Bác predate
+  /// this field and intentionally have no caregiver recipient.
+  final String? creatorUid;
   bool get isDone => status == TaskStatus.done;
 
   bool occursOn(DateTime day) {
@@ -134,7 +139,8 @@ class TaskItem {
           String? occurrenceDate,
           String? rescheduleSourceDate,
           bool? isRescheduled,
-          String? completionSourceId}) =>
+          String? completionSourceId,
+          String? creatorUid}) =>
       TaskItem(
           id: id ?? this.id,
           title: title ?? this.title,
@@ -156,11 +162,13 @@ class TaskItem {
           rescheduleSourceDate:
               rescheduleSourceDate ?? this.rescheduleSourceDate,
           isRescheduled: isRescheduled ?? this.isRescheduled,
-          completionSourceId: completionSourceId ?? this.completionSourceId);
+          completionSourceId: completionSourceId ?? this.completionSourceId,
+          creatorUid: creatorUid ?? this.creatorUid);
 
   Map<String, Object?> toMap() => {
         'schemaVersion': 2,
         'completionSourceId': completionSourceId,
+        'creatorUid': creatorUid,
         'revision': revision,
         'title': title.trim(),
         'habitKey': habitKey,
@@ -199,7 +207,8 @@ class TaskItem {
       durationMinutes:
           ((m['durationMinutes'] ?? m['durationMin']) as num?)?.toInt() ?? 15,
       revision: (m['revision'] as num?)?.toInt() ?? 0,
-      completionSourceId: m['completionSourceId'] as String?);
+      completionSourceId: m['completionSourceId'] as String?,
+      creatorUid: m['creatorUid'] as String?);
 }
 
 /// Gregorian calendar/weekday patterns repeat every 400 years. Include all
