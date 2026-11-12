@@ -19,3 +19,9 @@ html,body{height:100%;overflow:hidden}body{padding:0;background:#f6f8f6;font-siz
 
 /* Keep navigation and filters free of infrastructure status copy. */
 .sidebar>.nav-label{margin-top:38px}.date-row{margin-bottom:24px}.date-row>#refresh-data{margin-left:auto;white-space:nowrap}.sidebar-bottom{padding-top:0}@media(max-width:600px){.date-row{flex-direction:row;align-items:center}.date-row>#refresh-data{font-size:11px}}
+
+#export:disabled{opacity:.55;cursor:default}
+@media(max-width:600px){
+  .page-heading{flex-wrap:wrap}
+  #export{min-height:44px}
+}
