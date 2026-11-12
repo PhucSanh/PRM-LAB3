@@ -25,3 +25,13 @@ html,body{height:100%;overflow:hidden}body{padding:0;background:#f6f8f6;font-siz
   .page-heading{flex-wrap:wrap}
   #export{min-height:44px}
 }
+
+/* Keep the notification preview readable at narrow widths and with long copy. */
+.phone{max-width:100%}
+.push-preview strong{font-size:12px;line-height:1.45}
+.push-preview p{font-size:11px;line-height:1.5;white-space:pre-wrap}
+.search:focus-within{outline:2px solid #47745e;outline-offset:2px}
+@media(max-width:600px){
+  .composer input,.composer select,.composer textarea,.search input,.auth-panel input{font-size:16px}
+  .composer .primary{min-height:44px}
+}
