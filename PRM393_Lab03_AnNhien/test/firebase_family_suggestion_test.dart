@@ -19,12 +19,13 @@ class AtomicMemoryService extends FakeSuggestionService
   final TaskRepository tasks;
   int accepts = 0;
   @override
-  Future<void> accept(String uid, String id, List<SuggestionItem> items) async {
+  Future<void> accept(String uid, String id, List<SuggestionItem> items,
+      {List<int>? indexes}) async {
     accepts++;
     for (var i = 0; i < items.length; i++) {
-      await tasks.save(items[i].toTask('suggestion-$id-$i'));
+      await tasks.save(items[i].toTask('suggestion-$id-${indexes?[i] ?? i}'));
     }
-    await super.accept(uid, id, items);
+    await super.accept(uid, id, items, indexes: indexes);
   }
 }
 
@@ -67,8 +68,7 @@ void main() {
     expect(s.items.first.date, DateTime(2026, 11, 7));
     expect(s.items.first.hour, 8);
   });
-  test('atomic backend acceptance never also writes client-side sg tasks',
-      () async {
+  test('atomic acceptance keeps both indexes for same-name tasks', () async {
     final repository = FakeTaskRepository([]);
     final service = AtomicMemoryService(repository);
     final day = DateTime(2099, 11, 7);
@@ -85,7 +85,13 @@ void main() {
                   habitKey: 'move',
                   date: day,
                   hour: 8,
-                  minute: 0)
+                  minute: 0),
+              SuggestionItem(
+                  title: 'Đi bộ',
+                  habitKey: 'move',
+                  date: day,
+                  hour: 16,
+                  minute: 0),
             ]));
     final c = ProviderContainer(overrides: [
       authServiceProvider.overrideWithValue(
@@ -106,6 +112,7 @@ void main() {
     expect(await c.read(provider.notifier).acceptAll(), true);
     final tasks = await repository.tasksForDay(day);
     expect(service.accepts, 1);
-    expect(tasks.single.id, 'suggestion-one-0');
+    expect(tasks.map((task) => (task.id, task.hour)),
+        [('suggestion-one-0', 8), ('suggestion-one-1', 16)]);
   });
 }

@@ -314,7 +314,7 @@ class SuggestionReviewViewModel extends Notifier<UiState<SuggestionReview>> {
       }
       await ref
           .read(suggestionServiceProvider)
-          .accept(data.momUid, s.id, items);
+          .accept(data.momUid, s.id, items, indexes: indexes);
     } catch (e, st) {
       for (final task in saved.reversed) {
         try {
@@ -444,7 +444,7 @@ class SuggestionReviewViewModel extends Notifier<UiState<SuggestionReview>> {
   }
 
   /// G03 "Bỏ qua gợi ý" → G09 (không hỏi lại – lịch không đổi, G09 có "Hoàn tác").
-  /// `SuggestionService.dismiss` chỉ đổi `status`; **không** báo gì cho người gửi (FR08).
+  /// Bỏ qua các việc chưa nhận trong gợi ý.
   /// Log `dismiss_suggestion { items }`.
   Future<bool> dismiss() async {
     final data = _data;

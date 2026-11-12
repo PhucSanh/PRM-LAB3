@@ -2,6 +2,12 @@
 const TRANSIENT = new Set(['messaging/internal-error','messaging/server-unavailable',
   'messaging/quota-exceeded','messaging/unknown-error']);
 
+const familyPush = new Map([
+  ['suggestion_accepted', {title:'Ba mẹ đã đồng ý với gợi ý',body:'Việc bạn gửi đã được thêm vào lịch.'}],
+  ['suggestion_partial', {title:'Ba mẹ đã nhận một phần gợi ý',body:'Một số việc bạn gửi đã được thêm vào lịch.'}],
+  ['suggestion_dismissed', {title:'Ba mẹ đã bỏ qua gợi ý',body:'Ba mẹ đã từ chối các việc chưa nhận.'}],
+]);
+
 async function sendInboxPush(db, messaging, {uid,id,data}, now=Date.now()) {
   if (!data || data.recipientUid && data.recipientUid !== uid) return;
   const devices=await db.collection(`users/${uid}/devices`).get();
@@ -16,7 +22,8 @@ async function sendInboxPush(db, messaging, {uid,id,data}, now=Date.now()) {
       tokens:chunk.map(doc=>doc.data().token),
       notification: (data.event==='admin_campaign' && data.campaignId) || data.event==='task_completed'
         ? {title:data.title,body:data.body}
-        : {title:'An Nhiên',body:'Bạn có thông báo mới. Mở An Nhiên để xem nhé.'},
+        : familyPush.get(data.event) ??
+          {title:'An Nhiên',body:'Bạn có thông báo mới. Mở An Nhiên để xem nhé.'},
       data:{notification_id:id,recipient_uid:uid,
         parent_uid:typeof data.parentUid==='string'?data.parentUid:'',
         kind:['family','reminder'].includes(data.kind)?data.kind:'system',

@@ -86,6 +86,7 @@ class AppShell extends StatelessWidget {
           body: Row(children: [
             SafeArea(
                 child: NavigationRail(
+                    scrollable: true,
                     selectedIndex: selected,
                     onDestinationSelected: select,
                     labelType: NavigationRailLabelType.all,

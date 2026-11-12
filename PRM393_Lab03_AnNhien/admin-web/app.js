@@ -21,7 +21,7 @@ function renderMetrics(m){
  document.querySelector('nav b').textContent=format(m.totalUsers);
 }
 function drawChart(){if(!snapshot)return;const p=snapshot.growth,prev=p.previous.reduce((a,b)=>a+b,0);$('#growth-total').textContent=format(p.total);$('#growth-rate').textContent=prev?((p.total/prev-1)*100).toFixed(1)+'%':'Chưa có kỳ trước';
- const step=['hour','day'].includes(currentPeriod)?'24 mốc theo giờ':`${p.labels.length} ngày gần nhất`;$('#date-display').textContent='▣ '+step+' · UTC+7';
+ const step=['hour','day'].includes(snapshot.period)?'24 mốc theo giờ':`${p.labels.length} ngày gần nhất`;$('#date-display').textContent='▣ '+step+' · UTC+7';
  $('.chart-summary>span').innerHTML='người dùng mới trong kỳ';
  const left=35,right=480,top=15,bottom=154,max=Math.max(1,...p.current,...p.previous),scale=Math.max(3,Math.ceil(max*1.2/3)*3),n=p.labels.length;
  const points=v=>v.map((value,i)=>[left+i*(right-left)/Math.max(1,n-1),bottom-value/scale*(bottom-top)]),line=pts=>pts.map(([x,y],i)=>`${i?'L':'M'}${x},${y}`).join(' '),a=points(p.current),b=points(p.previous);
@@ -43,9 +43,24 @@ function renderHistory(){const history=snapshot?.campaigns||[];
 }
 function renderSegments(){const selected=$('#segment').value;for(const option of $('#segment').options)option.textContent=`${segmentLabels[option.value]} (${format(snapshot?.segments[option.value]||0)})`;$('#segment').value=selected;$('#recipient-count').textContent=format(snapshot?.segments[selected]||0);}
 function showPage(page){const titles={dashboard:['Tổng quan ứng dụng','Người dùng, hoạt động và những kết nối gia đình.','Tổng quan'],users:['Người dùng & gia đình','Thấu hiểu cộng đồng, gắn kết những người thân yêu.','Người dùng'],engagement:['Nhịp sống của cộng đồng','Theo dõi tăng trưởng và những thói quen tích cực.','Hoạt động'],notifications:['Gửi một lời quan tâm','Tạo push notification theo từng nhóm người dùng.','Push notification'],guide:['Hướng dẫn quản trị','Nguồn dữ liệu và định nghĩa chỉ số.','Hướng dẫn']};if(!titles[page])page='dashboard';const [title,desc,label]=titles[page];document.body.dataset.page=page;$('#page-title').textContent=title;$('#page-description').textContent=desc;$('#breadcrumb').textContent=label;
- const dashboard=['dashboard','users','engagement'].includes(page);$('#dashboard-content').hidden=!dashboard;$('.date-row').hidden=!dashboard;$('#notification-content').hidden=page!=='notifications';$('#guide-content').hidden=page!=='guide';$('#export').hidden=!dashboard;$('.dashboard-grid').hidden=page==='users';$('#users-card').hidden=page==='engagement';
+ const dashboard=['dashboard','users','engagement'].includes(page);$('#dashboard-content').hidden=!dashboard;$('.date-row').hidden=!dashboard;$('#notification-content').hidden=page!=='notifications';$('#guide-content').hidden=page!=='guide';$('#report-status').hidden=!dashboard;$('#export').hidden=!dashboard;$('.dashboard-grid').hidden=page==='users';$('#users-card').hidden=page==='engagement';
  document.querySelectorAll('[data-page]').forEach(a=>{a.classList.toggle('active',a.dataset.page===page);if(a.dataset.page===page)a.setAttribute('aria-current','page');else a.removeAttribute('aria-current');});}
-$('#period-tabs').addEventListener('click',e=>{const b=e.target.closest('[data-period]');if(!b)return;currentPeriod=b.dataset.period;window.adminSelectedPeriod=currentPeriod;document.querySelectorAll('[data-period]').forEach(x=>{x.classList.toggle('selected',x===b);x.setAttribute('aria-pressed',x===b);});refresh();});
+function selectPeriod(period) {
+ currentPeriod = period;
+ window.adminSelectedPeriod = period;
+ $('#period-tabs').querySelectorAll('[data-period]').forEach(button => {
+  const selected = button.dataset.period === period;
+  button.classList.toggle('selected', selected);
+  button.setAttribute('aria-pressed', selected);
+ });
+ updateExportAvailability();
+}
+$('#period-tabs').addEventListener('click', event => {
+ const button = event.target.closest('[data-period]');
+ if (!button) return;
+ selectPeriod(button.dataset.period);
+ refresh();
+});
 $('#user-search').addEventListener('input',renderUsers);window.addEventListener('hashchange',()=>showPage(location.hash.slice(1)));
 ['notification-shortcut','all-campaigns','new-campaign','insight-push'].forEach(id=>$('#'+id).addEventListener('click',()=>{location.hash='notifications';showPage('notifications');}));
 $('#segment').addEventListener('change',renderSegments);
@@ -56,9 +71,25 @@ $('#delivery').addEventListener('change',()=>{const scheduled=$('#delivery').val
 $('#schedule-at').addEventListener('change',()=>{if(window.adminBackend)window.adminBackend.requestId=null;});
 $('#push-form').addEventListener('submit',async e=>{e.preventDefault();if(pendingCampaign)return;const title=$('#push-title').value.trim(),body=$('#push-body').value.trim(),scheduledAt=$('#delivery').value==='schedule'?new Date($('#schedule-at').value).getTime():null;if(!title||!body){toast('Vui lòng nhập tiêu đề và nội dung.');return;}if(scheduledAt!==null&&(!Number.isFinite(scheduledAt)||scheduledAt<=Date.now())){toast('Vui lòng chọn thời gian trong tương lai.');return;}if(!window.adminBackend?.ready){toast('Vui lòng đăng nhập admin.');return;}pendingCampaign=true;const button=$('#push-form button[type="submit"]');button.disabled=true;try{await window.adminBackend.createCampaign({title,body,segment:$('#segment').value,scheduledAt});toast('Đã tạo chiến dịch. Backend sẽ xếp hàng thông báo theo lịch.');await refresh();}catch(error){toast('Không tạo được chiến dịch: '+error.message);}finally{pendingCampaign=false;button.disabled=false;}});
 $('#push-history').addEventListener('click',async e=>{const b=e.target.closest('[data-cancel]');if(!b)return;b.disabled=true;try{await window.adminBackend.cancelCampaign(b.dataset.cancel);toast('Đã hủy chiến dịch đang chờ.');await refresh();}catch(error){toast(error.message);b.disabled=false;}});
-$('#export').addEventListener('click',()=>{if(!snapshot){toast('Chưa có dữ liệu để xuất.');return;}const p=snapshot.growth;const rows=[['AN NHIEN - FIRESTORE'],['Cap nhat',date(snapshot.generatedAt)],['Ky',snapshot.period],['Moc thoi gian','Nguoi dung moi','Ky truoc'],...p.labels.map((l,i)=>[l,p.current[i],p.previous[i]]),[],['Chi so','Gia tri'],...Object.entries(snapshot.metrics).map(([k,v])=>[k,v??'Chua co du lieu'])];const csv='\uFEFF'+rows.map(r=>r.map(v=>'"'+String(v).replace(/"/g,'""')+'"').join(',')).join('\r\n');const url=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8;'}));const a=document.createElement('a');a.href=url;a.download=`an-nhien-${snapshot.period}.csv`;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);});
-window.addEventListener('admin-data',e=>{snapshot=e.detail;renderMetrics(snapshot.metrics);drawChart();renderAudience(snapshot.metrics);renderUsers();renderHistory();renderSegments();});
-window.addEventListener('admin-error',e=>toast('Không tải được báo cáo: '+e.detail));
+function updateExportAvailability() {
+ const waitingForPeriod = snapshot?.period !== currentPeriod;
+ $('#export').disabled = waitingForPeriod;
+ const status = $('#period-status');
+ status.hidden = !waitingForPeriod;
+ status.textContent = snapshot ? 'Đang tải kỳ đã chọn. Dữ liệu bên dưới thuộc kỳ trước.' : 'Đang chờ dữ liệu báo cáo…';
+}
+
+$('#export').addEventListener('click',()=>{if(snapshot?.period !== currentPeriod)return;const p=snapshot.growth;const rows=[['AN NHIEN - FIRESTORE'],['Cap nhat',date(snapshot.generatedAt)],['Ky',snapshot.period],['Moc thoi gian','Nguoi dung moi','Ky truoc'],...p.labels.map((l,i)=>[l,p.current[i],p.previous[i]]),[],['Chi so','Gia tri'],...Object.entries(snapshot.metrics).map(([k,v])=>[k,v??'Chua co du lieu'])];const csv='\uFEFF'+rows.map(r=>r.map(v=>'"'+String(v).replace(/"/g,'""')+'"').join(',')).join('\r\n');const url=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8;'}));const a=document.createElement('a');a.href=url;a.download=`an-nhien-${snapshot.period}.csv`;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);});
+window.addEventListener('admin-data',e=>{snapshot=e.detail;updateExportAvailability();renderMetrics(snapshot.metrics);drawChart();renderAudience(snapshot.metrics);renderUsers();renderHistory();renderSegments();});
+window.addEventListener('admin-error', event => {
+ if (snapshot) selectPeriod(snapshot.period);
+ const status = $('#period-status');
+ status.textContent = snapshot
+  ? 'Không tải được báo cáo. Đang hiển thị dữ liệu đã tải gần nhất.'
+  : 'Không tải được báo cáo. Bấm Làm mới để thử lại.';
+ status.hidden = false;
+ toast('Không tải được báo cáo: ' + event.detail);
+});
 $('#users-card thead th:last-child').textContent='HOẠT ĐỘNG GẦN NHẤT';
 $('#period-tabs [data-period="month"]').textContent='30 ngày';$('#period-tabs [data-period="quarter"]').textContent='90 ngày';
-renderUsers();renderHistory();showPage(location.hash.slice(1));
+updateExportAvailability();renderUsers();renderHistory();showPage(location.hash.slice(1));

@@ -456,8 +456,9 @@ class _TodayContentState extends ConsumerState<_TodayContent> {
       const SizedBox(height: AppSpacing.lg),
       Semantics(
         label: 'Việc ${_flashIndex + 1} trên ${tasks.length}',
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
+        child: Wrap(
+          alignment: WrapAlignment.center,
+          runSpacing: AppSpacing.sm,
           children: List.generate(
               tasks.length,
               (index) => Container(
@@ -482,8 +483,8 @@ class _TodayContentState extends ConsumerState<_TodayContent> {
       required IconData icon,
       required VoidCallback? onPressed,
       bool iconAtEnd = false}) {
-    return SizedBox(
-      height: AppSizes.minTarget,
+    return ConstrainedBox(
+      constraints: const BoxConstraints(minHeight: AppSizes.minTarget),
       child: OutlinedButton(
         onPressed: onPressed,
         style: OutlinedButton.styleFrom(
@@ -529,35 +530,53 @@ class _S03Header extends StatelessWidget {
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
     return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      FittedBox(
-        fit: BoxFit.scaleDown,
-        alignment: Alignment.centerLeft,
-        child: Row(mainAxisSize: MainAxisSize.min, children: [
-          const Icon(AppIcons.tabToday,
-              size: 48, color: AppColors.warningStrong),
-          const SizedBox(width: AppSpacing.md),
-          Text(greeting, style: theme.textTheme.headlineMedium),
-        ]),
-      ),
+      Row(children: [
+        const Icon(AppIcons.tabToday, size: 48, color: AppColors.warningStrong),
+        const SizedBox(width: AppSpacing.md),
+        Expanded(child: Text(greeting, style: theme.textTheme.headlineMedium)),
+      ]),
       const SizedBox(height: AppSpacing.lg),
-      FittedBox(
-        fit: BoxFit.scaleDown,
-        alignment: Alignment.centerLeft,
-        child: Row(mainAxisSize: MainAxisSize.min, children: [
-          Icon(AppIcons.tabWeek,
-              size: AppSizes.icon, color: scheme.onSurfaceVariant),
-          const SizedBox(width: AppSpacing.sm),
-          Text(_todayLabel(),
-              style: theme.textTheme.titleMedium
-                  ?.copyWith(color: scheme.onSurfaceVariant)),
-          const SizedBox(width: AppSpacing.lg),
-          Icon(AppIcons.checkCircle,
-              size: AppSizes.icon, color: scheme.primary),
-          const SizedBox(width: AppSpacing.sm),
-          Text('$doneCount/$total việc',
-              style: theme.textTheme.titleMedium
-                  ?.copyWith(color: scheme.onSurfaceVariant)),
-        ]),
+      Wrap(
+        spacing: AppSpacing.lg,
+        runSpacing: AppSpacing.sm,
+        children: [
+          _TodayHeaderDetail(
+            icon: AppIcons.tabWeek,
+            label: _todayLabel(),
+            color: scheme.onSurfaceVariant,
+          ),
+          _TodayHeaderDetail(
+            icon: AppIcons.checkCircle,
+            label: '$doneCount/$total việc',
+            color: scheme.primary,
+          ),
+        ],
+      ),
+    ]);
+  }
+}
+
+class _TodayHeaderDetail extends StatelessWidget {
+  const _TodayHeaderDetail({
+    required this.icon,
+    required this.label,
+    required this.color,
+  });
+
+  final IconData icon;
+  final String label;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Row(mainAxisSize: MainAxisSize.min, children: [
+      Icon(icon, size: AppSizes.icon, color: color),
+      const SizedBox(width: AppSpacing.sm),
+      Flexible(
+        child: Text(label,
+            style: theme.textTheme.titleMedium
+                ?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
       ),
     ]);
   }

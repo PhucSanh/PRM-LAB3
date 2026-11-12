@@ -19,7 +19,7 @@ class ScheduleSuggestion {
       message: message);
 }
 
-/// F12 (Sanh) có thể dùng contract này. Không gửi phản hồi bỏ qua cho Con cháu.
+/// Gửi và xử lý yêu cầu thêm việc giữa các tài khoản gia đình.
 abstract interface class SuggestionService {
   Stream<List<ScheduleSuggestion>> watchPending();
   Future<String> send(String momUid, String requestId, List<TaskItem> tasks,

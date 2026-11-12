@@ -89,15 +89,30 @@ class FirebaseFamilySuggestionService implements AtomicSuggestionService {
   }
 
   @override
-  Future<void> accept(
-      String momUid, String id, List<SuggestionItem> items) async {
+  Future<void> accept(String momUid, String id, List<SuggestionItem> items,
+      {List<int>? indexes}) async {
     final s = await byId(momUid, id);
     if (s == null) throw const AppException('Không tìm thấy gợi ý.');
     final selected = <int>[];
     final times = <String, Object>{};
-    for (final item in items) {
-      final i = s.items.indexWhere((t) => t.sameTaskAs(item) && !t.accepted);
-      if (i < 0) {
+    if (indexes != null && indexes.length != items.length) {
+      throw const AppException('Lựa chọn chưa hợp lệ.');
+    }
+    for (final (position, item) in items.indexed) {
+      final i = indexes?[position] ??
+          s.items.indexed
+              .where((entry) =>
+                  !entry.$2.accepted &&
+                  !selected.contains(entry.$1) &&
+                  entry.$2.sameTaskAs(item))
+              .map((entry) => entry.$1)
+              .firstOrNull ??
+          -1;
+      if (i < 0 ||
+          i >= s.items.length ||
+          selected.contains(i) ||
+          s.items[i].accepted ||
+          !s.items[i].sameTaskAs(item)) {
         throw const AppException('Gợi ý đã thay đổi. Bác tải lại nhé.');
       }
       selected.add(i);

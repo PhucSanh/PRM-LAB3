@@ -76,15 +76,23 @@ test('suggestion send retries persist one inbox; partial acceptance atomic and i
   await domain.resolveSuggestion(mom,{id:'req',selected:[1],times:{1:{hour:16,minute:30}}});
   const tasks=await db.collection(`users/${mom}/tasks`).get();assert.equal(tasks.size,1);assert.equal(tasks.docs[0].data().hour,16);
   assert.equal((await db.doc(`users/${mom}/suggestions/req`).get()).data().status,'partial');
+  const notices=db.collection(`users/${child}/notifications`);
+  assert.equal((await notices.where('event','==','suggestion_partial').get()).size,1);
   await assert.rejects(domain.resolveSuggestion(mom,{id:'req',selected:[1]}),e=>e.code==='failed-precondition');
   assert.equal((await db.collection(`users/${mom}/tasks`).get()).size,1);
+  await domain.resolveSuggestion(mom,{id:'req',selected:[0]});
+  assert.equal((await notices.where('event','==','suggestion_accepted').get()).size,1);
+  assert.equal((await notices.get()).size,2);
 });
-test('dismiss creates no tasks or child notification; undo returns pending',async()=>{
+test('dismiss notifies the sender once without creating tasks; undo returns pending',async()=>{
   const {domain,mom,child}=await setup();await domain.redeemPairing(child,(await domain.createPairing(mom)).code);
   await domain.sendSuggestion(child,{momUid:mom,id:'dismiss',tasks:[task]});
   await domain.resolveSuggestion(mom,{id:'dismiss',selected:[]});
   assert.equal((await db.collection(`users/${mom}/tasks`).get()).size,0);
-  assert.equal((await db.collection(`users/${child}/notifications`).get()).size,0);
+  await assert.rejects(domain.resolveSuggestion(mom,{id:'dismiss',selected:[]}),e=>e.code==='failed-precondition');
+  const notices=await db.collection(`users/${child}/notifications`).get();
+  assert.equal(notices.size,1);
+  assert.equal(notices.docs[0].data().event,'suggestion_dismissed');
   await domain.undoDismiss(mom,{id:'dismiss'});assert.equal((await db.doc(`users/${mom}/suggestions/dismiss`).get()).data().status,'pending');
   await assert.rejects(domain.undoDismiss(child,{id:'dismiss'}),e=>e.code==='failed-precondition');
   await domain.revokePairing(mom,mom,child);
@@ -113,13 +121,14 @@ test('schedule push requires current grant and a different authenticated actor; 
 test('completion notifies only linked child, once per occurrence; undo, skip, revoke do not notify',async()=>{
   const {domain,mom,child}=await setup();const events=createNotificationEvents(db);
   await domain.redeemPairing(child,(await domain.createPairing(mom)).code);
+  await db.doc(`users/${mom}/tasks/walk`).set({...task,creatorUid:child});
   const completionId='walk_2026-11-04';
   const after={taskId:'walk',date:'2026-11-04',status:'done'};
   await db.doc(`users/${mom}/completions/${completionId}`).set(after);
   await events.completed({ownerUid:mom,completionId,after});
   await events.completed({ownerUid:mom,completionId,after});
   let list=await db.collection(`users/${child}/notifications`).get();assert.equal(list.size,1);
-  assert.equal(list.docs[0].data().route,'/caregiver/schedule?date=2026-11-04');
+  assert.equal(list.docs[0].data().route,'/caregiver/task/walk?date=2026-11-04');
   await events.completed({ownerUid:mom,completionId,after:{...after,status:'skipped'}});
   await events.completed({ownerUid:mom,completionId,after:{...after,status:'pending'}});
   await domain.revokePairing(mom,mom,child);

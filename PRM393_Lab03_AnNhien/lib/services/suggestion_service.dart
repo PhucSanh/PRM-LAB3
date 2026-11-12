@@ -7,12 +7,7 @@ import '../utils/app_error.dart';
 /// Máy con cháu `send`; máy Bác `watchPending` / `byId` / `markPopupShown` /
 /// `accept` / `dismiss` / `undoDismiss`.
 ///
-/// Luật (đề + Lab 2): service **không** tạo việc trong lịch – ViewModel gọi
-/// `TaskRepository.save` sau khi Bác bấm nhận. `dismiss` / `undoDismiss` **không**
-/// báo gì cho người gửi (FR08): chỉ đổi `status`, rules quyết định ai đọc được.
-///
-/// TODO(Hiếu): bản Firebase – Firestore `users/{momUid}/suggestions` + FCM
-/// "có gợi ý mới" cho máy Bác, payload `route: /today/suggestions/{id}`.
+/// Bản Firebase tạo việc và thông báo phản hồi trong cùng transaction.
 abstract interface class SuggestionService {
   /// Máy con cháu gửi. `s.id` rỗng → service tự tạo id. Gợi ý lưu ở trạng thái
   /// `pending`, `popupShown: false`.
@@ -29,10 +24,11 @@ abstract interface class SuggestionService {
 
   /// Đánh dấu [items] đã nhận. Nhận hết → `accepted`, còn việc chưa nhận → `partial`.
   /// Gọi lại được trên gợi ý `partial` để nhận tiếp việc còn lại (G07).
-  /// [items] khớp theo tên + thói quen + ngày (giờ có thể đã đổi).
-  Future<void> accept(String momUid, String id, List<SuggestionItem> items);
+  /// [indexes] giữ vị trí gốc của từng việc khi giờ đã đổi.
+  Future<void> accept(String momUid, String id, List<SuggestionItem> items,
+      {List<int>? indexes});
 
-  /// Bỏ qua (G09). Không báo cho người gửi.
+  /// Bỏ qua các việc chưa nhận (G09).
   Future<void> dismiss(String momUid, String id);
 
   /// Hoàn tác bỏ qua: về `partial` nếu đã nhận việc nào, ngược lại `pending`.
@@ -72,9 +68,7 @@ class FakeSuggestionService implements SuggestionService {
   /// Số lần "báo cho Bác có gợi ý mới" (FCM ở bản thật) – tăng mỗi lần `send`.
   int momNotified = 0;
 
-  /// Số lần báo cho người gửi. Không hàm nào của service được báo (FR08:
-  /// nhận / bỏ qua / hoàn tác đều im lặng) – test kiểm luôn = 0. Bản Firebase
-  /// cũng không được gửi FCM / ghi tài liệu nào cho người gửi.
+  /// Bản giả chỉ mô phỏng trạng thái gợi ý.
   int get senderNotified => 0;
 
   static const sendError =
@@ -207,15 +201,16 @@ class FakeSuggestionService implements SuggestionService {
   }
 
   @override
-  Future<void> accept(
-      String momUid, String id, List<SuggestionItem> items) async {
+  Future<void> accept(String momUid, String id, List<SuggestionItem> items,
+      {List<int>? indexes}) async {
     await _wait();
     if (failOnAccept) throw acceptError;
     if (items.isEmpty) throw noItem;
     final s = _require(momUid, id);
     final next = [...s.items];
-    for (final picked in items) {
-      final i = next.indexWhere((x) => !x.accepted && x.sameTaskAs(picked));
+    for (final (position, picked) in items.indexed) {
+      final i = indexes?[position] ??
+          next.indexWhere((x) => !x.accepted && x.sameTaskAs(picked));
       if (i >= 0) next[i] = next[i].copyWith(accepted: true);
     }
     final all = next.every((x) => x.accepted);
