@@ -19,12 +19,13 @@ class AtomicMemoryService extends FakeSuggestionService
   final TaskRepository tasks;
   int accepts = 0;
   @override
-  Future<void> accept(String uid, String id, List<SuggestionItem> items) async {
+  Future<void> accept(String uid, String id, List<SuggestionItem> items,
+      {List<int>? indexes}) async {
     accepts++;
     for (var i = 0; i < items.length; i++) {
-      await tasks.save(items[i].toTask('suggestion-$id-$i'));
+      await tasks.save(items[i].toTask('suggestion-$id-${indexes?[i] ?? i}'));
     }
-    await super.accept(uid, id, items);
+    await super.accept(uid, id, items, indexes: indexes);
   }
 }
 
