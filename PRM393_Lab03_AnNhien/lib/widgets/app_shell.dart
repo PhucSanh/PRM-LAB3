@@ -4,7 +4,6 @@ import '../screens/suggestion/suggestion_popup_listener.dart';
 import '../theme/app_icons.dart';
 import '../theme/app_spacing.dart';
 import 'app_button.dart';
-import 'assistant_bubble.dart';
 
 /// Trang "Lịch của Bác" (toàn bộ lịch theo ngày) thuộc tab Lịch.
 bool isCalendarTab(String path) =>
@@ -77,35 +76,26 @@ class AppShell extends StatelessWidget {
         uri.path.startsWith('/today/task/')) {
       return content;
     }
-    final bubble = !caregiver && AssistantBubble.shellPaths.contains(uri.path)
-        ? const AssistantBubble()
-        : null;
     if (MediaQuery.sizeOf(context).width >= 600) {
       return Scaffold(
-          floatingActionButton: bubble,
           body: Row(children: [
-            SafeArea(
-                child: NavigationRail(
-                    scrollable: true,
-                    selectedIndex: selected,
-                    onDestinationSelected: select,
-                    labelType: NavigationRailLabelType.all,
-                    destinations: [
-                  for (final (icon, label) in destinations)
-                    NavigationRailDestination(
-                        icon: Icon(icon), label: Text(label))
-                ])),
-            const VerticalDivider(width: 1),
-            Expanded(child: content)
-          ]));
+        SafeArea(
+            child: NavigationRail(
+                scrollable: true,
+                selectedIndex: selected,
+                onDestinationSelected: select,
+                labelType: NavigationRailLabelType.all,
+                destinations: [
+              for (final (icon, label) in destinations)
+                NavigationRailDestination(icon: Icon(icon), label: Text(label))
+            ])),
+        const VerticalDivider(width: 1),
+        Expanded(child: content)
+      ]));
     }
     if (!caregiver && MediaQuery.textScalerOf(context).scale(20) > 32) {
       return Scaffold(
-        body: Padding(
-            padding: EdgeInsets.only(
-                bottom: bubble == null ? 0 : AssistantBubble.clearance),
-            child: content),
-        floatingActionButton: bubble,
+        body: content,
         bottomNavigationBar: SafeArea(
           top: false,
           child: Padding(
@@ -158,11 +148,7 @@ class AppShell extends StatelessWidget {
       );
     }
     return Scaffold(
-        body: Padding(
-            padding: EdgeInsets.only(
-                bottom: bubble == null ? 0 : AssistantBubble.clearance),
-            child: content),
-        floatingActionButton: bubble,
+        body: content,
         bottomNavigationBar: Material(
             color: Theme.of(context).scaffoldBackgroundColor,
             child: SafeArea(

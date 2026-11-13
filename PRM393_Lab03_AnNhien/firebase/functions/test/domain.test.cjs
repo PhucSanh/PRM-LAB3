@@ -163,3 +163,13 @@ test('partial can dismiss, undo and accept remaining without duplicating accepte
   assert.equal((await db.collection(`users/${mom}/tasks`).get()).size,2);
   await assert.rejects(domain.resolveSuggestion(mom,{id:'resume',selected:[0]}),e=>e.code==='failed-precondition');
 });
+
+test('sending a new suggestion rejects a start time already past in Vietnam', async () => {
+  const {mom, child, domain, advance} = await setup();
+  await domain.redeemPairing(child, (await domain.createPairing(mom)).code);
+  advance(4 * 60 * 60 * 1000);
+  const request = {momUid: mom, id: 'past-start', tasks: [task]};
+  await assert.rejects(domain.sendSuggestion(child, request),
+    error => error.code === 'invalid-argument' && /đã qua/.test(error.message));
+  await domain.sendSuggestion(child, {...request, tasks: [{...task, hour: 12}]});
+});

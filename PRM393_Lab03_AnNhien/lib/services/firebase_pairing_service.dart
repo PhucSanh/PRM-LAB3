@@ -18,6 +18,7 @@ class FirebaseCallableClient {
       throw AppException(
           switch (e.code) {
             'unauthenticated' => 'Cần đăng nhập trước khi thực hiện.',
+            'invalid-argument' => e.message ?? 'Kiểm tra lại dữ liệu lịch.',
             'not-found' when name == 'redeemPairing' =>
               'Mã chưa đúng hoặc đã hết hạn. Nhờ mẹ tạo mã mới rồi thử lại.',
             'resource-exhausted' =>

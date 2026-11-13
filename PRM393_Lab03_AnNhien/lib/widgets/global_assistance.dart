@@ -1,3 +1,4 @@
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/task_item.dart';
@@ -31,6 +32,7 @@ class _GlobalAssistanceState extends ConsumerState<GlobalAssistance> {
   bool _addingTask = false;
   String _initialTask = '';
   Offset? _petPosition;
+  Offset? _dragOffset;
   ChildBackButtonDispatcher? _backDispatcher;
   late final _router = ref.read(routerProvider);
 
@@ -134,11 +136,14 @@ class _GlobalAssistanceState extends ConsumerState<GlobalAssistance> {
     });
     final colors = Theme.of(context).colorScheme;
     final path = _router.routeInformationProvider.value.uri.path;
-    // Tab roots already expose a voice assistant. Avoid two overlapping targets.
+    final tabPet = AssistantBubble.shellPaths.contains(path) ||
+        path == '/calendar' ||
+        path == '/calendar/day';
+    final calendar = path == '/calendar' || path == '/calendar/day';
     final showPet = path != '/today/voice' &&
-        path != '/calendar' &&
-        path != '/calendar/day' &&
-        !AssistantBubble.shellPaths.contains(path);
+        (!tabPet ||
+            (ref.watch(profileProvider).value?.role != UserRole.caregiver &&
+                ref.watch(voiceInputEnabledProvider)));
     ref.listen(assistantViewModelProvider, (before, next) {
       if (!_open || next.action == null || before?.action == next.action) {
         return;
@@ -159,14 +164,26 @@ class _GlobalAssistanceState extends ConsumerState<GlobalAssistance> {
             child: LayoutBuilder(builder: (context, box) {
               const size = AppSizes.assistanceTarget;
               final maxX = (box.maxWidth - size).clamp(0.0, double.infinity);
+              final minY = MediaQuery.paddingOf(context).top;
               final maxY =
                   (box.maxHeight - size - MediaQuery.paddingOf(context).bottom)
-                      .clamp(0.0, double.infinity);
+                      .clamp(minY, double.infinity);
+              final largeText = MediaQuery.textScalerOf(context).scale(20) > 32;
               final point = _petPosition ??
-                  Offset(maxX - AppSpacing.base,
-                      maxY - AppSizes.navBar - AppSpacing.base);
+                  Offset(
+                      maxX - AppSpacing.base,
+                      maxY -
+                          AppSizes.navBar -
+                          AppSpacing.base -
+                          (calendar
+                              ? AppSizes.minTarget +
+                                  2 * AppSpacing.sm +
+                                  (largeText
+                                      ? AppSizes.navBar + AppSpacing.base
+                                      : 0)
+                              : 0));
               final position =
-                  Offset(point.dx.clamp(0.0, maxX), point.dy.clamp(0.0, maxY));
+                  Offset(point.dx.clamp(0.0, maxX), point.dy.clamp(minY, maxY));
               return Stack(fit: StackFit.expand, children: [
                 KeyedSubtree(key: _screenKey, child: widget.child),
                 if (!_open && showPet)
@@ -174,18 +191,29 @@ class _GlobalAssistanceState extends ConsumerState<GlobalAssistance> {
                       left: position.dx,
                       top: position.dy,
                       child: GestureDetector(
-                          onPanUpdate: (details) => setState(() {
-                                _petPosition = Offset(
-                                    (position.dx + details.delta.dx)
-                                        .clamp(0.0, maxX),
-                                    (position.dy + details.delta.dy)
-                                        .clamp(0.0, maxY));
-                              }),
+                          dragStartBehavior: DragStartBehavior.down,
+                          onPanStart: (details) {
+                            _dragOffset = details.globalPosition - position;
+                          },
+                          onPanUpdate: (details) {
+                            final offset = _dragOffset;
+                            if (offset == null) return;
+                            final next = details.globalPosition - offset;
+                            setState(() {
+                              _petPosition = Offset(next.dx.clamp(0.0, maxX),
+                                  next.dy.clamp(minY, maxY));
+                            });
+                          },
+                          onPanEnd: (_) => _dragOffset = null,
+                          onPanCancel: () => _dragOffset = null,
                           child: Semantics(
                               hint: 'Kéo để di chuyển trợ lý',
                               child: SizedBox.square(
                                   dimension: size,
                                   child: FloatingActionButton(
+                                      key: tabPet
+                                          ? const Key('assistant-bubble')
+                                          : null,
                                       backgroundColor: colors.primaryContainer,
                                       foregroundColor: colors.primary,
                                       elevation: 0,

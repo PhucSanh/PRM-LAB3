@@ -107,6 +107,14 @@ class CaregiverFormViewModel extends Notifier<CaregiverFormState> {
     if (!state.busy) state = state.copyWith(scope: value, dirty: true);
   }
 
+  bool _isPastStart(TaskItem task) {
+    final start = DateTime.parse(task.startDate!);
+    final scheduled =
+        DateTime.utc(start.year, start.month, start.day, task.hour, task.minute)
+            .subtract(const Duration(hours: 7));
+    return scheduled.isBefore(DateTime.now());
+  }
+
   bool validate() {
     try {
       if (state.task.title.trim().isEmpty) {
@@ -116,6 +124,10 @@ class CaregiverFormViewModel extends Notifier<CaregiverFormState> {
       state.task.validate();
       if (state.task.startDate == null) {
         throw const FormatException('Chọn ngày bắt đầu.');
+      }
+      if (state.original == null && _isPastStart(state.task)) {
+        throw const FormatException(
+            'Giờ bắt đầu đã qua. Chọn giờ sau hiện tại hoặc ngày khác.');
       }
       return true;
     } catch (e) {
@@ -144,6 +156,10 @@ class CaregiverFormViewModel extends Notifier<CaregiverFormState> {
     try {
       final templates = await schedules.templates(mom);
       if (!ref.mounted || generation != _generation) return false;
+      if (!validate()) {
+        state = state.copyWith(busy: false);
+        return false;
+      }
       final candidate = input.original == null || input.scope == ChangeScope.all
           ? input.task
           : input.task.copyWith(

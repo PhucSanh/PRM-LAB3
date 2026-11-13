@@ -110,7 +110,6 @@ class CalendarScreen extends ConsumerWidget {
     void open(TaskItem task) => context
         .push('/calendar/task/${Uri.encodeComponent(task.id)}?date=$key');
     return Scaffold(
-        floatingActionButton: const AssistantBubble(),
         bottomNavigationBar: _AddActivityBar(dayKey: key),
         body: SafeArea(
             child: RefreshIndicator(
@@ -229,7 +228,6 @@ class _CalendarDayScreenState extends ConsumerState<CalendarDayScreen> {
         appBar: context.canPop()
             ? AppBackBar.adaptive(context, onBack: () => context.pop())
             : null,
-        floatingActionButton: const AssistantBubble(),
         bottomNavigationBar: _AddActivityBar(dayKey: key),
         body: SafeArea(
             child: RefreshIndicator(

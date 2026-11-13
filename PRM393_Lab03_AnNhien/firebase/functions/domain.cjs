@@ -114,6 +114,13 @@ function createDomain(db, {now = () => Date.now(), generateCode = () => String(r
         if(existing.data().senderUid!==uid || !isDeepStrictEqual(existing.data().tasks,tasks) || existing.data().message!==message) fail('already-exists','Mã yêu cầu đã dùng cho lịch khác. Tạo lịch mới rồi gửi lại.');
         return; // Same request id: do not create a second notification or schedule.
       }
+      for (const task of tasks) {
+        const hour = String(task.hour).padStart(2, '0');
+        const minute = String(task.minute).padStart(2, '0');
+        if (Date.parse(`${task.startDate}T${hour}:${minute}:00+07:00`) < now()) {
+          fail('invalid-argument', 'Giờ bắt đầu đã qua. Chọn giờ sau hiện tại hoặc ngày khác.');
+        }
+      }
       const sender=await tx.get(db.doc(`users/${uid}`));
       tx.create(ref,{senderName:sender.data()?.displayName||'Người thân',senderUid:uid,status:'pending',tasks,message,createdAt:FieldValue.serverTimestamp(),acceptedIds:[]});
       tx.set(db.doc(`users/${momUid}/notifications/suggestion-${id}`),{
