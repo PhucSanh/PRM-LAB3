@@ -13,6 +13,7 @@ Chào mừng thầy cô và ban giám khảo đến với kho tài liệu hoàn 
 - [Quy tắc Gamification & Câu nói Tích cực Mỗi ngày](file:///d:/TaiLieu_FA26/PRM/PRM-LAB3/PRM393_Lab03_AnNhien/docs/f9-gamification-rules.md)
 - [Đặc tả Quản lý Người thân & Gia đình (F11)](file:///d:/TaiLieu_FA26/PRM/PRM-LAB3/PRM393_Lab03_AnNhien/docs/f11-family-management-spec.md)
 - [Hướng dẫn Kỹ thuật Tin nhắn & Lời nhắn Âm thanh](file:///d:/TaiLieu_FA26/PRM/PRM-LAB3/PRM393_Lab03_AnNhien/docs/f11-family-messaging-guide.md)
+- [Checklist Kiểm thử Gia đình (F11)](f11-verification.md)
 
 ## 2. Hướng dẫn Sử dụng & Vận hành
 - [Sổ tay Hướng dẫn Dành cho Bác Lan (Elderly User Manual)](file:///d:/TaiLieu_FA26/PRM/PRM-LAB3/PRM393_Lab03_AnNhien/docs/elderly-user-manual.md)
