@@ -42,6 +42,7 @@ Chào mừng thầy cô và ban giám khảo đến với kho tài liệu hoàn 
 - [Cấu hình Nhập liệu Giọng nói](groq-voice-setup.md)
 - [Kế hoạch Kiểm thử](test-plan.md)
 - [Nhật ký AI Code Review](code-review.md)
+- [Bảng Thuật ngữ Dự án](glossary.md)
 
 ---
 *Tất cả tài liệu được hoàn thành và nghiệm thu đầy đủ cho đợt nộp bài Lab 3.*
