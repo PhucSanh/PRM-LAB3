@@ -32,5 +32,16 @@ Chào mừng thầy cô và ban giám khảo đến với kho tài liệu hoàn 
 - [Đánh giá Hiệu năng & Khảo sát Người dùng Cao tuổi](../report/usability-evaluation.md)
 - [Kịch bản Chi tiết Video Thuyết minh (Storyboard & Script)](demo-video-storyboard.md)
 
+## 5. Tài liệu Kỹ thuật & Kiến trúc
+- [Kiến trúc Ứng dụng (MVVM + Riverpod)](architecture.md)
+- [Bảng Truy vết Thiết kế Figma ↔ Code](design-traceability.md)
+- [Hướng dẫn Cấu hình Firebase](firebase-setup.md)
+- [Kết quả Kiểm chứng Firebase](firebase-verification.md)
+- [Kế hoạch Analytics (Event & Tham số)](analytics-plan.md)
+- [Thông báo Đẩy (Push Notifications)](push-notifications.md)
+- [Cấu hình Nhập liệu Giọng nói](groq-voice-setup.md)
+- [Kế hoạch Kiểm thử](test-plan.md)
+- [Nhật ký AI Code Review](code-review.md)
+
 ---
 *Tất cả tài liệu được hoàn thành và nghiệm thu đầy đủ cho đợt nộp bài Lab 3.*
