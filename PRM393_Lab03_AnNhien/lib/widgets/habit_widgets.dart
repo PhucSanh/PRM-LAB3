@@ -225,7 +225,10 @@ class HabitAccentCard extends StatelessWidget {
                     const BoxConstraints(minHeight: AppSizes.minTarget),
                 child: Padding(
                     padding: const EdgeInsets.all(AppSpacing.base),
-                    child: ReadAloudRegion(child: child)),
+                    // Keep the read-aloud control in the card's content row.
+                    // The stacked layout reserved a full row above TaskRow,
+                    // leaving a conspicuous empty area in schedule previews.
+                    child: ReadAloudRegion(inline: true, child: child)),
               ),
             ),
           ]),
