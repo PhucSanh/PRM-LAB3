@@ -44,5 +44,15 @@ Chào mừng thầy cô và ban giám khảo đến với kho tài liệu hoàn 
 - [Nhật ký AI Code Review](code-review.md)
 - [Bảng Thuật ngữ Dự án](glossary.md)
 
+## 6. Tra cứu Nhanh & Quy trình Nhóm
+- [Thư mục Tra cứu Nhanh (route, service, ViewModel, model, widget, event…)](reference/README.md)
+- [Bắt đầu cho Thành viên mới](onboarding-new-member.md)
+- [Hướng dẫn Đóng góp](contributing.md)
+- [Quy ước Commit](commit-convention.md)
+- [Checklist trước khi mở PR](pr-checklist.md)
+- [Bảng Lệnh hay dùng](dev-commands-cheatsheet.md)
+- [Thẻ nhớ Luật Giao diện cho Người 65+](elderly-ui-rules-cheatsheet.md)
+- [Câu hỏi Thường gặp (FAQ)](faq.md)
+
 ---
 *Tất cả tài liệu được hoàn thành và nghiệm thu đầy đủ cho đợt nộp bài Lab 3.*
