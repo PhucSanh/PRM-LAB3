@@ -33,4 +33,4 @@ Chào mừng thầy cô và ban giám khảo đến với kho tài liệu hoàn 
 - [Kịch bản Chi tiết Video Thuyết minh (Storyboard & Script)](demo-video-storyboard.md)
 
 ---
-*Tất cả tài liệu được hoàn thành và nghiệm thu đầy đủ cho đợt nộp bài Lab 3.*\n
+*Tất cả tài liệu được hoàn thành và nghiệm thu đầy đủ cho đợt nộp bài Lab 3.*
