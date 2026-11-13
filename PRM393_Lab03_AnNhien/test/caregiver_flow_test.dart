@@ -123,6 +123,10 @@ void main() {
         router.routeInformationProvider.value.uri.path, '/caregiver/task/new');
     await tester.ensureVisible(find.text('Uống trà'));
     await tester.tap(find.text('Uống trà'));
+    final draft = c.read(caregiverFormViewModelProvider);
+    c.read(caregiverFormViewModelProvider.notifier).updateTask(draft.task
+        .copyWith(
+            startDate: dateKey(vietnamToday().add(const Duration(days: 1)))));
     await tester.tap(find.text('Xem lại'));
     await tester.pumpAndSettle();
     expect(router.routeInformationProvider.value.uri.path,
@@ -213,6 +217,10 @@ void main() {
     task = c.read(caregiverFormViewModelProvider).task;
     expect(task.hour, 15);
     expect(task.minute, 0);
+    final draft = c.read(caregiverFormViewModelProvider);
+    c.read(caregiverFormViewModelProvider.notifier).updateTask(draft.task
+        .copyWith(
+            startDate: dateKey(vietnamToday().add(const Duration(days: 1)))));
     await tester.tap(find.text('Xem lại'));
     await tester.pumpAndSettle();
     expect(c.read(routerProvider).routeInformationProvider.value.uri.path,
@@ -242,6 +250,10 @@ void main() {
         scrollable: find.byType(Scrollable).last);
     await tester.ensureVisible(field);
     await tester.enterText(field, 'Uống trà chiều');
+    final draft = c.read(caregiverFormViewModelProvider);
+    c.read(caregiverFormViewModelProvider.notifier).updateTask(draft.task
+        .copyWith(
+            startDate: dateKey(vietnamToday().add(const Duration(days: 1)))));
     await tester.tap(find.text('Xem lại'));
     await tester.pumpAndSettle();
     expect(router.routeInformationProvider.value.uri.path,
@@ -278,15 +290,18 @@ void main() {
   testWidgets(
       'conflict requires confirmation, failed save keeps draft, retry is idempotent',
       (tester) async {
-    final schedules = FakeCaregiverScheduleService([seed()]);
+    final schedules = FakeCaregiverScheduleService([
+      seed().copyWith(
+          startDate: dateKey(vietnamToday().add(const Duration(days: 1))))
+    ]);
     final c = demoContainer(schedules: schedules);
     await mount(tester, c);
     final vm = c.read(caregiverFormViewModelProvider.notifier);
     vm.start();
-    vm.updateTask(c
-        .read(caregiverFormViewModelProvider)
-        .task
-        .copyWith(title: 'Đi bộ cùng mẹ'));
+    vm.updateTask(c.read(caregiverFormViewModelProvider).task.copyWith(
+        title: 'Đi bộ cùng mẹ',
+        repeat: RepeatRule.daily,
+        startDate: dateKey(vietnamToday().add(const Duration(days: 1)))));
     vm.consent(false);
     expect(await vm.submit(), false);
     expect(c.read(caregiverFormViewModelProvider).conflicts, isNotEmpty);
