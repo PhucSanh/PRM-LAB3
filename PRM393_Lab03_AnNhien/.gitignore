@@ -62,3 +62,7 @@ ui-debug.log
 
 # Local rules test dependencies
 node_modules/
+
+# Secrets & golden test failure artifacts
+**/.secret.local
+**/test/failures/
