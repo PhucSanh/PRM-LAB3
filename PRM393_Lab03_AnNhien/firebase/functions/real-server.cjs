@@ -2,6 +2,19 @@
 const http=require('node:http');const path=require('node:path');const fs=require('node:fs');
 const {createHmac,randomBytes,scryptSync,timingSafeEqual}=require('node:crypto');
 const {HttpsError}=require('firebase-functions/v2/https');
+
+// Android Firebase Callable serializes Java Long values as protobuf wrappers.
+function decodeCallableNumber(key, value) {
+ const type = value?.['@type'];
+ const signed = type === 'type.googleapis.com/google.protobuf.Int64Value';
+ if (!signed && type !== 'type.googleapis.com/google.protobuf.UInt64Value') return value;
+ const decimal = signed ? /^-?\d+$/ : /^\d+$/;
+ if (typeof value.value !== 'string' || !decimal.test(value.value) ||
+     !Number.isSafeInteger(Number(value.value))) {
+  throw new Error('Invalid callable integer.');
+ }
+ return Number(value.value);
+}
 const {createDomain,DomainError}=require('./domain.cjs');
 const {createAdminService,requireAdmin}=require('./admin.cjs');
 const {createNotificationEvents}=require('./notification-events.cjs');
@@ -39,7 +52,7 @@ function createHandler({db,auth,admin,worker,password,webRoot,extraRoutes={},all
    if(origin&&!allowedOrigins.includes(origin)){json(403,{error:{status:'PERMISSION_DENIED',message:'Origin is not allowed.'}});return;}
    try{
     let raw='';for await(const chunk of req){raw+=chunk;if(Buffer.byteLength(raw)>65536)throw new HttpsError('invalid-argument','Nội dung quá lớn.');}
-    let data;try{data=JSON.parse(raw).data;}catch{throw new HttpsError('invalid-argument','JSON không hợp lệ.');}
+    let data;try{data=JSON.parse(raw, decodeCallableNumber).data;}catch{throw new HttpsError('invalid-argument','JSON không hợp lệ.');}
     if(!data||typeof data!=='object'||Array.isArray(data))throw new HttpsError('invalid-argument','Dữ liệu không hợp lệ.');
     const name=url.pathname.slice(5);
     if(name==='adminSignIn'){json(200,{result:sessions.login(data.username,data.password,req.socket.remoteAddress)});return;}

@@ -9,8 +9,8 @@ test('admin session rejects forgery, expires, and rate limits wrong passwords',(
  for(let i=0;i<5;i++)assert.throws(()=>session.login('admin','wrong','other'),e=>e.code==='unauthenticated');
  assert.throws(()=>session.login('admin','fixture-pass','other'),e=>e.code==='resource-exhausted');
 });
-async function fixture(t){
- const calls=[];const handler=createHandler({db:{projectId:'test-real'},auth:{verifyIdToken:async token=>{if(token==='firebase-admin-token')return {uid:'an-nhien-admin',admin:true};assert.equal(token,'firebase-user-token');return {uid:'app-user'};}},admin:{dashboard:async(a,d)=>{requireAdmin(a);if(d.simulateQuota)throw Object.assign(new Error('Quota exceeded'),{code:8});return {source:'firestore',period:d.period};},createCampaign:async(a,d)=>{requireAdmin(a);calls.push(d);return {id:'real-campaign'};},recordActivity:async a=>{calls.push(a.uid);return {ok:true};}},worker:{status:()=>({mode:'realtime',listeners:5})},password:'fixture-pass',webRoot:path.resolve(__dirname,'../../../admin-web'),allowedOrigins:['http://allowed.test']});
+async function fixture(t, extraRoutes={}){
+ const calls=[];const handler=createHandler({extraRoutes,db:{projectId:'test-real'},auth:{verifyIdToken:async token=>{if(token==='firebase-admin-token')return {uid:'an-nhien-admin',admin:true};assert.equal(token,'firebase-user-token');return {uid:'app-user'};}},admin:{dashboard:async(a,d)=>{requireAdmin(a);if(d.simulateQuota)throw Object.assign(new Error('Quota exceeded'),{code:8});return {source:'firestore',period:d.period};},createCampaign:async(a,d)=>{requireAdmin(a);calls.push(d);return {id:'real-campaign'};},recordActivity:async a=>{calls.push(a.uid);return {ok:true};}},worker:{status:()=>({mode:'realtime',listeners:5})},password:'fixture-pass',webRoot:path.resolve(__dirname,'../../../admin-web'),allowedOrigins:['http://allowed.test']});
  const server=http.createServer(handler);await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));t.after(()=>new Promise(resolve=>server.close(resolve)));const base=`http://127.0.0.1:${server.address().port}`;
  const call=async(name,data={},token,origin)=>{const response=await fetch(base+'/api/'+name,{method:'POST',headers:{'Content-Type':'application/json',...(token?{Authorization:'Bearer '+token}:{}),...(origin?{Origin:origin}:{})},body:JSON.stringify({data})});return {status:response.status,body:await response.json()};};return {base,call,calls};
 }
@@ -49,4 +49,18 @@ test('Firestore quota exhaustion returns a clear retryable service error',async 
 test('worker diagnostics require admin and identify realtime mode',async t=>{
  const f=await fixture(t);assert.equal((await f.call('adminWorkerStatus',{},'firebase-user-token')).status,403);
  const result=await f.call('adminWorkerStatus',{},'firebase-admin-token');assert.equal(result.status,200);assert.equal(result.body.result.mode,'realtime');
+});
+
+test('Azure callable accepts nested Android int64 values and rejects invalid values', async t => {
+ const f = await fixture(t, {decodeExample: (actor, data) => data});
+ const int64 = value => ({
+  '@type': 'type.googleapis.com/google.protobuf.Int64Value',
+  value,
+ });
+ const data = {tasks: [{schemaVersion: int64('2'), revision: int64('0'), weekdays: [int64('7')]}]};
+ const response = await f.call('decodeExample', data, 'firebase-user-token');
+ assert.equal(response.status, 200);
+ assert.deepEqual(response.body.result, {tasks: [{schemaVersion: 2, revision: 0, weekdays: [7]}]});
+ const invalid = await f.call('decodeExample', {revision: int64('9007199254740993')}, 'firebase-user-token');
+ assert.equal(invalid.status, 400);
 });
